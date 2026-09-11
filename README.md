@@ -22,3 +22,9 @@ Current focus: **Salary Grade Promotion** ("Xét nâng bậc lương"), a featur
 ## UI/UX Design
 
 - **Figma:** [Human Resource Management](https://www.figma.com/design/D3hSGsuVDHosEGUxPO2Ory/Human-Resource-Management?node-id=0-1&t=BWTSO16JxwwAMuSz-1) — high-fidelity UI/UX design for the Salary Grade Promotion feature.
+- **`Docs/Figma_design/`** — exported screenshots of key screens from the Figma design above, kept in the repo as a snapshot in case the live Figma file changes:
+  - `Review Period List.png`
+  - `Review Period Detail.png`
+  - `Employee Review Details.png`
+  - `Employee Salary History.png`
+  - `Create Salary Decision.png`
