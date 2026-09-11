@@ -18,3 +18,7 @@ Current focus: **Salary Grade Promotion** ("Xét nâng bậc lương"), a featur
 - **`HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx`** — UI/UX wireframes for the Salary Grade Promotion feature (screens and user flow).
 - **`DB_Diagram.png`** — Entity-relationship diagram (from dbdiagram.io) visualizing the 8 database tables for Salary Grade Promotion and their relationships.
 - **`Gen_Table.sql`** — SQL script (generated from dbdiagram.io) to create the 8 database tables, keys, indexes, and foreign keys for Salary Grade Promotion.
+
+## UI/UX Design
+
+- **Figma:** [Human Resource Management](https://www.figma.com/design/D3hSGsuVDHosEGUxPO2Ory/Human-Resource-Management?node-id=0-1&t=BWTSO16JxwwAMuSz-1) — high-fidelity UI/UX design for the Salary Grade Promotion feature.
