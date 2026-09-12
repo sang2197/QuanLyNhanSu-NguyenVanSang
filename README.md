@@ -18,6 +18,7 @@ Current focus: **Salary Grade Promotion** ("Xét nâng bậc lương"), a featur
 - **`HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx`** — UI/UX wireframes for the Salary Grade Promotion feature (screens and user flow).
 - **`DB_Diagram.png`** — Entity-relationship diagram (from dbdiagram.io) visualizing the 8 database tables for Salary Grade Promotion and their relationships.
 - **`Gen_Table.sql`** — SQL script (generated from dbdiagram.io) to create the 8 database tables, keys, indexes, and foreign keys for Salary Grade Promotion.
+- **`UseCase_SalaryGradePromotion.md`** — Use case diagram and description for the Salary Grade Promotion feature (actors and main actions).
 
 ## UI/UX Design
 
