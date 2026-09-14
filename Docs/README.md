@@ -26,3 +26,4 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 
 - [`UseCase_SalaryGradePromotion.md`](UseCase_SalaryGradePromotion.md) — Use case diagram and description (actors and main actions).
 - [`InformationArchitecture_SalaryGradePromotion.md`](InformationArchitecture_SalaryGradePromotion.md) — Sitemap of the module's menu structure (Salary Management, Master Data), separate from the step-by-step navigation flow in the wireframe document.
+- [`c4/`](c4/README.md) — C4 model architecture diagrams (System Context, Container, Component, Code). Only System Context is done so far.
