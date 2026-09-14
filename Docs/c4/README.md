@@ -5,7 +5,7 @@ Architecture diagrams for the HRM System, drawn using the [C4 model](https://c4m
 The C4 model shows the system at 4 levels, from most general to most detailed:
 
 1. **System Context** — the system and who/what uses it. ✅ Done
-2. **Container** — the main parts inside the system (e.g. web app, API, database). Not yet
+2. **Container** — the main parts inside the system (e.g. web app, API, database). ✅ Done
 3. **Component** — the main parts inside one container. Not yet
 4. **Code** — class/code level detail. Not yet
 
@@ -21,6 +21,21 @@ Shows the HRM System and its 2 main users:
 - **HR Staff** — performs day-to-day HR operations.
 - **Approver** — has authority to review and make final decisions on HR requests.
 
+## 2. Container Diagram
+
+![Container Diagram](Container-diagram.png)
+
+- [`Container-diagram.drawio`](Container-diagram.drawio) — editable source file.
+- [`Container-diagram.png`](Container-diagram.png) — exported image.
+
+Shows the 3 main containers inside the HRM System:
+
+- **HRM Web Application** (JavaScript / Angular) — provides the user interface for HR operations.
+- **HRM Backend API** (ASP.NET Core) — handles HR business logic and exposes APIs to client applications.
+- **HRM Database** (SQL Server) — stores HRM operational data.
+
+The Web Application calls the Backend API over HTTPS/REST/JSON, and the Backend API reads/writes the Database over SQL.
+
 ## Notes
 
-- Diagrams 2–4 (Container, Component, Code) will be added later.
+- Diagrams 3–4 (Component, Code) will be added later.
