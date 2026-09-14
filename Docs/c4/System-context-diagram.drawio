@@ -1,0 +1,34 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="YdkE9Hm-6TMTP-wAVU45">
+    <mxGraphModel dx="1395" dy="631" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Y5IkRVukuTND_azBzcsU-1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="HR Staff&lt;br&gt;[Person]&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Performs day-to-day human&lt;br/&gt;resource operations.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="50" x="149" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="Y5IkRVukuTND_azBzcsU-2" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Approver&lt;br&gt;[Person]&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Has authority to review and make&lt;br/&gt;final decisions on HR requests.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="50" x="149" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Y5IkRVukuTND_azBzcsU-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="120" width="240" x="439" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="Y5IkRVukuTND_azBzcsU-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;b&gt;HRM System&lt;/b&gt;&amp;nbsp;&lt;div&gt;[Software System]&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;Manages employee information&lt;br&gt;and HR processes.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="240" x="439" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="Y5IkRVukuTND_azBzcsU-14" edge="1" parent="1" source="Y5IkRVukuTND_azBzcsU-1" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;exitX=1;exitY=0.3333333333333333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" target="Y5IkRVukuTND_azBzcsU-12" value="Uses to manage HR operations">
+          <mxGeometry relative="1" width="160" as="geometry">
+            <mxPoint x="399" y="340" as="sourcePoint" />
+            <mxPoint x="559" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Y5IkRVukuTND_azBzcsU-15" edge="1" parent="1" source="Y5IkRVukuTND_azBzcsU-2" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;exitX=1;exitY=0.3333333333333333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" target="Y5IkRVukuTND_azBzcsU-12" value="Reviews and approves">
+          <mxGeometry relative="1" width="160" as="geometry">
+            <mxPoint x="399" y="340" as="sourcePoint" />
+            <mxPoint x="559" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
