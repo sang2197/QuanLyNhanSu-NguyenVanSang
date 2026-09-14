@@ -6,8 +6,8 @@ The C4 model shows the system at 4 levels, from most general to most detailed:
 
 1. **System Context** — the system and who/what uses it. ✅ Done
 2. **Container** — the main parts inside the system (e.g. web app, API, database). ✅ Done
-3. **Component** — the main parts inside one container. Not yet
-4. **Code** — class/code level detail. Not yet
+3. **Component** — the main parts inside one container. ✅ Done
+4. **Code** — class/code level detail. ✅ Done
 
 ## 1. System Context Diagram
 
@@ -36,6 +36,31 @@ Shows the 3 main containers inside the HRM System:
 
 The Web Application calls the Backend API over HTTPS/REST/JSON, and the Backend API reads/writes the Database over SQL.
 
-## Notes
+## 3. Component Diagram
 
-- Diagrams 3–4 (Component, Code) will be added later.
+![Component Diagram](Component-diagram.png)
+
+- [`Component-diagram.drawio`](Component-diagram.drawio) — editable source file.
+- [`Component-diagram.png`](Component-diagram.png) — exported image.
+
+Shows the 2 main components inside the **HRM Backend API** container:
+
+- **Employee Management** — manages employee profiles and employment information.
+- **Salary Management** — handles salary grades, salary reviews, salary decisions, and salary history.
+
+Both components are called by the Web Application over HTTPS/REST/JSON and read/write the Database over SQL. Salary Management also reads employee information from Employee Management.
+
+## 4. Code Diagram
+
+![Code Diagram](Code-diagram.png)
+
+- [`Code-diagram.drawio`](Code-diagram.drawio) — editable source file.
+- [`Code-diagram.png`](Code-diagram.png) — exported image.
+
+Zooms into the **Salary Management** component, showing its main classes:
+
+- **SalaryReviewController** — handles salary review requests.
+- **SalaryReviewService** — handles salary review business logic.
+- **SalaryRepository** — handles salary data access.
+
+The flow is: Controller delegates to Service, Service accesses data through Repository.
