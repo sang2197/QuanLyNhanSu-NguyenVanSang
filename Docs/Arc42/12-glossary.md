@@ -11,7 +11,7 @@
 | Eligibility | Whether an employee currently qualifies for a grade review (e.g. minimum time in current grade). |
 | Salary Decision | The official, signed document that changes one or more employees' salary grade. |
 | Proposal | A suggested new grade for an employee within a review period, not yet official until a decision is issued. |
-| SPA (Single-Page Application) | A web app (here, the Angular frontend) that runs in the browser and talks to a backend API instead of reloading full pages from a server. |
+| SPA (Single-Page Application) | A web app (here, the React frontend — see [ADR-08](09-architecture-decisions.md#adr-08-switch-frontend-framework-to-react)) that runs in the browser and talks to a backend API instead of reloading full pages from a server. |
 | REST API | An API style where the Backend API exposes resources (e.g. review periods, decisions) over HTTP, used here for Web Application ↔ Backend API communication. |
 | JWT (JSON Web Token) | A signed token proving who a user is, issued at login and sent with every API request (see [ADR-07](09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism)). |
 | RBAC (Role-Based Access Control) | Restricting actions by role (HR Staff vs. Approver) rather than by individual user. |

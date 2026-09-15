@@ -14,3 +14,5 @@ Architecture documentation for the HRM System (Salary Grade Promotion feature), 
 10. [Quality Requirements](10-quality-requirements.md)
 11. [Risks and Technical Debt](11-risks-and-technical-debt.md)
 12. [Glossary](12-glossary.md)
+
+Source code locations for these building blocks are documented separately in [`Docs/CodeStructure/`](../CodeStructure/README.md).

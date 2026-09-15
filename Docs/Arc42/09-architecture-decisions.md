@@ -12,7 +12,7 @@ The system needs a web UI usable by both HR Staff and Approver, calling a shared
 
 **Decision**
 
-The Angular frontend communicates with the ASP.NET Core backend through REST APIs.
+The React frontend communicates with the ASP.NET Core backend through REST APIs.
 
 **Consequences**
 
@@ -109,7 +109,7 @@ A review result (a proposed grade an employee is screened against) is stored sep
 
 ## ADR-06: Technology Stack (Angular + ASP.NET Core + SQL Server)
 
-**Status:** Accepted
+**Status:** Partially Superseded — the frontend framework choice (Angular) is superseded by [ADR-08](#adr-08-switch-frontend-framework-to-react); the backend (ASP.NET Core) and database (SQL Server) choices below remain Accepted. Kept here as the historical record.
 
 **Context**
 
@@ -146,3 +146,24 @@ Use ASP.NET Core Identity to issue JWT bearer tokens after login. The Web Applic
 - *Negative:* Adds a token issuance/refresh flow to build; the role model needs to be finalized (e.g. can one person hold both roles?) before implementation.
 
 **Risks created:** RISK-05
+
+---
+
+## ADR-08: Switch Frontend Framework to React
+
+**Status:** Accepted — supersedes the frontend framework choice in [ADR-06](#adr-06-technology-stack-angular--aspnet-core--sql-server)
+
+**Context**
+
+ADR-06 originally chose Angular for the frontend, before any frontend implementation began. The team decided to use React instead. This does not affect ADR-01 (frontend/backend separation via REST API) or the backend/database choices in ADR-06 (ASP.NET Core, SQL Server), which remain unchanged.
+
+**Decision**
+
+Use React (instead of Angular) for the `HRM Web Application` frontend.
+
+**Consequences**
+
+- *Positive:* Larger talent pool and ecosystem for React; being a lighter-weight library rather than a full framework, the team can pick only the tooling this project actually needs (routing, state management) instead of adopting Angular's full opinionated toolset.
+- *Negative:* Loses Angular's batteries-included structure (built-in dependency injection, forms, routing) — the team must select and standardize equivalent libraries themselves.
+
+**Risks created:** RISK-10
