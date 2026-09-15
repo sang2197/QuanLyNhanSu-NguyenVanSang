@@ -59,8 +59,8 @@ rather than simply overwriting previous values.
 
 **Business context** — see the [System Context Diagram](../c4/README.md#1-system-context-diagram):
 
-- **HR Staff** (person) — performs day-to-day HR operations, uses the system to manage review periods and prepare decisions.
-- **Approver / Manager** (person) — reviews and approves/rejects proposals, has authority to make final decisions.
+- **HR Staff** (person) — performs day-to-day HR operations, creates review periods, and screens the system's proposed grades for each employee (approves or rejects them) before submitting the batch.
+- **Approver / Manager** (person) — reviews a submitted review period, drafts a salary decision from the approved employees, and applies it to make the decision official.
 - **HRM System** (software system) — manages employee information and HR processes.
 
 **Technical context** — see the [Container Diagram](../c4/README.md#2-container-diagram): the Web Application calls the Backend API over HTTPS/REST/JSON; the Backend API reads/writes the Database over SQL.
@@ -82,20 +82,19 @@ This view is the C4 model, already documented in detail in [`Docs/c4/`](../c4/RE
 3. **Component** (inside HRM Backend API) — Employee Management, Salary Management.
 4. **Code** (inside Salary Management component) — `SalaryReviewController` → `SalaryReviewService` → `SalaryRepository`.
 
-**Database building blocks** — see [Database Design](../README.md#database-design) ([DBML source](../HRM_Salary_Grade_Promotion.dbml), [ER diagram](../DB_Diagram.png)): 8 tables — `HrEmployee`, `HrSalaryScale`, `HrSalaryGrade`, `HrEmployeeSalary`, `HrSalaryReviewPeriod`, `HrSalaryReviewEmployee`, `HrSalaryDecision`, `HrSalaryDecisionDetail`.
+**Database building blocks** — see [Database Design](../Database/README.md) ([DBML source](../Database/HRM_Salary_Grade_Promotion.dbml), [Mermaid ER diagram](../Database/README.md#er-diagram-mermaid)): 8 tables — `HrEmployee`, `HrSalaryScale`, `HrSalaryGrade`, `HrEmployeeSalary`, `HrSalaryReviewPeriod`, `HrSalaryReviewEmployee`, `HrSalaryDecision`, `HrSalaryDecisionDetail`.
 
 ## 6. Runtime View
 
-**Main scenario: "Process a salary grade review period end-to-end"** (matches the [Use Case Diagram](../UseCase_SalaryGradePromotion.md) and the wireframe's navigation flow):
+**Main scenario: "Process a salary grade review period end-to-end"** (matches the [Use Case Diagram](../UseCase_SalaryGradePromotion.md) and [User Stories](../UserStories_SalaryGradePromotion.md)):
 
-1. HR Staff creates a **Review Period** (e.g. "Annual Review H1 2026").
-2. The system loads all employees into the period and checks eligibility automatically (e.g. minimum time in current grade).
-3. HR Staff opens the **Review Period Detail** screen, filters/searches employees, and opens individual employees to propose a new grade.
-4. Approver opens **Employee Review Detail**, checks the salary snapshot and eligibility reason, then **Approves** or **Rejects** the proposal (reason required if rejected).
-5. Once enough employees are processed, HR Staff **Submits for Approval** at the period level.
-6. HR Staff opens **Create Salary Decision**, which lists only approved employees, fills in decision info, and either **Saves as Draft** or **Issues** it.
-7. On issue, in a single transaction: the system closes the employee's previous `HrEmployeeSalary` record (`EffectiveTo` set) and creates a new one linked to the decision.
-8. HR Staff or Approver can look up the result later in **Employee Salary History**, which shows the full timeline and links back to the decision.
+1. HR Staff creates a **Review Period** (e.g. "Annual Review H1 2026"). The system automatically works out a proposed new grade for each eligible employee in it (see the eligibility rule in [US-03](../UserStories_SalaryGradePromotion.md#us-03-view-employees-and-their-proposed-grade-in-a-review-period)).
+2. HR Staff opens the **Review Period Detail** screen, filters/searches employees, and reviews each employee's system-calculated proposed grade.
+3. HR Staff marks each employee's proposal as **Approved** or **Not Approved** — one at a time or in bulk (a reason is recorded if not approved).
+4. Once every employee in the period has been marked, HR Staff **submits the period** to the Approver.
+5. The Approver reviews the submitted period and **drafts a salary decision** from the approved employees.
+6. The Approver **applies the decision**. In a single transaction: the system closes each included employee's previous `HrEmployeeSalary` record (`EffectiveTo` set) and creates a new one linked to the decision.
+7. HR Staff or the Approver can look up the result later in **Employee Salary History**, which shows the full timeline and links back to the decision.
 
 ## 7. Deployment View
 
@@ -140,19 +139,63 @@ closed and a new salary record is created.
 This allows the system to preserve and retrieve the employee's salary
 history.
 
+### ADR-03: Split the Backend by Business Domain
+
+**Decision**
+
+Inside the Backend API, `Employee Management` and `Salary Management` are
+implemented as separate components, split by business domain rather than
+by technical layer.
+
+**Rationale**
+
+Salary Management's scope is expected to grow (e.g. a future Allowance
+Management feature). Keeping it separate from Employee Management lets
+it evolve independently without risking employee profile logic.
+
+### ADR-04: Layered Design inside Salary Management
+
+**Decision**
+
+Within the Salary Management component, requests flow through a
+Controller, then a Service, then a Repository (`SalaryReviewController`
+→ `SalaryReviewService` → `SalaryRepository`).
+
+**Rationale**
+
+This keeps business rules (eligibility, approval, effective-dating) in
+one place — the Service — instead of scattered across HTTP handling and
+data-access code.
+
+### ADR-05: Separate Proposal from Official Decision
+
+**Decision**
+
+A review result (a proposed grade an employee is screened against) is
+stored separately from an official salary decision. Only an issued
+decision changes an employee's real salary.
+
+**Rationale**
+
+This lets HR Staff and the Approver work with proposals safely — redoing
+or rejecting them — without any risk to real salary data until a
+decision is actually applied.
+
 ## 10. Quality Requirements
 
 ### 10.1 Maintainability
 
-Employee, Salary, Allowance, and Attendance responsibilities are
-separated into clear business components to make the system easier to
-maintain and extend.
+Employee and Salary responsibilities are separated into distinct
+components (see [Component Diagram](../c4/README.md#3-component-diagram)),
+so Salary Management can evolve — for example if a future feature like
+Allowance Management is added under Salary Management — without needing
+changes to Employee Management.
 
 ### 10.2 Data Integrity
 
-Important changes such as salary and allowance updates should only
-become official according to the corresponding business process and
-approval state.
+Important changes such as salary grade updates should only become
+official according to the corresponding business process and approval
+state.
 
 ### 10.3 Traceability
 
@@ -170,8 +213,12 @@ Potential architectural risks include:
     levels are introduced.
 -   Salary policies and promotion eligibility rules may change over
     time.
--   Attendance may introduce additional dependencies if the system scope
-    later expands to full payroll calculation.
+-   The eligibility rule (24 months in the current grade, a next grade
+    must exist within the employee's salary scale, and no duplicate
+    proposal within the same review period — see
+    [US-03](../UserStories_SalaryGradePromotion.md#us-03-view-employees-and-their-proposed-grade-in-a-review-period))
+    is defined at the requirements level but not yet enforced as a
+    database constraint or validation rule.
 
 Specific technical debt items will be documented as the system evolves.
 

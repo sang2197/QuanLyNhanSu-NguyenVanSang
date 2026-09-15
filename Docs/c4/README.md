@@ -1,6 +1,6 @@
 # C4 Model Diagrams
 
-Architecture diagrams for the HRM System, drawn using the [C4 model](https://c4model.com/) with draw.io.
+Architecture diagrams for the HRM System, following the [C4 model](https://c4model.com/). Diagrams are written in [Mermaid](https://mermaid.js.org/) and rendered directly by GitHub — no external tool needed to view or diff them.
 
 The C4 model shows the system at 4 levels, from most general to most detailed:
 
@@ -11,10 +11,15 @@ The C4 model shows the system at 4 levels, from most general to most detailed:
 
 ## 1. System Context Diagram
 
-![System Context Diagram](System-context-diagram.png)
+```mermaid
+flowchart LR
+    HR([HR Staff<br/>Person])
+    APR([Approver<br/>Person])
+    SYS[["HRM System<br/>Software System<br/>Manages employee information and HR processes"]]
 
-- [`System-context-diagram.drawio`](System-context-diagram.drawio) — editable source file (open with [draw.io](https://app.diagrams.net/) / diagrams.net).
-- [`System-context-diagram.png`](System-context-diagram.png) — exported image.
+    HR -->|Uses to manage HR operations| SYS
+    APR -->|Reviews and approves| SYS
+```
 
 Shows the HRM System and its 2 main users:
 
@@ -23,10 +28,22 @@ Shows the HRM System and its 2 main users:
 
 ## 2. Container Diagram
 
-![Container Diagram](Container-diagram.png)
+```mermaid
+flowchart TB
+    HR([HR Staff])
+    APR([Approver])
 
-- [`Container-diagram.drawio`](Container-diagram.drawio) — editable source file.
-- [`Container-diagram.png`](Container-diagram.png) — exported image.
+    subgraph HRM["HRM System"]
+        WEB[["HRM Web Application<br/>Container: JavaScript / Angular<br/>Provides the UI for HR operations"]]
+        API[["HRM Backend API<br/>Container: ASP.NET Core<br/>Handles HR business logic"]]
+        DB[("HRM Database<br/>Container: SQL Server<br/>Stores HRM operational data")]
+    end
+
+    HR -->|Use| WEB
+    APR -->|Use| WEB
+    WEB -->|Make API request<br/>HTTPS/REST/JSON| API
+    API -->|Reads from and writes to<br/>SQL| DB
+```
 
 Shows the 3 main containers inside the HRM System:
 
@@ -38,10 +55,23 @@ The Web Application calls the Backend API over HTTPS/REST/JSON, and the Backend 
 
 ## 3. Component Diagram
 
-![Component Diagram](Component-diagram.png)
+```mermaid
+flowchart TB
+    WEB([HRM Web Application])
 
-- [`Component-diagram.drawio`](Component-diagram.drawio) — editable source file.
-- [`Component-diagram.png`](Component-diagram.png) — exported image.
+    subgraph API["HRM Backend API"]
+        EMP[["Employee Management<br/>Component<br/>Manages employee profiles and employment information"]]
+        SAL[["Salary Management<br/>Component<br/>Handles salary grades, reviews, decisions, and history"]]
+    end
+
+    DB[("HRM Database")]
+
+    WEB -->|HTTPS/REST/JSON| EMP
+    WEB -->|HTTPS/REST/JSON| SAL
+    EMP -->|Reads from and writes to SQL| DB
+    SAL -->|Reads from and writes to SQL| DB
+    SAL -.->|Provides employee information| EMP
+```
 
 Shows the 2 main components inside the **HRM Backend API** container:
 
@@ -52,10 +82,17 @@ Both components are called by the Web Application over HTTPS/REST/JSON and read/
 
 ## 4. Code Diagram
 
-![Code Diagram](Code-diagram.png)
+```mermaid
+flowchart TB
+    subgraph SAL["Salary Management"]
+        CTRL[["SalaryReviewController<br/>Class<br/>Handles salary review requests"]]
+        SVC[["SalaryReviewService<br/>Class<br/>Handles salary review business logic"]]
+        REPO[["SalaryRepository<br/>Class<br/>Handles salary data access"]]
+    end
 
-- [`Code-diagram.drawio`](Code-diagram.drawio) — editable source file.
-- [`Code-diagram.png`](Code-diagram.png) — exported image.
+    CTRL -->|Delegates business processing to| SVC
+    SVC -->|Accesses salary data through| REPO
+```
 
 Zooms into the **Salary Management** component, showing its main classes:
 
@@ -64,3 +101,7 @@ Zooms into the **Salary Management** component, showing its main classes:
 - **SalaryRepository** — handles salary data access.
 
 The flow is: Controller delegates to Service, Service accesses data through Repository.
+
+## Legacy source files
+
+The `.drawio` and `.png` files in this folder (`System-context-diagram.*`, `Container-diagram.*`, `Component-diagram.*`, `Code-diagram.*`) are the original draw.io versions these Mermaid diagrams were standardized from. They are kept for now as a historical reference but are no longer the source of truth — update the Mermaid blocks above when the architecture changes.

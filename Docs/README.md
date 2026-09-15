@@ -8,13 +8,7 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 
 ## Database Design
 
-![DB Diagram](DB_Diagram.png)
-
-- [`DB_Diagram.png`](DB_Diagram.png) — Entity-relationship diagram (from dbdiagram.io) of the 8 database tables and their relationships.
-- [`HRM_Salary_Grade_Promotion.dbml`](HRM_Salary_Grade_Promotion.dbml) — DBML source code (from dbdiagram.io) that generates the diagram and SQL below. Edit this file first, then re-export, if the schema changes.
-- [`Gen_Table.sql`](Gen_Table.sql) — SQL script (generated from dbdiagram.io) to create the 8 tables, keys, indexes, and foreign keys.
-- [`HRM_Salary_Grade_Promotion_Database_Design_EN.docx`](HRM_Salary_Grade_Promotion_Database_Design_EN.docx) — Database design write-up (English).
-- [`thiet_ke_CSDL_nang_bac_luong_8_bang.docx`](thiet_ke_CSDL_nang_bac_luong_8_bang.docx) — Same database design write-up (Vietnamese).
+- [`Database/`](Database/README.md) — Database design for the 8 tables: Mermaid ER diagram, DBML source, generated SQL, and the design write-up (English + Vietnamese).
 
 ## UI/UX Design
 

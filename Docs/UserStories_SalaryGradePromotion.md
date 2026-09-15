@@ -19,16 +19,18 @@ Priority uses MoSCoW (Must / Should / Could).
 
 ## Summary
 
-| ID | Story | Role | Priority |
-|---|---|---|---|
-| US-01 | Create a review period | HR Staff | Must |
-| US-02 | Search and filter review periods | HR Staff | Should |
-| US-03 | View employees and their proposed grade in a review period | HR Staff | Must |
-| US-04 | Approve or reject each employee's proposed grade | HR Staff | Must |
-| US-05 | Submit a review period to the Approver | HR Staff | Must |
-| US-06 | Review a submitted period and draft a salary decision | Approver | Must |
-| US-07 | Apply a salary decision | Approver | Must |
-| US-08 | Look up an employee's salary history | HR Staff / Approver | Should |
+`Size` is a rough T-shirt estimate (S/M/L) to gauge relative effort, not a committed number — to be refined once the team sizes the backlog. `Depends on` lists the story that must be functionally complete first; it does not mean the story can't be *built* independently, only that it can't be *tested end-to-end* without its dependency.
+
+| ID | Story | Role | Priority | Depends on | Size |
+|---|---|---|---|---|---|
+| US-01 | Create a review period | HR Staff | Must | — | S |
+| US-02 | Search and filter review periods | HR Staff | Should | US-01 | S |
+| US-03 | View employees and their proposed grade in a review period | HR Staff | Must | US-01 | M |
+| US-04 | Approve or reject each employee's proposed grade | HR Staff | Must | US-03 | L |
+| US-05 | Submit a review period to the Approver | HR Staff | Must | US-04 | S |
+| US-06 | Review a submitted period and draft a salary decision | Approver | Must | US-05 | M |
+| US-07 | Apply a salary decision | Approver | Must | US-06 | L |
+| US-08 | Look up an employee's salary history | HR Staff / Approver | Should | — | S |
 
 ---
 
@@ -61,9 +63,17 @@ Priority uses MoSCoW (Must / Should / Could).
 **Business Rules:**
 - The system automatically works out a proposed new grade for every eligible employee in the period; HR Staff does not calculate this by hand.
 - An employee who is not eligible for review must always show the reason why, and has no proposed grade.
+- An employee is eligible for a proposal in this review period only when **all** of the following are true:
+  1. They have held their current grade for at least the minimum required time — **24 months** as of the review date.
+  2. There is a next grade above their current one within their **own salary scale** — an employee already at the highest grade of their scale is not eligible.
+  3. They have not already been given a proposal in this review period — an employee cannot receive more than one proposal per period.
+- When an employee is eligible, the proposed grade is the **next grade up within their current salary scale**.
 
 **Acceptance Criteria:**
 - Given a review period is open, when I view it, then I see every included employee, their current grade, and the grade the system proposed for them (if eligible).
+- Given an employee has held their current grade for less than 24 months as of the review date, when the period is opened, then they are shown as not eligible with that reason.
+- Given an employee is already at the highest grade of their salary scale, when the period is opened, then they are shown as not eligible with that reason.
+- Given an employee already has a proposal in this review period, when the period is opened, then they are not given a second proposal.
 - Given I want to narrow the list, when I filter by department, eligibility, or review outcome, then only matching employees are shown.
 
 ### US-04: Approve or reject each employee's proposed grade
