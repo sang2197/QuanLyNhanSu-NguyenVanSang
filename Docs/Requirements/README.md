@@ -12,4 +12,4 @@ Requirements analysis documents for the **Salary Grade Promotion** feature: the 
 
 ## Use Case Diagram
 
-- [`UseCase_SalaryGradePromotion.md`](UseCase_SalaryGradePromotion.md) — Use case diagram and description (actors and main actions), aligned 1-to-1 with the user stories above.
+- [`UseCase_SalaryGradePromotion.md`](UseCase_SalaryGradePromotion.md) — Use case diagram and description (actors and main actions).

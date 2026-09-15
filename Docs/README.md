@@ -21,3 +21,7 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 ## Database Design
 
 - [`Database/`](Database/README.md) — Database design for the 8 tables: Mermaid ER diagram, DBML source, generated SQL, and the design write-up (English + Vietnamese).
+
+## API Documentation
+
+- [`API/`](API/README.md) — OpenAPI 3.0 spec for the Salary Grade Promotion REST API, mapped 1-to-1 to the user stories.
