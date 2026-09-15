@@ -34,7 +34,7 @@ flowchart TB
     APR([Approver])
 
     subgraph HRM["HRM System"]
-        WEB[["HRM Web Application<br/>Container: JavaScript / Angular<br/>Provides the UI for HR operations"]]
+        WEB[["HRM Web Application<br/>Container: JavaScript / React<br/>Provides the UI for HR operations"]]
         API[["HRM Backend API<br/>Container: ASP.NET Core<br/>Handles HR business logic"]]
         DB[("HRM Database<br/>Container: SQL Server<br/>Stores HRM operational data")]
     end
@@ -47,7 +47,7 @@ flowchart TB
 
 Shows the 3 main containers inside the HRM System:
 
-- **HRM Web Application** (JavaScript / Angular) — provides the user interface for HR operations.
+- **HRM Web Application** (JavaScript / React) — provides the user interface for HR operations.
 - **HRM Backend API** (ASP.NET Core) — handles HR business logic and exposes APIs to client applications.
 - **HRM Database** (SQL Server) — stores HRM operational data.
 

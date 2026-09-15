@@ -25,3 +25,7 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 ## API Documentation
 
 - [`API/`](API/README.md) — OpenAPI 3.0 spec for the Salary Grade Promotion REST API, mapped 1-to-1 to the user stories.
+
+## Code Structure
+
+- [`CodeStructure/`](CodeStructure/README.md) — Proposed frontend (React) and backend (ASP.NET Core, 3-layer) source folder layout, mapped to the C4 diagrams and Arc42 decisions.
