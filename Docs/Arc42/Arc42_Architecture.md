@@ -9,7 +9,7 @@ This document follows the [arc42](https://arc42.org/) template. It summarizes th
 The HRM System supports core human resource management processes within
 an organization.
 
-**Scope of this document:** Only the *Salary Grade Promotion* feature, part of the *Salary Management* function group. The HRM system has 5 other function groups (Employee Profile, Department/Unit, Reward/Discipline, Attendance, Contract) that are out of scope here — see the [mind map](../Quản%20lý%20nhân%20sự.xmind).
+**Scope of this document:** Only the *Salary Grade Promotion* feature, part of the *Salary Management* function group. The HRM system has 5 other function groups (Employee Profile, Department/Unit, Reward/Discipline, Attendance, Contract) that are out of scope here — see the [mind map](../Requirements/Quản%20lý%20nhân%20sự.xmind).
 
 The system is primarily used by HR Staff and authorized Approvers.
 
@@ -86,9 +86,9 @@ This view is the C4 model, already documented in detail in [`Docs/c4/`](../c4/RE
 
 ## 6. Runtime View
 
-**Main scenario: "Process a salary grade review period end-to-end"** (matches the [Use Case Diagram](../UseCase_SalaryGradePromotion.md) and [User Stories](../UserStories_SalaryGradePromotion.md)):
+**Main scenario: "Process a salary grade review period end-to-end"** (matches the [Use Case Diagram](../Requirements/UseCase_SalaryGradePromotion.md) and [User Stories](../Requirements/UserStories_SalaryGradePromotion.md)):
 
-1. HR Staff creates a **Review Period** (e.g. "Annual Review H1 2026"). The system automatically works out a proposed new grade for each eligible employee in it (see the eligibility rule in [US-03](../UserStories_SalaryGradePromotion.md#us-03-view-employees-and-their-proposed-grade-in-a-review-period)).
+1. HR Staff creates a **Review Period** (e.g. "Annual Review H1 2026"). The system automatically works out a proposed new grade for each eligible employee in it (see the eligibility rule in [US-03](../Requirements/UserStories_SalaryGradePromotion.md#us-03-view-employees-and-their-proposed-grade-in-a-review-period)).
 2. HR Staff opens the **Review Period Detail** screen, filters/searches employees, and reviews each employee's system-calculated proposed grade.
 3. HR Staff marks each employee's proposal as **Approved** or **Not Approved** — one at a time or in bulk (a reason is recorded if not approved).
 4. Once every employee in the period has been marked, HR Staff **submits the period** to the Approver.
@@ -110,7 +110,7 @@ This is the **planned** deployment:
 - **Soft status instead of hard delete**: `Status` fields (e.g. `DRAFT`, `APPROVED`, `CANCELLED`) are used everywhere instead of deleting rows, so history is never lost.
 - **Effective-dated records**: `EffectiveFrom`/`EffectiveTo` pattern is reused across `HrSalaryScale`, `HrSalaryGrade`, and `HrEmployeeSalary` to answer "what was true at date X".
 - **Snapshot values**: coefficients are copied (snapshotted) into review and decision tables so historical numbers don't change if master data is edited later.
-- **Consistent UX rules**: status badges, confirmation dialogs for sensitive actions (issuing a decision), pagination for large lists — documented in the [Wireframe document](../HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx).
+- **Consistent UX rules**: status badges, confirmation dialogs for sensitive actions (issuing a decision), pagination for large lists — documented in the [Wireframe document](../UI-UX/HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx).
 
 ## 9. Architecture Decisions
 
@@ -216,7 +216,7 @@ Potential architectural risks include:
 -   The eligibility rule (24 months in the current grade, a next grade
     must exist within the employee's salary scale, and no duplicate
     proposal within the same review period — see
-    [US-03](../UserStories_SalaryGradePromotion.md#us-03-view-employees-and-their-proposed-grade-in-a-review-period))
+    [US-03](../Requirements/UserStories_SalaryGradePromotion.md#us-03-view-employees-and-their-proposed-grade-in-a-review-period))
     is defined at the requirements level but not yet enforced as a
     database constraint or validation rule.
 
