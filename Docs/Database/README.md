@@ -104,4 +104,3 @@ erDiagram
 - [`DB_Diagram.png`](DB_Diagram.png) — Entity-relationship diagram exported from dbdiagram.io (legacy reference; the Mermaid diagram above is the standardized version).
 - [`Gen_Table.sql`](Gen_Table.sql) — SQL script (generated from dbdiagram.io) to create the 8 tables, keys, indexes, and foreign keys.
 - [`HRM_Salary_Grade_Promotion_Database_Design_EN.docx`](HRM_Salary_Grade_Promotion_Database_Design_EN.docx) — Database design write-up (English): purpose, keys, indexes, and business notes per table.
-- [`thiet_ke_CSDL_nang_bac_luong_8_bang.docx`](thiet_ke_CSDL_nang_bac_luong_8_bang.docx) — Same database design write-up (Vietnamese).

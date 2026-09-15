@@ -1,0 +1,901 @@
+openapi: 3.0.3
+info:
+  title: HRM - Salary Grade Promotion API
+  description: >
+    API for the Salary Grade Promotion feature of the HRM System.
+    Covers the end-to-end flow: HR Staff creates a review period, screens the
+    system-calculated proposed grades, and submits the period; the Approver
+    reviews the submitted period, drafts a salary decision, and applies it.
+    See the [User Stories](../Requirements/UserStories_SalaryGradePromotion.md)
+    for the business rules and acceptance criteria behind each endpoint.
+  version: "0.1.0"
+servers:
+  - url: https://api.example.com/v1
+    description: Placeholder — actual base URL not yet decided (see Arc42 Deployment View)
+
+tags:
+  - name: Review Periods
+    description: Create and manage salary review periods (US-01, US-02, US-05)
+  - name: Review Period Employees
+    description: Screen employees and their system-calculated proposed grade within a review period (US-03, US-04)
+  - name: Salary Decisions
+    description: Draft and apply official salary decisions (US-06, US-07)
+  - name: Salary History
+    description: Read-only lookup of an employee's salary history (US-08)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /review-periods:
+    post:
+      tags: [Review Periods]
+      summary: Create a review period
+      description: US-01 — HR Staff creates a new salary review period.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewPeriodRequest"
+      responses:
+        "201":
+          description: Review period created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriod"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: A review period with this code already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Review Periods]
+      summary: Search and filter review periods
+      description: US-02 — HR Staff finds a specific review period by date range, type, or status.
+      parameters:
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+        - name: reviewType
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReviewType"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReviewPeriodStatus"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: A page of review periods
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriodPage"
+
+  /review-periods/{periodId}:
+    get:
+      tags: [Review Periods]
+      summary: Get review period detail
+      description: US-03 — HR Staff (and later the Approver) open a review period to see its overview.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+      responses:
+        "200":
+          description: Review period detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriodDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /review-periods/{periodId}/submit:
+    post:
+      tags: [Review Periods]
+      summary: Submit a review period to the Approver
+      description: >
+        US-05 — HR Staff submits the period once every employee in it has been
+        marked approved or not approved. Blocked if any employee is still
+        unprocessed.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+      responses:
+        "200":
+          description: Review period submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriod"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Some employees in the period are still unprocessed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /review-periods/{periodId}/employees:
+    get:
+      tags: [Review Period Employees]
+      summary: List employees in a review period with their proposed grade
+      description: US-03 — the proposed grade shown here is calculated automatically by the system.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: eligibility
+          in: query
+          schema:
+            $ref: "#/components/schemas/EligibilityStatus"
+        - name: outcome
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReviewOutcome"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: A page of employees in the review period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriodEmployeePage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /review-periods/{periodId}/employees/{employeeId}:
+    get:
+      tags: [Review Period Employees]
+      summary: Get one employee's review detail
+      description: >
+        US-03 — salary snapshot at review time, the system-calculated proposed
+        grade, eligibility reason (if not eligible), and recent salary history.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "200":
+          description: Employee review detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriodEmployeeDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /review-periods/{periodId}/employees/{employeeId}/approve:
+    post:
+      tags: [Review Period Employees]
+      summary: Approve one employee's proposed grade
+      description: US-04 — only valid for an eligible employee whose outcome is still pending.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "200":
+          description: Employee marked as approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriodEmployee"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Employee is not eligible, or already has an outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /review-periods/{periodId}/employees/{employeeId}/reject:
+    post:
+      tags: [Review Period Employees]
+      summary: Reject one employee's proposed grade
+      description: US-04 — a reason is required so it can be explained later.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+        - $ref: "#/components/parameters/EmployeeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequest"
+      responses:
+        "200":
+          description: Employee marked as not approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriodEmployee"
+        "400":
+          description: Reason is missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Employee is not eligible, or already has an outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /review-periods/{periodId}/employees/bulk-approve:
+    post:
+      tags: [Review Period Employees]
+      summary: Approve multiple employees at once
+      description: >
+        US-04 — each selected employee is still checked individually against
+        the same rules as a single approval; only the valid ones go through.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkEmployeeActionRequest"
+      responses:
+        "200":
+          description: Result of the bulk approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /review-periods/{periodId}/employees/bulk-reject:
+    post:
+      tags: [Review Period Employees]
+      summary: Reject multiple employees at once
+      description: US-04 — a shared reason is required, same validation as a single rejection.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/BulkEmployeeActionRequest"
+                - type: object
+                  required: [reason]
+                  properties:
+                    reason:
+                      type: string
+      responses:
+        "200":
+          description: Result of the bulk rejection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+        "400":
+          description: Reason is missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /salary-decisions:
+    post:
+      tags: [Salary Decisions]
+      summary: Draft a salary decision from a submitted review period
+      description: >
+        US-06 — the Approver drafts a decision. Only employees approved in the
+        given review period can be included; drafting does not change any
+        employee's real salary yet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSalaryDecisionRequest"
+      responses:
+        "201":
+          description: Draft salary decision created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryDecision"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Review period not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Review period has not been submitted yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Salary Decisions]
+      summary: Search and list salary decisions
+      description: Supporting endpoint (no dedicated user story), mirrors US-02 for decisions.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/SalaryDecisionStatus"
+        - name: reviewPeriodId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: A page of salary decisions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryDecisionPage"
+
+  /salary-decisions/{decisionId}:
+    get:
+      tags: [Salary Decisions]
+      summary: Get salary decision detail
+      description: >
+        US-06 / US-08 — also used to open a decision in read-only mode from a
+        Salary History entry.
+      parameters:
+        - $ref: "#/components/parameters/DecisionId"
+      responses:
+        "200":
+          description: Salary decision detail, including its included employees
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryDecisionDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /salary-decisions/{decisionId}/employees/{employeeId}:
+    delete:
+      tags: [Salary Decisions]
+      summary: Remove one employee from a draft decision
+      description: US-06 — only allowed while the decision is still a draft.
+      parameters:
+        - $ref: "#/components/parameters/DecisionId"
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "204":
+          description: Employee removed from the draft
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Decision is no longer a draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /salary-decisions/{decisionId}/apply:
+    post:
+      tags: [Salary Decisions]
+      summary: Apply a drafted salary decision
+      description: >
+        US-07 — makes the decision official. Applied to all included
+        employees together in a single transaction: if any employee's change
+        cannot be applied (e.g. a conflicting record), none of them are
+        updated. A decision can only be applied once.
+      parameters:
+        - $ref: "#/components/parameters/DecisionId"
+      responses:
+        "200":
+          description: Decision applied; each employee's salary history is updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryDecisionDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >
+            Decision has already been applied, or one or more employees have a
+            conflicting salary record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /employees/{employeeId}/salary-history:
+    get:
+      tags: [Salary History]
+      summary: Get an employee's full salary history
+      description: >
+        US-08 — read-only, newest first. Salary cannot be changed through this
+        endpoint.
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+      responses:
+        "200":
+          description: The employee's salary history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryHistoryPage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT issued after login (see Arc42 ADR-07). The token-issuing login
+        endpoint itself is not yet designed in this spec.
+
+  parameters:
+    PeriodId:
+      name: periodId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    EmployeeId:
+      name: employeeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DecisionId:
+      name: decisionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    FromDate:
+      name: fromDate
+      in: query
+      schema:
+        type: string
+        format: date
+    ToDate:
+      name: toDate
+      in: query
+      schema:
+        type: string
+        format: date
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: reason is required when rejecting an employee
+
+    ReviewType:
+      type: string
+      enum: [PERIODIC, EARLY]
+    ReviewPeriodStatus:
+      type: string
+      description: >
+        DRAFT: just created. IN_PROGRESS: HR Staff is screening employees.
+        SUBMITTED: sent to the Approver (US-05). CLOSED: a decision from this
+        period has been applied.
+      enum: [DRAFT, IN_PROGRESS, SUBMITTED, CLOSED]
+    EligibilityStatus:
+      type: string
+      enum: [ELIGIBLE, INELIGIBLE]
+    ReviewOutcome:
+      type: string
+      description: HR Staff's screening outcome for one employee (US-04).
+      enum: [PENDING, APPROVED, REJECTED]
+    SalaryDecisionStatus:
+      type: string
+      enum: [DRAFT, APPLIED, CANCELLED]
+    DecisionType:
+      type: string
+      enum: [PERIODIC, EARLY]
+
+    CreateReviewPeriodRequest:
+      type: object
+      required: [code, name, reviewType, reviewDate]
+      properties:
+        code:
+          type: string
+          example: RP-2026-001
+        name:
+          type: string
+          example: Annual Review H1 2026
+        reviewType:
+          $ref: "#/components/schemas/ReviewType"
+        reviewDate:
+          type: string
+          format: date
+        effectiveDate:
+          type: string
+          format: date
+        description:
+          type: string
+
+    ReviewPeriod:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        reviewType:
+          $ref: "#/components/schemas/ReviewType"
+        reviewDate:
+          type: string
+          format: date
+        effectiveDate:
+          type: string
+          format: date
+        status:
+          $ref: "#/components/schemas/ReviewPeriodStatus"
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ReviewPeriodDetail:
+      allOf:
+        - $ref: "#/components/schemas/ReviewPeriod"
+        - type: object
+          properties:
+            totalEmployees:
+              type: integer
+            eligibleCount:
+              type: integer
+            approvedCount:
+              type: integer
+            rejectedCount:
+              type: integer
+            pendingCount:
+              type: integer
+
+    ReviewPeriodPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewPeriod"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalItems:
+          type: integer
+
+    ReviewPeriodEmployee:
+      type: object
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        department:
+          type: string
+        currentGrade:
+          type: string
+          example: "3.1"
+        currentCoefficient:
+          type: number
+          format: double
+          example: 3.33
+        proposedGrade:
+          type: string
+          nullable: true
+          example: "3.2"
+        proposedCoefficient:
+          type: number
+          format: double
+          nullable: true
+          example: 3.66
+        eligibilityStatus:
+          $ref: "#/components/schemas/EligibilityStatus"
+        eligibilityReason:
+          type: string
+          nullable: true
+          description: Populated when eligibilityStatus is INELIGIBLE.
+        reviewOutcome:
+          $ref: "#/components/schemas/ReviewOutcome"
+        reason:
+          type: string
+          nullable: true
+          description: Populated when reviewOutcome is REJECTED.
+
+    ReviewPeriodEmployeePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewPeriodEmployee"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalItems:
+          type: integer
+
+    SalaryHistoryEntrySummary:
+      type: object
+      properties:
+        grade:
+          type: string
+        coefficient:
+          type: number
+          format: double
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+          nullable: true
+
+    ReviewPeriodEmployeeDetail:
+      allOf:
+        - $ref: "#/components/schemas/ReviewPeriodEmployee"
+        - type: object
+          properties:
+            salarySnapshotAt:
+              type: string
+              format: date-time
+              description: When the current/proposed grade shown here was captured.
+            recentSalaryHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalaryHistoryEntrySummary"
+
+    RejectRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    BulkEmployeeActionRequest:
+      type: object
+      required: [employeeIds]
+      properties:
+        employeeIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+
+    BulkActionResult:
+      type: object
+      properties:
+        succeededEmployeeIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        failed:
+          type: array
+          items:
+            type: object
+            properties:
+              employeeId:
+                type: string
+                format: uuid
+              reason:
+                type: string
+
+    CreateSalaryDecisionRequest:
+      type: object
+      required: [reviewPeriodId, decisionNumber, decisionType, effectiveDate]
+      properties:
+        reviewPeriodId:
+          type: string
+          format: uuid
+        decisionNumber:
+          type: string
+          example: SD-2026-015
+        decisionType:
+          $ref: "#/components/schemas/DecisionType"
+        effectiveDate:
+          type: string
+          format: date
+        signerEmployeeId:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+
+    SalaryDecision:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        decisionNumber:
+          type: string
+        reviewPeriodId:
+          type: string
+          format: uuid
+        decisionDate:
+          type: string
+          format: date
+        effectiveDate:
+          type: string
+          format: date
+        decisionType:
+          $ref: "#/components/schemas/DecisionType"
+        status:
+          $ref: "#/components/schemas/SalaryDecisionStatus"
+        signerEmployeeId:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SalaryDecisionEmployeeDetail:
+      type: object
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        oldGrade:
+          type: string
+          nullable: true
+        oldCoefficient:
+          type: number
+          format: double
+          nullable: true
+        newGrade:
+          type: string
+        newCoefficient:
+          type: number
+          format: double
+        effectiveFrom:
+          type: string
+          format: date
+        reason:
+          type: string
+          nullable: true
+
+    SalaryDecisionDetail:
+      allOf:
+        - $ref: "#/components/schemas/SalaryDecision"
+        - type: object
+          properties:
+            employees:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalaryDecisionEmployeeDetail"
+
+    SalaryDecisionPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalaryDecision"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalItems:
+          type: integer
+
+    SalaryHistoryEntry:
+      type: object
+      properties:
+        grade:
+          type: string
+        coefficient:
+          type: number
+          format: double
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+        decisionId:
+          type: string
+          format: uuid
+          nullable: true
+        decisionNumber:
+          type: string
+          nullable: true
+        isCurrent:
+          type: boolean
+
+    SalaryHistoryPage:
+      type: object
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalaryHistoryEntry"

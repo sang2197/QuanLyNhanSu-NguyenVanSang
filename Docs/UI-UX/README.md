@@ -5,7 +5,6 @@ Screen design for the **Salary Grade Promotion** feature: wireframe behavior spe
 ## Wireframe & Screen Behavior
 
 - [`HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx`](HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx) — Wireframe & screen behavior write-up (English): main behavior, validation, and actor per screen.
-- [`wireframe_uiux_nang_bac_luong.docx`](wireframe_uiux_nang_bac_luong.docx) — Same wireframe write-up (Vietnamese).
 
 ## Information Architecture
 
