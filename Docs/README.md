@@ -29,3 +29,7 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 ## Code Structure
 
 - [`CodeStructure/`](CodeStructure/README.md) — Proposed frontend (React) and backend (ASP.NET Core, 3-layer) source folder layout, mapped to the C4 diagrams and Arc42 decisions.
+
+## Detailed Design
+
+- [`DetailedDesign/`](DetailedDesign/README.md) — Class diagrams, sequence diagrams, and state diagrams for the API, derived from Code Structure, API Documentation, Database Design, and the C4 diagrams. The last design step before implementation.
