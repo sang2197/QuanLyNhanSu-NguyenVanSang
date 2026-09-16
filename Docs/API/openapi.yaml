@@ -6,12 +6,9 @@ info:
     Covers the end-to-end flow: HR Staff creates a review period, screens the
     system-calculated proposed grades, and submits the period; the Approver
     reviews the submitted period, drafts a salary decision, and applies it.
-    See the [User Stories](../Requirements/UserStories_SalaryGradePromotion.md)
-    for the business rules and acceptance criteria behind each endpoint.
   version: "0.1.0"
 servers:
   - url: https://api.example.com/v1
-    description: Placeholder — actual base URL not yet decided (see Arc42 Deployment View)
 
 tags:
   - name: Review Periods

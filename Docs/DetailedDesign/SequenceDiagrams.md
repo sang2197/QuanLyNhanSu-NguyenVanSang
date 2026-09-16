@@ -115,7 +115,7 @@ sequenceDiagram
         REPO-->>SVC: OK
         SVC-->>API: SalaryDecisionDetail
         API-->>FE: 200 OK
-        FE-->>APR: Decision applied; salaries updated
+        FE-->>APR: Decision applied — salaries updated
     end
 ```
 
