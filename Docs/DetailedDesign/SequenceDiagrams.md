@@ -1,6 +1,6 @@
 # Sequence Diagrams - Salary Grade Promotion
 
-Four key flows, matching the [Runtime View](../Arc42/06-runtime-view.md) scenarios and the [User Stories](../Requirements/UserStories_SalaryGradePromotion.md) / [OpenAPI spec](../API/openapi.yaml) they implement. Class names match [ClassDiagram.md](ClassDiagram.md).
+Five key flows, matching the [Runtime View](../Arc42/06-runtime-view.md) scenarios and the [User Stories](../Requirements/UserStories_SalaryGradePromotion.md) / [OpenAPI spec](../API/openapi.yaml) they implement. Class names match [ClassDiagram.md](ClassDiagram.md).
 
 ## 1. Approve an employee's proposed grade (US-04)
 
@@ -142,4 +142,61 @@ sequenceDiagram
     SVC-->>API: SalaryHistoryPage
     API-->>FE: 200 OK
     FE-->>U: Timeline rendered, newest first
+```
+
+## 5. List salary decisions and start or resume one (US-09)
+
+`GET /salary-decisions` then either `POST /salary-decisions` (new) or `GET /salary-decisions/{decisionId}` (resume)
+
+```mermaid
+sequenceDiagram
+    actor APR as Approver
+    participant FE as React Web App
+    participant API as SalaryDecisionsController
+    participant SVC as SalaryDecisionService
+    participant REPO as SalaryRepository
+    participant DB as HRM Database
+
+    APR->>FE: Open "Salary Decisions" from the menu
+    FE->>API: GET /salary-decisions
+    API->>SVC: GetDecisions(filter)
+    SVC->>REPO: ListDecisions(filter)
+    REPO->>DB: SELECT HrSalaryDecision
+    DB-->>REPO: rows
+    REPO-->>SVC: decisions[]
+    SVC-->>API: SalaryDecisionPage
+    API-->>FE: 200 OK
+    FE-->>APR: List rendered (Draft / Applied / Cancelled)
+
+    alt clicks a Draft row
+        FE->>API: GET /salary-decisions/{decisionId}
+        API->>SVC: GetDecision(decisionId)
+        SVC->>REPO: GetDecisionDetails(decisionId)
+        REPO->>DB: SELECT HrSalaryDecision, HrSalaryDecisionDetail
+        DB-->>REPO: rows
+        REPO-->>SVC: decision + employees
+        SVC-->>API: SalaryDecisionDetail
+        API-->>FE: 200 OK
+        FE-->>APR: Resumes drafting, same employees as before
+    else clicks Applied or Cancelled row
+        FE->>API: GET /salary-decisions/{decisionId}
+        API-->>FE: 200 OK
+        FE-->>APR: Opens in read-only mode
+    else clicks "Create New"
+        FE-->>APR: Prompts to pick a submitted period without an existing decision
+        APR->>FE: Picks a review period
+        FE->>API: POST /salary-decisions {reviewPeriodId, ...}
+        API->>SVC: CreateDecision(reviewPeriodId, ...)
+        SVC->>REPO: CheckNoExistingDecision(reviewPeriodId)
+        alt period already has a non-cancelled decision
+            SVC-->>API: 409 Conflict
+            API-->>FE: 409 Conflict
+        else no existing decision
+            SVC->>REPO: InsertDecision(reviewPeriodId, ...)
+            REPO->>DB: INSERT HrSalaryDecision
+            SVC-->>API: SalaryDecision (Draft)
+            API-->>FE: 201 Created
+            FE-->>APR: Opens the new draft for this period
+        end
+    end
 ```

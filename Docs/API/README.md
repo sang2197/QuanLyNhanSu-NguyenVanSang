@@ -12,7 +12,7 @@ REST API design for the **Salary Grade Promotion** feature, written as an [OpenA
 |---|---|---|
 | Review Periods | Create, search/filter, view detail, submit | US-01, US-02, US-03, US-05 |
 | Review Period Employees | List, view detail, approve/reject (single + bulk) | US-03, US-04 |
-| Salary Decisions | Draft, list, view detail, remove employee, apply | US-06, US-07 |
+| Salary Decisions | Draft, list, view detail, remove employee, apply | US-06, US-07, US-09 |
 | Salary History | Look up an employee's history (read-only) | US-08 |
 
 ## Out of scope

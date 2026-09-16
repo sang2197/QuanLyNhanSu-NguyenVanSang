@@ -10,7 +10,7 @@ Three scenarios, covering the happy path, an error/recovery case, and a scenario
 2. HR Staff opens the **Review Period Detail** screen, filters/searches employees, and reviews each employee's system-calculated proposed grade.
 3. HR Staff marks each employee's proposal as **Approved** or **Not Approved** — one at a time or in bulk (a reason is recorded if not approved).
 4. Once every employee in the period has been marked, HR Staff **submits the period** to the Approver.
-5. The Approver reviews the submitted period and **drafts a salary decision** from the approved employees.
+5. The Approver reviews the submitted period and **drafts a salary decision** from the approved employees — either directly from the period (which pre-selects it) or from the salary decision list, picking the period there instead (see [US-09](../Requirements/UserStories_SalaryGradePromotion.md#us-09-list-salary-decisions-and-resume-a-draft)).
 6. The Approver **applies the decision**. In a single transaction: the system closes each included employee's previous `HrEmployeeSalary` record (`EffectiveTo` set) and creates a new one linked to the decision.
 7. HR Staff or the Approver can look up the result later in **Employee Salary History**, which shows the full timeline and links back to the decision.
 

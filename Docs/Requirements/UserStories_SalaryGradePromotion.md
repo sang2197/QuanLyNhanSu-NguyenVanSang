@@ -31,6 +31,7 @@ Priority uses MoSCoW (Must / Should / Could).
 | US-06 | Review a submitted period and draft a salary decision | Approver | Must | US-05 | M |
 | US-07 | Apply a salary decision | Approver | Must | US-06 | L |
 | US-08 | Look up an employee's salary history | HR Staff / Approver | Should | — | S |
+| US-09 | List salary decisions and resume a draft | Approver | Must | — | S |
 
 ---
 
@@ -110,9 +111,16 @@ Priority uses MoSCoW (Must / Should / Could).
 **Business Rules:**
 - Only employees marked approved by HR Staff can be included in a decision being drafted.
 - Drafting a decision must not change any employee's real salary yet.
+- There are two ways to start drafting a decision, and both must end up at the same screen with the same period already selected:
+  1. From the submitted review period itself (e.g. a "Create Decision" action shown once its status is Submitted) — the period is already known, so nothing needs to be picked.
+  2. From the salary decision list ([US-09](#us-09-list-salary-decisions-and-resume-a-draft)) by choosing "Create New" — here the Approver must first pick which submitted review period the decision is for.
+- A submitted review period can have at most one non-cancelled decision drafted from it.
 
 **Acceptance Criteria:**
 - Given a review period has been submitted, when I open it, then I see each included employee's current grade and the grade approved for them.
+- Given a submitted review period, when I start a decision from it directly, then the decision-drafting screen opens with that period already selected — I am not asked to pick one.
+- Given I start a decision from the salary decision list instead, when the drafting screen opens, then I must choose a submitted review period before I can add employees.
+- Given a submitted review period already has a non-cancelled decision, when I try to start another decision from it, then this is blocked.
 - Given I am drafting a decision, when I add employees to it, then only employees approved in that period can be added.
 - Given a decision is still a draft, when I check any included employee's salary, then it is unchanged.
 
@@ -141,3 +149,19 @@ Priority uses MoSCoW (Must / Should / Could).
 **Acceptance Criteria:**
 - Given I search for an employee, when their history loads, then I see every past salary grade with its effective period and the reason/decision behind each change, newest first.
 - Given I want more detail on a change, when I open the decision behind it, then I see that decision in a read-only view.
+
+### US-09: List salary decisions and resume a draft
+
+**As** an Approver, **I want** to see a list of all salary decisions (draft, applied, or cancelled) and reopen any draft, **so that** I don't lose track of a decision I started earlier or accidentally start a duplicate one.
+
+**Business Rules:**
+- The list shows every decision regardless of status, with which review period it belongs to.
+- Opening a draft from this list returns to the exact same drafting screen used in [US-06](#us-06-review-a-submitted-period-and-draft-a-salary-decision), with its previously added employees still there.
+- Applied or cancelled decisions open in read-only mode from this list (see [US-07](#us-07-apply-a-salary-decision)) — they cannot be edited.
+- "Create New" from this list requires picking a submitted review period first (see US-06, entry point 2), and only review periods without an existing non-cancelled decision can be picked.
+
+**Acceptance Criteria:**
+- Given decisions exist, when I open the list, then I see each one's decision number, review period, status, and effective date.
+- Given a decision in the list has Draft status, when I open it, then I return to drafting it with everything I previously added still there.
+- Given a decision in the list has Applied or Cancelled status, when I open it, then I see it in read-only mode.
+- Given I click "Create New", when I am asked to pick a review period, then only submitted periods without an existing non-cancelled decision are offered.

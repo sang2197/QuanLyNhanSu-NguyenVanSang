@@ -322,7 +322,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "409":
-          description: Review period has not been submitted yet
+          description: >
+            Review period has not been submitted yet, or already has a
+            non-cancelled decision drafted from it
           content:
             application/json:
               schema:
@@ -330,7 +332,10 @@ paths:
     get:
       tags: [Salary Decisions]
       summary: Search and list salary decisions
-      description: Supporting endpoint (no dedicated user story), mirrors US-02 for decisions.
+      description: >
+        US-09 — landing page for the "Salary Decisions" menu item. Lists
+        decisions regardless of status so the Approver can resume a draft or
+        open an applied/cancelled one read-only.
       parameters:
         - name: status
           in: query
@@ -615,6 +620,14 @@ components:
               type: integer
             pendingCount:
               type: integer
+            decisionId:
+              type: string
+              format: uuid
+              nullable: true
+              description: >
+                The non-cancelled decision already drafted from this period,
+                if any (US-06/US-09). The UI shows "Create Decision" when
+                null, or "View Decision" pointing at this id when set.
 
     ReviewPeriodPage:
       type: object

@@ -1,20 +1,22 @@
 # UI/UX Design - Salary Grade Promotion
 
-Screen design for the **Salary Grade Promotion** feature: wireframe behavior specs, information architecture, and the Figma visual design.
+Screen design for the **Salary Grade Promotion** feature, in design order: information architecture, screens hierarchy, wireframe behavior, then the Figma visual design.
+
+## Information Architecture
+
+- [`InformationArchitecture_SalaryGradePromotion.md`](InformationArchitecture_SalaryGradePromotion.md) — Sitemap of the module's menu structure (Salary Management, Master Data).
+
+## Screens Hierarchy
+
+- [`ScreensHierarchy_SalaryGradePromotion.md`](ScreensHierarchy_SalaryGradePromotion.md) — Every individual screen state (pages, modals, confirmation dialogs), with the action that triggers each transition. Expands the Information Architecture sitemap into a direct blueprint for the wireframe.
 
 ## Wireframe & Screen Behavior
 
 - [`HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx`](HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx) — Wireframe & screen behavior write-up (English): main behavior, validation, and actor per screen.
 
-## Information Architecture
-
-- [`InformationArchitecture_SalaryGradePromotion.md`](InformationArchitecture_SalaryGradePromotion.md) — Sitemap of the module's menu structure (Salary Management, Master Data), separate from the step-by-step navigation flow in the wireframe document.
-
 ## Figma Visual Design
 
 Live Figma file: [Human Resource Management](https://www.figma.com/design/D3hSGsuVDHosEGUxPO2Ory/Human-Resource-Management?node-id=0-1&t=BWTSO16JxwwAMuSz-1)
-
-> The screenshots below are a snapshot at design time, kept in the repo in case the live Figma file changes later.
 
 ### 1. Review Period List
 ![Review Period List](Review%20Period%20List.png)
