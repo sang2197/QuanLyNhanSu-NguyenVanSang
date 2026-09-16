@@ -67,6 +67,7 @@ classDiagram
     }
     class HrSalaryDecision {
         +int Id
+        +int ReviewPeriodId
         +string DecisionNumber
         +DateTime DecisionDate
         +DateTime EffectiveDate
@@ -90,6 +91,7 @@ classDiagram
     HrSalaryScale "1" --> "*" HrEmployeeSalary : used in
     HrSalaryGrade "1" --> "*" HrEmployeeSalary : assigned as
     HrSalaryDecision "1" --> "*" HrEmployeeSalary : causes
+    HrSalaryReviewPeriod "1" --> "0..1" HrSalaryDecision : drafted from
     HrSalaryReviewPeriod "1" --> "*" HrSalaryReviewEmployee : contains
     HrEmployee "1" --> "*" HrSalaryReviewEmployee : is reviewed in
     HrEmployeeSalary "1" --> "*" HrSalaryReviewEmployee : current salary
@@ -114,6 +116,7 @@ classDiagram
         +GetReviewPeriods(filter) ReviewPeriodPage
         +GetReviewPeriod(periodId) ReviewPeriodDetail
         +SubmitReviewPeriod(periodId) ReviewPeriod
+        +CancelReviewPeriod(periodId) ReviewPeriod
         +GetEmployees(periodId, filter) ReviewPeriodEmployeePage
         +GetEmployee(periodId, employeeId) ReviewPeriodEmployeeDetail
         +ApproveEmployee(periodId, employeeId) ReviewPeriodEmployee
@@ -122,11 +125,12 @@ classDiagram
         +BulkReject(periodId, employeeIds, reason) BulkActionResult
     }
     class SalaryDecisionsController {
-        +CreateDecision(request) SalaryDecision
+        +CreateDecision(reviewPeriodId, employeeIds, ...) SalaryDecision
         +GetDecisions(filter) SalaryDecisionPage
         +GetDecision(decisionId) SalaryDecisionDetail
         +RemoveEmployee(decisionId, employeeId)
         +ApplyDecision(decisionId) SalaryDecisionDetail
+        +CancelDecision(decisionId) SalaryDecisionDetail
     }
     class SalaryHistoryController {
         +GetSalaryHistory(employeeId, filter) SalaryHistoryPage
@@ -135,19 +139,21 @@ classDiagram
     class SalaryReviewService {
         -SalaryRepository salaryRepository
         -EmployeeRepository employeeRepository
-        +CreateReviewPeriod(request)
+        +CreateReviewPeriod(request) : calculates proposed grades synchronously, US-01
         +SubmitReviewPeriod(periodId)
-        +ApproveEmployee(periodId, employeeId)
-        +RejectEmployee(periodId, employeeId, reason)
+        +CancelReviewPeriod(periodId) : blocked if a non-cancelled decision exists, US-11
+        +ApproveEmployee(periodId, employeeId) : blocked unless period is IN_PROGRESS, US-04/US-05
+        +RejectEmployee(periodId, employeeId, reason) : blocked unless period is IN_PROGRESS, US-04/US-05
         +BulkApprove(periodId, employeeIds)
         +BulkReject(periodId, employeeIds, reason)
         -CalculateProposedGrade(employee) : applies the eligibility rule, US-03
     }
     class SalaryDecisionService {
         -SalaryRepository salaryRepository
-        +CreateDecision(reviewPeriodId, ...)
+        +CreateDecision(reviewPeriodId, employeeIds, ...) : employees fixed at creation, US-06
         +RemoveEmployee(decisionId, employeeId)
         +ApplyDecision(decisionId) : all-or-nothing transaction, US-07
+        +CancelDecision(decisionId) : status-only, never touches HrEmployeeSalary, US-10
     }
     class SalaryHistoryService {
         -SalaryRepository salaryRepository

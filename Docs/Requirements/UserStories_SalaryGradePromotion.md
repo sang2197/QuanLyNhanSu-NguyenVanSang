@@ -32,6 +32,8 @@ Priority uses MoSCoW (Must / Should / Could).
 | US-07 | Apply a salary decision | Approver | Must | US-06 | L |
 | US-08 | Look up an employee's salary history | HR Staff / Approver | Should | — | S |
 | US-09 | List salary decisions and resume a draft | Approver | Must | — | S |
+| US-10 | Cancel a salary decision | Approver | Should | US-06 | S |
+| US-11 | Cancel a review period | HR Staff | Should | US-01 | S |
 
 ---
 
@@ -41,10 +43,12 @@ Priority uses MoSCoW (Must / Should / Could).
 
 **Business Rules:**
 - A review period must have a unique name/code, a review date, and a type (e.g. annual, mid-year, special).
+- Creating a period immediately calculates the proposed grade for every eligible employee ([US-03](#us-03-view-employees-and-their-proposed-grade-in-a-review-period)) as part of the same action — there is no separate step to start screening.
 
 **Acceptance Criteria:**
 - Given I am on the review period list, when I fill in the required details and save, then a new review period is created and appears in the list.
 - Given I try to save a review period with a code that already exists, when I submit, then I see an error and nothing is created.
+- Given a review period was just created, when I open it right away, then every eligible employee already has a proposed grade — I don't need to trigger screening separately.
 
 ### US-02: Search and filter review periods
 
@@ -85,11 +89,13 @@ Priority uses MoSCoW (Must / Should / Could).
 - Only an eligible employee with a system-proposed grade can be marked approved or not approved.
 - When several employees are selected for the same action, each one is still individually checked against the same rules as if done one at a time.
 - If an employee is marked not approved, a reason should be recorded so it can be explained later.
+- An employee's outcome can only be changed while the review period is still in progress — once submitted (see [US-05](#us-05-submit-a-review-period-to-the-approver)), it can no longer be changed at all.
 
 **Acceptance Criteria:**
 - Given an employee has a proposed grade, when I mark it approved, then that employee is recorded as approved for this period.
 - Given an employee has a proposed grade, when I try to mark it not approved without giving a reason, then this is blocked until a reason is entered.
 - Given I select several employees at once, when I approve or reject them together, then each one is checked individually, only the valid ones go through, and I'm told how many succeeded, how many failed, and why.
+- Given the review period has already been submitted, when I try to approve or reject an employee in it (single or bulk), then this is blocked entirely, even if that employee's outcome is still pending.
 
 ### US-05: Submit a review period to the Approver
 
@@ -115,13 +121,14 @@ Priority uses MoSCoW (Must / Should / Could).
   1. From the submitted review period itself (e.g. a "Create Decision" action shown once its status is Submitted) — the period is already known, so nothing needs to be picked.
   2. From the salary decision list ([US-09](#us-09-list-salary-decisions-and-resume-a-draft)) by choosing "Create New" — here the Approver must first pick which submitted review period the decision is for.
 - A submitted review period can have at most one non-cancelled decision drafted from it.
+- The employees included in a decision are selected up front, when the decision is created (from those approved in the picked review period). An employee can be removed from a draft afterward, but there is no way to add more later — a decision needing different employees must be re-created.
 
 **Acceptance Criteria:**
 - Given a review period has been submitted, when I open it, then I see each included employee's current grade and the grade approved for them.
 - Given a submitted review period, when I start a decision from it directly, then the decision-drafting screen opens with that period already selected — I am not asked to pick one.
 - Given I start a decision from the salary decision list instead, when the drafting screen opens, then I must choose a submitted review period before I can add employees.
 - Given a submitted review period already has a non-cancelled decision, when I try to start another decision from it, then this is blocked.
-- Given I am drafting a decision, when I add employees to it, then only employees approved in that period can be added.
+- Given I am creating a decision, when I select which employees to include, then only employees approved in that period are offered, and my selection is saved as part of creating the draft.
 - Given a decision is still a draft, when I check any included employee's salary, then it is unchanged.
 
 ### US-07: Apply a salary decision
@@ -165,3 +172,33 @@ Priority uses MoSCoW (Must / Should / Could).
 - Given a decision in the list has Draft status, when I open it, then I return to drafting it with everything I previously added still there.
 - Given a decision in the list has Applied or Cancelled status, when I open it, then I see it in read-only mode.
 - Given I click "Create New", when I am asked to pick a review period, then only submitted periods without an existing non-cancelled decision are offered.
+
+### US-10: Cancel a salary decision
+
+**As** an Approver, **I want** to formally cancel a salary decision (draft or already applied), **so that** a mistaken or no-longer-valid decision is clearly marked instead of left active or silently deleted.
+
+**Business Rules:**
+- Cancelling only marks the decision's status as Cancelled — it does not automatically revert any employee's salary that was already applied by that decision.
+- If a real salary change needs to be undone, that requires drafting and applying a separate new decision; cancelling by itself never changes `HrEmployeeSalary`.
+- A cancelled decision is permanent — it cannot be un-cancelled or edited afterward.
+- Cancelling a decision frees up its review period so a new decision can be drafted from it (see [US-06](#us-06-review-a-submitted-period-and-draft-a-salary-decision)'s "at most one non-cancelled decision" rule).
+
+**Acceptance Criteria:**
+- Given a decision is a draft, when I cancel it, then its status becomes Cancelled and it can no longer be edited.
+- Given a decision has already been applied, when I cancel it, then its status becomes Cancelled, but every employee's salary it previously changed remains exactly as applied.
+- Given a decision is already Cancelled, when I try to cancel it again, then this is blocked.
+- Given a review period's only non-cancelled decision was just cancelled, when I try to draft a new decision from that period, then it is now offered again.
+
+### US-11: Cancel a review period
+
+**As** HR Staff, **I want** to cancel a review period that no longer needs to be carried forward, **so that** it stops cluttering the active list without deleting its record.
+
+**Business Rules:**
+- A review period can be cancelled at any status except Closed or already Cancelled.
+- A review period cannot be cancelled while it already has a non-cancelled decision drafted from it — that decision must be cancelled first (see [US-10](#us-10-cancel-a-salary-decision)).
+- Cancelling does not delete or change the employees already screened in it; their review outcomes remain as a record, they simply can no longer lead anywhere.
+
+**Acceptance Criteria:**
+- Given a review period is Draft, In Progress, or Submitted with no decision drafted from it, when I cancel it, then its status becomes Cancelled.
+- Given a review period already has a non-cancelled decision, when I try to cancel it, then this is blocked with a message telling me to deal with the decision first.
+- Given a review period is Closed, when I try to cancel it, then this is blocked — a period with an applied decision is never cancelled, only the decision itself can be (US-10).

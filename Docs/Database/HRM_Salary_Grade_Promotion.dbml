@@ -90,6 +90,7 @@ Table HrSalaryReviewEmployee {
 
 Table HrSalaryDecision {
   Id int [pk, increment]
+  ReviewPeriodId int [not null]
   DecisionNumber varchar(100) [not null, unique]
   DecisionDate date [not null]
   EffectiveDate date [not null]
@@ -100,6 +101,8 @@ Table HrSalaryDecision {
   FileUrl varchar(500)
   CreatedAt datetime
   UpdatedAt datetime
+
+  Note: 'At most one non-cancelled decision per ReviewPeriodId — enforced via a filtered unique index in Gen_Table.sql (DBML has no filtered-index syntax, so it is not modeled as [unique] here to avoid generating an incorrect plain unique constraint).'
 }
 
 Table HrSalaryDecisionDetail {
@@ -133,6 +136,7 @@ Ref: HrSalaryReviewEmployee.CurrentGradeId > HrSalaryGrade.Id
 Ref: HrSalaryReviewEmployee.ProposedGradeId > HrSalaryGrade.Id
 
 Ref: HrSalaryDecision.SignerEmployeeId > HrEmployee.Id
+Ref: HrSalaryDecision.ReviewPeriodId > HrSalaryReviewPeriod.Id
 
 Ref: HrSalaryDecisionDetail.DecisionId > HrSalaryDecision.Id
 Ref: HrSalaryDecisionDetail.EmployeeId > HrEmployee.Id

@@ -16,6 +16,7 @@ erDiagram
     HrSalaryGrade ||--o{ HrSalaryReviewEmployee : "current / proposed grade"
     HrSalaryGrade ||--o{ HrSalaryDecisionDetail : "old / new grade"
     HrSalaryReviewPeriod ||--o{ HrSalaryReviewEmployee : contains
+    HrSalaryReviewPeriod ||--o{ HrSalaryDecision : "drafted from"
     HrSalaryDecision ||--o{ HrSalaryDecisionDetail : contains
     HrSalaryDecision ||--o{ HrEmployeeSalary : causes
     HrEmployeeSalary ||--o{ HrSalaryReviewEmployee : "current salary"
@@ -79,6 +80,7 @@ erDiagram
     }
     HrSalaryDecision {
         int Id PK
+        int ReviewPeriodId FK
         string DecisionNumber UK
         date DecisionDate
         date EffectiveDate

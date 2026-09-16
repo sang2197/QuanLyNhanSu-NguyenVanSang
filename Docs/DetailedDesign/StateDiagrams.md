@@ -7,9 +7,12 @@ Status lifecycles already defined as enums in [`openapi.yaml`](../API/openapi.ya
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT : Create (US-01)
-    DRAFT --> IN_PROGRESS : System calculates proposed grades
+    DRAFT --> IN_PROGRESS : Proposed grades calculated — same request, immediately after DRAFT
     IN_PROGRESS --> SUBMITTED : Submit (US-05) — only when every employee is processed
     SUBMITTED --> CLOSED : Linked decision is applied (US-07)
+    DRAFT --> CANCELLED : Cancel (US-11)
+    IN_PROGRESS --> CANCELLED : Cancel (US-11)
+    SUBMITTED --> CANCELLED : Cancel (US-11) — blocked if a decision already exists
 ```
 
 ## Review Outcome (per employee within a period)

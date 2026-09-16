@@ -6,13 +6,13 @@ REST API design for the **Salary Grade Promotion** feature, written as an [OpenA
 
 ## Coverage
 
-16 endpoints across 4 groups, each mapped to the [user story](../Requirements/UserStories_SalaryGradePromotion.md) it implements:
+18 endpoints across 4 groups, each mapped to the [user story](../Requirements/UserStories_SalaryGradePromotion.md) it implements:
 
 | Group | Endpoints | Stories |
 |---|---|---|
-| Review Periods | Create, search/filter, view detail, submit | US-01, US-02, US-03, US-05 |
+| Review Periods | Create, search/filter, view detail, submit, cancel | US-01, US-02, US-03, US-05, US-11 |
 | Review Period Employees | List, view detail, approve/reject (single + bulk) | US-03, US-04 |
-| Salary Decisions | Draft, list, view detail, remove employee, apply | US-06, US-07, US-09 |
+| Salary Decisions | Draft (with employees picked up front), list, view detail, remove employee, apply, cancel | US-06, US-07, US-09, US-10 |
 | Salary History | Look up an employee's history (read-only) | US-08 |
 
 ## Out of scope

@@ -12,11 +12,11 @@ servers:
 
 tags:
   - name: Review Periods
-    description: Create and manage salary review periods (US-01, US-02, US-05)
+    description: Create and manage salary review periods (US-01, US-02, US-05, US-11)
   - name: Review Period Employees
     description: Screen employees and their system-calculated proposed grade within a review period (US-03, US-04)
   - name: Salary Decisions
-    description: Draft and apply official salary decisions (US-06, US-07)
+    description: Draft, apply, cancel, and list official salary decisions (US-06, US-07, US-09, US-10)
   - name: Salary History
     description: Read-only lookup of an employee's salary history (US-08)
 
@@ -28,7 +28,10 @@ paths:
     post:
       tags: [Review Periods]
       summary: Create a review period
-      description: US-01 — HR Staff creates a new salary review period.
+      description: >
+        US-01 — HR Staff creates a new salary review period. The proposed
+        grade for every eligible employee (US-03) is calculated synchronously
+        as part of this request — there is no separate "start review" step.
       requestBody:
         required: true
         content:
@@ -118,6 +121,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /review-periods/{periodId}/cancel:
+    post:
+      tags: [Review Periods]
+      summary: Cancel a review period
+      description: >
+        US-11 — HR Staff cancels a period that no longer makes sense to carry
+        forward. Blocked once a decision has already been drafted from it
+        (draft or applied) — the decision must be dealt with first.
+      parameters:
+        - $ref: "#/components/parameters/PeriodId"
+      responses:
+        "200":
+          description: Review period cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPeriod"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >
+            Period is already Closed or Cancelled, or already has a
+            non-cancelled decision drafted from it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /review-periods/{periodId}/employees:
     get:
       tags: [Review Period Employees]
@@ -187,7 +218,10 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Employee is not eligible, or already has an outcome
+          description: >
+            Employee is not eligible or already has an outcome, or the review
+            period is no longer IN_PROGRESS (US-05 — outcomes cannot change
+            after submission)
           content:
             application/json:
               schema:
@@ -223,7 +257,10 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Employee is not eligible, or already has an outcome
+          description: >
+            Employee is not eligible or already has an outcome, or the review
+            period is no longer IN_PROGRESS (US-05 — outcomes cannot change
+            after submission)
           content:
             application/json:
               schema:
@@ -253,6 +290,15 @@ paths:
                 $ref: "#/components/schemas/BulkActionResult"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          description: >
+            The review period is no longer IN_PROGRESS (US-05 — outcomes
+            cannot change after submission); rejected as a whole, not
+            per-employee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /review-periods/{periodId}/employees/bulk-reject:
     post:
@@ -288,15 +334,27 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          description: >
+            The review period is no longer IN_PROGRESS (US-05 — outcomes
+            cannot change after submission); rejected as a whole, not
+            per-employee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /salary-decisions:
     post:
       tags: [Salary Decisions]
       summary: Draft a salary decision from a submitted review period
       description: >
-        US-06 — the Approver drafts a decision. Only employees approved in the
-        given review period can be included; drafting does not change any
-        employee's real salary yet.
+        US-06 — the Approver drafts a decision, selecting which approved
+        employees from the given review period to include up front. Only
+        employees approved in that review period can be included; drafting
+        does not change any employee's real salary yet. There is no endpoint
+        to add more employees after creation — remove and re-create the draft
+        instead (see `DELETE .../employees/{employeeId}` to remove one).
       requestBody:
         required: true
         content:
@@ -387,6 +445,34 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           description: Decision is no longer a draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /salary-decisions/{decisionId}/cancel:
+    post:
+      tags: [Salary Decisions]
+      summary: Cancel a salary decision
+      description: >
+        US-10 — formally cancels a decision (draft or applied) instead of
+        deleting it. Cancelling only marks the decision's status as
+        CANCELLED for audit purposes — it does not revert any employee's
+        salary that was already applied. Reversing a real salary change, if
+        needed, requires drafting and applying a separate new decision.
+      parameters:
+        - $ref: "#/components/parameters/DecisionId"
+      responses:
+        "200":
+          description: Decision cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryDecisionDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Decision is already cancelled
           content:
             application/json:
               schema:
@@ -534,10 +620,14 @@ components:
     ReviewPeriodStatus:
       type: string
       description: >
-        DRAFT: just created. IN_PROGRESS: HR Staff is screening employees.
-        SUBMITTED: sent to the Approver (US-05). CLOSED: a decision from this
-        period has been applied.
-      enum: [DRAFT, IN_PROGRESS, SUBMITTED, CLOSED]
+        DRAFT: transient, only exists mid-creation. IN_PROGRESS: proposed
+        grades have been calculated (synchronously, same request as create)
+        and HR Staff is screening employees — this is the status returned
+        right after a successful create. SUBMITTED: sent to the Approver
+        (US-05). CLOSED: a decision from this period has been applied.
+        CANCELLED: cancelled by HR Staff (US-11) before any decision was
+        drafted from it.
+      enum: [DRAFT, IN_PROGRESS, SUBMITTED, CLOSED, CANCELLED]
     EligibilityStatus:
       type: string
       enum: [ELIGIBLE, INELIGIBLE]
@@ -764,11 +854,20 @@ components:
 
     CreateSalaryDecisionRequest:
       type: object
-      required: [reviewPeriodId, decisionNumber, decisionType, effectiveDate]
+      required: [reviewPeriodId, employeeIds, decisionNumber, decisionType, effectiveDate]
       properties:
         reviewPeriodId:
           type: string
           format: uuid
+        employeeIds:
+          type: array
+          description: >
+            Employees to include, from those approved in reviewPeriodId.
+            There is no endpoint to add more later (see DELETE to remove one).
+          items:
+            type: string
+            format: uuid
+          minItems: 1
         decisionNumber:
           type: string
           example: SD-2026-015

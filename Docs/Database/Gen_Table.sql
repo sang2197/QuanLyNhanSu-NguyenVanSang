@@ -88,6 +88,7 @@ GO
 
 CREATE TABLE [HrSalaryDecision] (
   [Id] int PRIMARY KEY IDENTITY(1, 1),
+  [ReviewPeriodId] int NOT NULL,
   [DecisionNumber] varchar(100) UNIQUE NOT NULL,
   [DecisionDate] date NOT NULL,
   [EffectiveDate] date NOT NULL,
@@ -123,6 +124,11 @@ GO
 CREATE UNIQUE INDEX [HrSalaryReviewEmployee_index_1] ON [HrSalaryReviewEmployee] ("ReviewPeriodId", "EmployeeId")
 GO
 
+-- At most one non-cancelled decision per review period (US-06); filtered index
+-- since CANCELLED decisions must not count against this limit.
+CREATE UNIQUE INDEX [HrSalaryDecision_index_noncancelled_period] ON [HrSalaryDecision] ("ReviewPeriodId") WHERE [Status] <> 'CANCELLED'
+GO
+
 ALTER TABLE [HrSalaryGrade] ADD FOREIGN KEY ([SalaryScaleId]) REFERENCES [HrSalaryScale] ([Id])
 GO
 
@@ -154,6 +160,9 @@ ALTER TABLE [HrSalaryReviewEmployee] ADD FOREIGN KEY ([ProposedGradeId]) REFEREN
 GO
 
 ALTER TABLE [HrSalaryDecision] ADD FOREIGN KEY ([SignerEmployeeId]) REFERENCES [HrEmployee] ([Id])
+GO
+
+ALTER TABLE [HrSalaryDecision] ADD FOREIGN KEY ([ReviewPeriodId]) REFERENCES [HrSalaryReviewPeriod] ([Id])
 GO
 
 ALTER TABLE [HrSalaryDecisionDetail] ADD FOREIGN KEY ([DecisionId]) REFERENCES [HrSalaryDecision] ([Id])

@@ -63,11 +63,14 @@ flowchart TD
     subgraph G5["Create/Edit Salary Decision"]
         CED
         M_Apply{{"Dialog: Issue/Apply Decision (impact summary)"}}
+        M_CancelDecision{{"Dialog: Cancel Decision"}}
     end
     CED -- "Save Draft" --> CED
     CED -- "Remove an employee" --> CED
     CED -- "Issue / Apply" --> M_Apply
     M_Apply -- "Confirm" --> CED
+    CED -- "Cancel Decision (Draft or Applied)" --> M_CancelDecision
+    M_CancelDecision -- "Confirm" --> CED
 
     ESH -- "Open a decision number" --> CED
 ```
@@ -89,6 +92,7 @@ flowchart TD
 | Pick a Review Period | Dialog | Salary Decision List | "Create New" |
 | Create/Edit Salary Decision | Page | Salary Decision List *(also reachable from Review Period Detail and Employee Salary History)* | "Create New" (after picking a period), "Open a draft/applied/cancelled row", "Create/View Decision", "Open a decision number" |
 | Issue/Apply Decision | Dialog | Create/Edit Salary Decision | "Issue / Apply" |
+| Cancel Decision | Dialog | Create/Edit Salary Decision | "Cancel Decision" (available while Draft or Applied) |
 | Employee Salary History | Page | Menu | Menu: "Salary History" |
 
 ## Notes

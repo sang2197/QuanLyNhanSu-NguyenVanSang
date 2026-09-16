@@ -1,10 +1,12 @@
 # Sequence Diagrams - Salary Grade Promotion
 
-Five key flows, matching the [Runtime View](../Arc42/06-runtime-view.md) scenarios and the [User Stories](../Requirements/UserStories_SalaryGradePromotion.md) / [OpenAPI spec](../API/openapi.yaml) they implement. Class names match [ClassDiagram.md](ClassDiagram.md).
+Seven key flows, matching the [Runtime View](../Arc42/06-runtime-view.md) scenarios and the [User Stories](../Requirements/UserStories_SalaryGradePromotion.md) / [OpenAPI spec](../API/openapi.yaml) they implement. Class names match [ClassDiagram.md](ClassDiagram.md).
 
 ## 1. Approve an employee's proposed grade (US-04)
 
-`POST /review-periods/{periodId}/employees/{employeeId}/approve`
+`POST /review-periods/{periodId}/employees/{employeeId}/approve` — the same
+period-status guard shown here also applies to reject, bulk-approve, and
+bulk-reject (US-04/US-05).
 
 ```mermaid
 sequenceDiagram
@@ -18,20 +20,29 @@ sequenceDiagram
     HR->>FE: Click "Approve" on employee row
     FE->>API: POST .../employees/{employeeId}/approve
     API->>SVC: ApproveEmployee(periodId, employeeId)
-    SVC->>REPO: GetReviewEmployee(periodId, employeeId)
-    REPO->>DB: SELECT HrSalaryReviewEmployee
-    DB-->>REPO: row
-    REPO-->>SVC: ReviewEmployee
-    alt not eligible or already has an outcome
-        SVC-->>API: 409 Conflict
+    SVC->>REPO: GetReviewPeriodStatus(periodId)
+    REPO->>DB: SELECT HrSalaryReviewPeriod
+    DB-->>REPO: status
+    REPO-->>SVC: status
+    alt period is not IN_PROGRESS
+        SVC-->>API: 409 Conflict — period no longer in progress (US-05)
         API-->>FE: 409 Conflict
-    else eligible and pending
-        SVC->>REPO: UpdateReviewOutcome(id, Approved)
-        REPO->>DB: UPDATE HrSalaryReviewEmployee SET ReviewOutcome='APPROVED'
-        DB-->>REPO: OK
-        REPO-->>SVC: OK
-        SVC-->>API: ReviewPeriodEmployee
-        API-->>FE: 200 OK
+    else period is IN_PROGRESS
+        SVC->>REPO: GetReviewEmployee(periodId, employeeId)
+        REPO->>DB: SELECT HrSalaryReviewEmployee
+        DB-->>REPO: row
+        REPO-->>SVC: ReviewEmployee
+        alt not eligible or already has an outcome
+            SVC-->>API: 409 Conflict
+            API-->>FE: 409 Conflict
+        else eligible and pending
+            SVC->>REPO: UpdateReviewOutcome(id, Approved)
+            REPO->>DB: UPDATE HrSalaryReviewEmployee SET ReviewOutcome='APPROVED'
+            DB-->>REPO: OK
+            REPO-->>SVC: OK
+            SVC-->>API: ReviewPeriodEmployee
+            API-->>FE: 200 OK
+        end
     end
     FE-->>HR: Row shows "Approved"
 ```
@@ -184,19 +195,106 @@ sequenceDiagram
         FE-->>APR: Opens in read-only mode
     else clicks "Create New"
         FE-->>APR: Prompts to pick a submitted period without an existing decision
-        APR->>FE: Picks a review period
-        FE->>API: POST /salary-decisions {reviewPeriodId, ...}
-        API->>SVC: CreateDecision(reviewPeriodId, ...)
+        APR->>FE: Picks a review period, then selects which approved employees to include
+        FE->>API: POST /salary-decisions {reviewPeriodId, employeeIds, ...}
+        API->>SVC: CreateDecision(reviewPeriodId, employeeIds, ...)
         SVC->>REPO: CheckNoExistingDecision(reviewPeriodId)
         alt period already has a non-cancelled decision
             SVC-->>API: 409 Conflict
             API-->>FE: 409 Conflict
         else no existing decision
-            SVC->>REPO: InsertDecision(reviewPeriodId, ...)
-            REPO->>DB: INSERT HrSalaryDecision
-            SVC-->>API: SalaryDecision (Draft)
-            API-->>FE: 201 Created
-            FE-->>APR: Opens the new draft for this period
+            SVC->>REPO: CheckAllApproved(reviewPeriodId, employeeIds)
+            REPO->>DB: SELECT HrSalaryReviewEmployee WHERE ReviewOutcome='APPROVED'
+            DB-->>REPO: matching rows
+            REPO-->>SVC: all approved? yes/no
+            alt any employeeId not approved in this period
+                SVC-->>API: 400 Bad Request
+                API-->>FE: 400 Bad Request
+            else all approved
+                SVC->>REPO: InsertDecision(reviewPeriodId, employeeIds, ...)
+                REPO->>DB: INSERT HrSalaryDecision, INSERT HrSalaryDecisionDetail (one per employee)
+                SVC-->>API: SalaryDecision (Draft)
+                API-->>FE: 201 Created
+                FE-->>APR: Opens the new draft for this period
+            end
         end
     end
+```
+
+## 6. Cancel a review period (US-11)
+
+`POST /review-periods/{periodId}/cancel`
+
+```mermaid
+sequenceDiagram
+    actor HR as HR Staff
+    participant FE as React Web App
+    participant API as ReviewPeriodsController
+    participant SVC as SalaryReviewService
+    participant REPO as SalaryRepository
+    participant DB as HRM Database
+
+    HR->>FE: Click "Cancel" on a review period row
+    FE->>API: POST /review-periods/{periodId}/cancel
+    API->>SVC: CancelReviewPeriod(periodId)
+    SVC->>REPO: GetReviewPeriod(periodId)
+    REPO->>DB: SELECT HrSalaryReviewPeriod
+    DB-->>REPO: row
+    REPO-->>SVC: period
+    alt status is CLOSED or CANCELLED
+        SVC-->>API: 409 Conflict — already Closed/Cancelled
+        API-->>FE: 409 Conflict
+    else status is DRAFT, IN_PROGRESS, or SUBMITTED
+        SVC->>REPO: CheckNoExistingDecision(periodId)
+        REPO->>DB: SELECT HrSalaryDecision WHERE ReviewPeriodId=... AND Status<>'CANCELLED'
+        DB-->>REPO: row?
+        REPO-->>SVC: exists? yes/no
+        alt a non-cancelled decision already exists
+            SVC-->>API: 409 Conflict — cancel the decision first (US-10)
+            API-->>FE: 409 Conflict
+        else no decision exists
+            SVC->>REPO: UpdatePeriodStatus(periodId, CANCELLED)
+            REPO->>DB: UPDATE HrSalaryReviewPeriod SET Status='CANCELLED'
+            DB-->>REPO: OK
+            REPO-->>SVC: OK
+            SVC-->>API: ReviewPeriod
+            API-->>FE: 200 OK
+        end
+    end
+    FE-->>HR: Period marked "Cancelled"
+```
+
+## 7. Cancel a salary decision (US-10)
+
+`POST /salary-decisions/{decisionId}/cancel`
+
+```mermaid
+sequenceDiagram
+    actor APR as Approver
+    participant FE as React Web App
+    participant API as SalaryDecisionsController
+    participant SVC as SalaryDecisionService
+    participant REPO as SalaryRepository
+    participant DB as HRM Database
+
+    APR->>FE: Click "Cancel Decision" and confirm
+    FE->>API: POST /salary-decisions/{decisionId}/cancel
+    API->>SVC: CancelDecision(decisionId)
+    SVC->>REPO: GetDecision(decisionId)
+    REPO->>DB: SELECT HrSalaryDecision
+    DB-->>REPO: row
+    REPO-->>SVC: decision
+    alt status is already CANCELLED
+        SVC-->>API: 409 Conflict
+        API-->>FE: 409 Conflict
+    else status is DRAFT or APPLIED
+        SVC->>REPO: UpdateDecisionStatus(decisionId, CANCELLED)
+        REPO->>DB: UPDATE HrSalaryDecision SET Status='CANCELLED'
+        DB-->>REPO: OK
+        REPO-->>SVC: OK
+        Note over SVC,DB: HrEmployeeSalary is never touched here — cancelling<br/>is status-only, even if this decision was already Applied.
+        SVC-->>API: SalaryDecisionDetail
+        API-->>FE: 200 OK
+    end
+    FE-->>APR: Decision marked "Cancelled" — its review period can now have a new decision drafted
 ```
