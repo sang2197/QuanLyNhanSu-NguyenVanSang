@@ -1,18 +1,21 @@
-# UI/UX Design - Salary Grade Promotion
+# UI/UX Design - HRM System
 
-Screen design for the **Salary Grade Promotion** feature, in design order: information architecture, screens hierarchy, wireframe behavior, then the Figma visual design.
+Screen design for the HRM system, in design order: information architecture, screens hierarchy, wireframe behavior, then the Figma visual design. All four modules now have an Information Architecture entry and a Screens Hierarchy; wireframe write-up and Figma visual design so far only cover **Salary Grade Promotion**.
 
 ## Information Architecture
 
-- [`InformationArchitecture_SalaryGradePromotion.md`](InformationArchitecture_SalaryGradePromotion.md) — Sitemap of the module's menu structure (Salary Management, Master Data).
+- [`InformationArchitecture_HRM.md`](InformationArchitecture_HRM.md) — Sitemap of the whole system's menu structure, covering all four modules (Employee Management, Organization, Salary Management, Master Data).
 
 ## Screens Hierarchy
 
-- [`ScreensHierarchy_SalaryGradePromotion.md`](ScreensHierarchy_SalaryGradePromotion.md) — Every individual screen state (pages, modals, confirmation dialogs), with the action that triggers each transition. Expands the Information Architecture sitemap into a direct blueprint for the wireframe.
+- [`ScreensHierarchy_SalaryGradePromotion.md`](ScreensHierarchy_SalaryGradePromotion.md) — Every individual screen state (pages, modals, confirmation dialogs) for the Salary Grade Promotion module, with the action that triggers each transition. Expands the Information Architecture sitemap into a direct blueprint for the wireframe.
+- [`ScreensHierarchy_EmployeeProfile.md`](ScreensHierarchy_EmployeeProfile.md) — Screen states for the Employee Profile module (Employee List, Employee Detail, and their modals/dialogs).
+- [`ScreensHierarchy_OrganizationManagement.md`](ScreensHierarchy_OrganizationManagement.md) — Screen states for the Organization Management module (Organization Structure, Job Titles, and their modals/dialogs).
+- [`ScreensHierarchy_SalaryMasterData.md`](ScreensHierarchy_SalaryMasterData.md) — Screen states for the Salary Master Data module (Base Salary Rate, Salary Scales, Salary Scale Detail, and their modals/dialogs).
 
 ## Wireframe & Screen Behavior
 
-- [`HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx`](HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx) — Wireframe & screen behavior write-up (English): main behavior, validation, and actor per screen.
+- [`HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx`](HRM_Salary_Grade_Promotion_Wireframe_UIUX_EN.docx) — Wireframe & screen behavior write-up (English) for Salary Grade Promotion: main behavior, validation, and actor per screen.
 
 ## Visual Design
 

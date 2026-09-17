@@ -1,6 +1,6 @@
 # Screens Hierarchy - Salary Grade Promotion
 
-This document expands the [Information Architecture](InformationArchitecture_SalaryGradePromotion.md) sitemap into every individual screen state a user will actually encounter — including modals, confirmation dialogs, and read-only variants that a page-level sitemap does not show. Each transition is labeled with the user action that triggers it, so this becomes the direct blueprint for the visual design that follows.
+This document expands the Salary Grade Promotion portion of the [Information Architecture](InformationArchitecture_HRM.md) sitemap into every individual screen state a user will actually encounter — including modals, confirmation dialogs, and read-only variants that a page-level sitemap does not show. Each transition is labeled with the user action that triggers it, so this becomes the direct blueprint for the visual design that follows.
 
 Two kinds of nodes:
 - **Page** — a full navigable screen with its own URL/location.
@@ -40,7 +40,7 @@ flowchart TD
     M_BulkApprove -- "Confirm" --> RPD
     RPD -- "Bulk Reject selected" --> M_BulkReject
     M_BulkReject -- "Submit reason" --> RPD
-    RPD -- "Create Decision / View Decision" --> CED[Page: Create/Edit Salary Decision]
+    RPD -- "Create Decision / View Decision" --> CED[Page: Salary Decision Detail]
 
     subgraph G3["Employee Review Detail"]
         ERD
@@ -60,7 +60,7 @@ flowchart TD
     SDL -- "Open a draft row" --> CED
     SDL -- "Open an applied/cancelled row" --> CED
 
-    subgraph G5["Create/Edit Salary Decision"]
+    subgraph G5["Salary Decision Detail"]
         CED
         M_Apply{{"Dialog: Issue/Apply Decision (impact summary)"}}
         M_CancelDecision{{"Dialog: Cancel Decision"}}
@@ -69,7 +69,7 @@ flowchart TD
     CED -- "Remove an employee" --> CED
     CED -- "Issue / Apply" --> M_Apply
     M_Apply -- "Confirm" --> CED
-    CED -- "Cancel Decision (Draft or Applied)" --> M_CancelDecision
+    CED -- "Cancel Decision (Draft only)" --> M_CancelDecision
     M_CancelDecision -- "Confirm" --> CED
 
     ESH -- "Open a decision number" --> CED
@@ -90,13 +90,13 @@ flowchart TD
 | Reject (employee) | Dialog | Employee Review Detail | "Reject" |
 | Salary Decision List | Page | Menu | Menu: "Salary Decisions" |
 | Pick a Review Period | Dialog | Salary Decision List | "Create New" |
-| Create/Edit Salary Decision | Page | Salary Decision List *(also reachable from Review Period Detail and Employee Salary History)* | "Create New" (after picking a period), "Open a draft/applied/cancelled row", "Create/View Decision", "Open a decision number" |
-| Issue/Apply Decision | Dialog | Create/Edit Salary Decision | "Issue / Apply" |
-| Cancel Decision | Dialog | Create/Edit Salary Decision | "Cancel Decision" (available while Draft or Applied) |
+| Salary Decision Detail | Page | Salary Decision List *(also reachable from Review Period Detail and Employee Salary History)* | "Create New" (after picking a period), "Open a draft/applied/cancelled row", "Create/View Decision", "Open a decision number" |
+| Issue/Apply Decision | Dialog | Salary Decision Detail | "Issue / Apply" |
+| Cancel Decision | Dialog | Salary Decision Detail | "Cancel Decision" (available only while Draft; an Applied decision is permanent — see US-SGP-10) |
 | Employee Salary History | Page | Menu | Menu: "Salary History" |
 
 ## Notes
 
 - Every dialog returns the user to the exact page it was opened from — none of them navigate elsewhere.
-- "Create/Edit Salary Decision" is the only page reachable from more than one parent; it behaves differently depending on how it was reached (a fresh draft, a resumed draft, or a read-only view of something already decided), but it is still one screen, not three.
+- "Salary Decision Detail" is the only page reachable from more than one parent; it behaves differently depending on how it was reached (a fresh draft, a resumed draft, or a read-only view of something already decided), but it is still one screen, not three.
 - "Employee Review Detail" and "Review Period Detail" link back and forth to each other rather than only going one direction.
