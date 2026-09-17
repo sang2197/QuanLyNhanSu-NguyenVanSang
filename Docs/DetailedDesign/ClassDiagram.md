@@ -139,9 +139,9 @@ classDiagram
     class SalaryReviewService {
         -SalaryRepository salaryRepository
         -EmployeeRepository employeeRepository
-        +CreateReviewPeriod(request) : calculates proposed grades synchronously, US-01
+        +CreateReviewPeriod(request) : calculates proposed grades synchronously, enters IN_PROGRESS directly, US-01
         +SubmitReviewPeriod(periodId)
-        +CancelReviewPeriod(periodId) : blocked if a non-cancelled decision exists, US-11
+        +CancelReviewPeriod(periodId) : blocked if CLOSED/CANCELLED or a non-cancelled decision exists, US-11
         +ApproveEmployee(periodId, employeeId) : blocked unless period is IN_PROGRESS, US-04/US-05
         +RejectEmployee(periodId, employeeId, reason) : blocked unless period is IN_PROGRESS, US-04/US-05
         +BulkApprove(periodId, employeeIds)
@@ -152,8 +152,8 @@ classDiagram
         -SalaryRepository salaryRepository
         +CreateDecision(reviewPeriodId, employeeIds, ...) : employees fixed at creation, US-06
         +RemoveEmployee(decisionId, employeeId)
-        +ApplyDecision(decisionId) : all-or-nothing transaction, US-07
-        +CancelDecision(decisionId) : status-only, never touches HrEmployeeSalary, US-10
+        +ApplyDecision(decisionId) : all-or-nothing transaction, also closes the review period, US-07
+        +CancelDecision(decisionId) : Draft only — an Applied decision can never be cancelled, US-10
     }
     class SalaryHistoryService {
         -SalaryRepository salaryRepository

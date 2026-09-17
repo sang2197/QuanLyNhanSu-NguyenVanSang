@@ -158,11 +158,12 @@ public class SalaryDecisionServiceTests
     }
 
     [Fact]
-    public async Task ApplyDecision_NoConflicts_ClosesOldSalaryAndCreatesNew_ForEveryEmployee()
+    public async Task ApplyDecision_NoConflicts_ClosesOldSalaryAndCreatesNew_ForEveryEmployee_AndClosesReviewPeriod()
     {
         var grade = new HrSalaryGrade { Id = 11, SalaryScaleId = 1, GradeNumber = 4, Coefficient = 3.66m };
         var detail = new HrSalaryDecisionDetail { EmployeeId = 5, EffectiveFrom = new DateOnly(2026, 4, 1), NewSalaryGradeId = 11, NewCoefficient = 3.66m, NewSalaryGrade = grade };
-        var decision = new HrSalaryDecision { Id = 1, DecisionNumber = "SD-2026-001", Status = SalaryDecisionStatus.DRAFT, Details = new List<HrSalaryDecisionDetail> { detail } };
+        var reviewPeriod = new HrSalaryReviewPeriod { Id = 1, Status = ReviewPeriodStatus.SUBMITTED };
+        var decision = new HrSalaryDecision { Id = 1, DecisionNumber = "SD-2026-001", Status = SalaryDecisionStatus.DRAFT, Details = new List<HrSalaryDecisionDetail> { detail }, ReviewPeriod = reviewPeriod };
         _salaryRepo.Setup(r => r.GetDecisionAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(decision);
         _salaryRepo.Setup(r => r.HasEffectiveDateConflictAsync(5, detail.EffectiveFrom, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
@@ -172,12 +173,13 @@ public class SalaryDecisionServiceTests
         var result = await _sut.ApplyDecisionAsync(1);
 
         result.Status.Should().Be(SalaryDecisionStatus.APPLIED);
+        reviewPeriod.Status.Should().Be(ReviewPeriodStatus.CLOSED);
         _salaryRepo.Verify(r => r.CloseSalaryAsync(currentSalary, detail.EffectiveFrom.AddDays(-1), It.IsAny<CancellationToken>()), Times.Once);
         _salaryRepo.Verify(r => r.AddSalaryAsync(It.Is<HrEmployeeSalary>(s => s.EmployeeId == 5 && s.SalaryGradeId == 11 && s.DecisionId == 1), It.IsAny<CancellationToken>()), Times.Once);
         _salaryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ---------- CancelDecision (US-10) ----------
+    // ---------- CancelDecision (US-10) — Draft only, Applied is permanent ----------
 
     [Fact]
     public async Task CancelDecision_AlreadyCancelled_ThrowsConflict()
@@ -190,12 +192,22 @@ public class SalaryDecisionServiceTests
         await act.Should().ThrowAsync<ConflictException>();
     }
 
-    [Theory]
-    [InlineData(SalaryDecisionStatus.DRAFT)]
-    [InlineData(SalaryDecisionStatus.APPLIED)]
-    public async Task CancelDecision_DraftOrApplied_SetsCancelled_AndNeverTouchesSalary(SalaryDecisionStatus initialStatus)
+    [Fact]
+    public async Task CancelDecision_Applied_ThrowsConflict_AppliedIsPermanent()
     {
-        var decision = new HrSalaryDecision { Id = 1, Status = initialStatus, Details = new List<HrSalaryDecisionDetail>() };
+        var decision = new HrSalaryDecision { Id = 1, Status = SalaryDecisionStatus.APPLIED, Details = new List<HrSalaryDecisionDetail>() };
+        _salaryRepo.Setup(r => r.GetDecisionAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(decision);
+
+        var act = () => _sut.CancelDecisionAsync(1);
+
+        await act.Should().ThrowAsync<ConflictException>();
+        decision.Status.Should().Be(SalaryDecisionStatus.APPLIED);
+    }
+
+    [Fact]
+    public async Task CancelDecision_Draft_SetsCancelled_AndNeverTouchesSalary()
+    {
+        var decision = new HrSalaryDecision { Id = 1, Status = SalaryDecisionStatus.DRAFT, Details = new List<HrSalaryDecisionDetail>() };
         _salaryRepo.Setup(r => r.GetDecisionAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(decision);
 
         var result = await _sut.CancelDecisionAsync(1);

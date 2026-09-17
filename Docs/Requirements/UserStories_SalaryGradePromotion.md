@@ -1,204 +1,747 @@
-# User Stories - Salary Grade Promotion
+# User Stories -- Salary Grade Promotion
 
-This document lists the user stories for the **Salary Grade Promotion** feature, written from the point of view of the people who will use it: **HR Staff** and **Approver**.
+## 1. Overview
 
-Format: `As a [role], I want [goal], so that [benefit]`. Each story has:
-- **Business Rules** — the constraints that make the story correct (in plain business language).
-- **Acceptance Criteria** — Given/When/Then, describing only the interaction, not implementation details.
+The **Salary Grade Promotion** feature enables HR Staff and Approvers to
+manage a salary grade promotion cycle from employee screening through
+final salary decision.
 
-Priority uses MoSCoW (Must / Should / Could).
+The scope includes:
 
-## Process Overview
+-   Creating and managing salary review periods.
+-   Automatically determining eligible employees and their proposed
+    salary grades.
+-   Reviewing and recording outcomes for eligible employees.
+-   Submitting completed review periods for approval.
+-   Creating and managing salary decisions.
+-   Applying salary decisions to make approved salary grade changes
+    effective.
+-   Viewing employee salary history.
+-   Cancelling review periods and draft salary decisions under defined
+    conditions.
 
-1. HR Staff creates a review period. The system automatically works out a proposed new grade for each eligible employee in it.
-2. HR Staff goes through the batch and marks each employee's proposed grade as approved or not approved (one at a time, or several at once).
-3. Once every employee in the period has been marked, HR Staff submits the period to the Approver.
-4. The Approver reviews the submitted period and drafts a salary decision from the approved employees.
-5. The Approver applies the decision, making the new grades official.
-6. Anyone can look up an employee's salary history afterwards.
+The feature uses salary scales (**Ngạch lương**) and ordered salary
+grades (**Bậc lương**) maintained in **Salary Master Data**. When
+determining a proposed grade, inactive grades are skipped and the next
+active grade in ascending order within the employee's current salary
+scale is used.
 
-## Summary
+This document describes business needs and expected behavior. It does
+not prescribe screen design, API design, database structure, or other
+implementation details.
 
-`Size` is a rough T-shirt estimate (S/M/L) to gauge relative effort, not a committed number — to be refined once the team sizes the backlog. `Depends on` lists the story that must be functionally complete first; it does not mean the story can't be *built* independently, only that it can't be *tested end-to-end* without its dependency.
+------------------------------------------------------------------------
 
-| ID | Story | Role | Priority | Depends on | Size |
-|---|---|---|---|---|---|
-| US-01 | Create a review period | HR Staff | Must | — | S |
-| US-02 | Search and filter review periods | HR Staff | Should | US-01 | S |
-| US-03 | View employees and their proposed grade in a review period | HR Staff | Must | US-01 | M |
-| US-04 | Approve or reject each employee's proposed grade | HR Staff | Must | US-03 | L |
-| US-05 | Submit a review period to the Approver | HR Staff | Must | US-04 | S |
-| US-06 | Review a submitted period and draft a salary decision | Approver | Must | US-05 | M |
-| US-07 | Apply a salary decision | Approver | Must | US-06 | L |
-| US-08 | Look up an employee's salary history | HR Staff / Approver | Should | — | S |
-| US-09 | List salary decisions and resume a draft | Approver | Must | — | S |
-| US-10 | Cancel a salary decision | Approver | Should | US-06 | S |
-| US-11 | Cancel a review period | HR Staff | Should | US-01 | S |
+## 2. Review Period Lifecycle
 
----
+A salary review period has the following business statuses:
 
-### US-01: Create a review period
+-   **IN_PROGRESS** -- the review period has been created successfully,
+    proposed grades have been calculated, and HR Staff can process
+    eligible employees.
+-   **SUBMITTED** -- every eligible employee with a proposed grade has
+    an outcome and the period has been submitted to the Approver.
+-   **CANCELLED** -- the review period has been cancelled and cannot be
+    processed further.
+-   **CLOSED** -- the salary decision associated with the period has
+    been applied successfully and the review cycle is complete.
 
-**As** HR Staff, **I want** to create a new salary review period, **so that** I can start reviewing employees for salary grade promotion in a defined cycle.
+A successfully created review period enters **IN_PROGRESS** directly.
+There is no user-visible Draft state for a review period.
 
-**Business Rules:**
-- A review period must have a unique name/code, a review date, and a type (e.g. annual, mid-year, special).
-- Creating a period immediately calculates the proposed grade for every eligible employee ([US-03](#us-03-view-employees-and-their-proposed-grade-in-a-review-period)) as part of the same action — there is no separate step to start screening.
+Valid lifecycle transitions are:
 
-**Acceptance Criteria:**
-- Given I am on the review period list, when I fill in the required details and save, then a new review period is created and appears in the list.
-- Given I try to save a review period with a code that already exists, when I submit, then I see an error and nothing is created.
-- Given a review period was just created, when I open it right away, then every eligible employee already has a proposed grade — I don't need to trigger screening separately.
+-   Create successfully → **IN_PROGRESS**
+-   IN_PROGRESS → **SUBMITTED**
+-   IN_PROGRESS → **CANCELLED**
+-   SUBMITTED → **CANCELLED**, only when no non-cancelled salary
+    decision exists
+-   SUBMITTED → **CLOSED**, when its salary decision is successfully
+    applied
 
-### US-02: Search and filter review periods
+**CANCELLED** and **CLOSED** are terminal states.
 
-**As** HR Staff, **I want** to filter review periods by date range, type, and status, **so that** I can find a specific period quickly without scrolling a long list.
+------------------------------------------------------------------------
 
-**Business Rules:**
-- None beyond the fields already captured when a period is created.
+## 3. User Story Summary
 
-**Acceptance Criteria:**
-- Given many review periods exist, when I set a date range, type, or status filter and search, then only matching periods are shown.
-- Given the result list is long, when it exceeds one page, then it is split into pages.
+| ID | User Story | Actor | Priority |
+|---|---|---|---|
+| US-SGP-01 | Create Salary Review Period | HR Staff | Must |
+| US-SGP-02 | Search and Filter Review Periods | HR Staff | Should |
+| US-SGP-03 | View Employees and Proposed Grades | HR Staff | Must |
+| US-SGP-04 | Review Proposed Grades | HR Staff | Must |
+| US-SGP-05 | Submit Review Period | HR Staff | Must |
+| US-SGP-06 | Create Salary Decision | Approver | Must |
+| US-SGP-07 | Apply Salary Decision | Approver | Must |
+| US-SGP-08 | View Employee Salary History | HR Staff / Approver | Should |
+| US-SGP-09 | View and Resume Salary Decisions | Approver | Must |
+| US-SGP-10 | Cancel Draft Salary Decision | Approver | Should |
+| US-SGP-11 | Cancel Review Period | HR Staff | Should |
 
-### US-03: View employees and their proposed grade in a review period
+------------------------------------------------------------------------
 
-**As** HR Staff, **I want** to see the list of employees included in a review period along with the new grade the system has worked out for each of them, **so that** I know who is ready for me to go through.
+## 4. Salary Review Period
 
-**Business Rules:**
-- The system automatically works out a proposed new grade for every eligible employee in the period; HR Staff does not calculate this by hand.
-- An employee who is not eligible for review must always show the reason why, and has no proposed grade.
-- An employee is eligible for a proposal in this review period only when **all** of the following are true:
-  1. They have held their current grade for at least the minimum required time — **24 months** as of the review date.
-  2. There is a next grade above their current one within their **own salary scale** — an employee already at the highest grade of their scale is not eligible.
-  3. They have not already been given a proposal in this review period — an employee cannot receive more than one proposal per period.
-- When an employee is eligible, the proposed grade is the **next grade up within their current salary scale**.
+## US-SGP-01 -- Create Salary Review Period
 
-**Acceptance Criteria:**
-- Given a review period is open, when I view it, then I see every included employee, their current grade, and the grade the system proposed for them (if eligible).
-- Given an employee has held their current grade for less than 24 months as of the review date, when the period is opened, then they are shown as not eligible with that reason.
-- Given an employee is already at the highest grade of their salary scale, when the period is opened, then they are shown as not eligible with that reason.
-- Given an employee already has a proposal in this review period, when the period is opened, then they are not given a second proposal.
-- Given I want to narrow the list, when I filter by department, eligibility, or review outcome, then only matching employees are shown.
+### User Story
 
-### US-04: Approve or reject each employee's proposed grade
+**As an** HR Staff,\
+**I want to** create a salary review period,\
+**so that** eligible employees can be reviewed for salary grade
+promotion within a defined review cycle.
 
-**As** HR Staff, **I want** to look at the new grade the system proposed for each employee and mark it as approved or not approved — one at a time, or several at once — **so that** I can screen the whole batch before it goes to the Approver.
+### Business Rules
 
-**Business Rules:**
-- Only an eligible employee with a system-proposed grade can be marked approved or not approved.
-- When several employees are selected for the same action, each one is still individually checked against the same rules as if done one at a time.
-- If an employee is marked not approved, a reason should be recorded so it can be explained later.
-- An employee's outcome can only be changed while the review period is still in progress — once submitted (see [US-05](#us-05-submit-a-review-period-to-the-approver)), it can no longer be changed at all.
+-   A review period must have a unique code and name.
+-   A review period has a review date and review type, such as annual,
+    mid-year, or special.
+-   Creating a review period automatically determines employee
+    eligibility and proposed salary grades as part of the same business
+    action.
+-   A successfully created review period enters **IN_PROGRESS** status.
+-   If the review period and its employee proposals cannot be created
+    successfully as a complete operation, the review period must not
+    become available for processing.
 
-**Acceptance Criteria:**
-- Given an employee has a proposed grade, when I mark it approved, then that employee is recorded as approved for this period.
-- Given an employee has a proposed grade, when I try to mark it not approved without giving a reason, then this is blocked until a reason is entered.
-- Given I select several employees at once, when I approve or reject them together, then each one is checked individually, only the valid ones go through, and I'm told how many succeeded, how many failed, and why.
-- Given the review period has already been submitted, when I try to approve or reject an employee in it (single or bulk), then this is blocked entirely, even if that employee's outcome is still pending.
+### Acceptance Criteria
 
-### US-05: Submit a review period to the Approver
+#### AC01 -- Create a review period
 
-**As** HR Staff, **I want** to submit a review period to the Approver once every employee in it has been marked approved or not approved, **so that** the Approver can process the results.
+**Given** I enter valid required information with a unique code and
+name\
+**When** I create the review period\
+**Then** the review period is created successfully\
+**And** its status is IN_PROGRESS\
+**And** eligibility and proposed grades have already been determined for
+the included employees.
 
-**Business Rules:**
-- A review period can only be submitted once every employee in it has an outcome; it cannot be submitted while some are still unprocessed.
-- Once submitted, HR Staff should not go back and quietly change any employee's outcome without the Approver knowing.
+#### AC02 -- Duplicate review period code
 
-**Acceptance Criteria:**
-- Given every employee in the period has been marked approved or not approved, when I submit the period, then I am asked to confirm before it is sent.
-- Given some employees in the period are still unprocessed, when I try to submit the period, then this is blocked with a message telling me what's left.
-- Given the period has been submitted, when I look at it afterwards, then it is clearly marked as submitted and visible to the Approver.
+**Given** another review period already uses the entered code\
+**When** I attempt to create the review period\
+**Then** the request is rejected\
+**And** no new review period is created.
 
-### US-06: Review a submitted period and draft a salary decision
+#### AC03 -- Duplicate review period name
 
-**As** an Approver, **I want** to review a submitted review period and draft a salary decision from the employees approved in it, **so that** I can prepare the official change before it takes effect.
+**Given** another review period already uses the entered name\
+**When** I attempt to create the review period\
+**Then** the request is rejected\
+**And** no new review period is created.
 
-**Business Rules:**
-- Only employees marked approved by HR Staff can be included in a decision being drafted.
-- Drafting a decision must not change any employee's real salary yet.
-- There are two ways to start drafting a decision, and both must end up at the same screen with the same period already selected:
-  1. From the submitted review period itself (e.g. a "Create Decision" action shown once its status is Submitted) — the period is already known, so nothing needs to be picked.
-  2. From the salary decision list ([US-09](#us-09-list-salary-decisions-and-resume-a-draft)) by choosing "Create New" — here the Approver must first pick which submitted review period the decision is for.
-- A submitted review period can have at most one non-cancelled decision drafted from it.
-- The employees included in a decision are selected up front, when the decision is created (from those approved in the picked review period). An employee can be removed from a draft afterward, but there is no way to add more later — a decision needing different employees must be re-created.
+#### AC04 -- Proposal calculation cannot complete
 
-**Acceptance Criteria:**
-- Given a review period has been submitted, when I open it, then I see each included employee's current grade and the grade approved for them.
-- Given a submitted review period, when I start a decision from it directly, then the decision-drafting screen opens with that period already selected — I am not asked to pick one.
-- Given I start a decision from the salary decision list instead, when the drafting screen opens, then I must choose a submitted review period before I can add employees.
-- Given a submitted review period already has a non-cancelled decision, when I try to start another decision from it, then this is blocked.
-- Given I am creating a decision, when I select which employees to include, then only employees approved in that period are offered, and my selection is saved as part of creating the draft.
-- Given a decision is still a draft, when I check any included employee's salary, then it is unchanged.
+**Given** the review period information is valid\
+**When** eligibility and proposed grades cannot be determined
+successfully as part of creation\
+**Then** the review period does not become available for processing as
+an incomplete review period.
 
-### US-07: Apply a salary decision
+------------------------------------------------------------------------
 
-**As** an Approver, **I want** to apply a drafted salary decision, **so that** the new salary grade for each included employee becomes real and traceable back to this decision.
+## US-SGP-02 -- Search and Filter Review Periods
 
-**Business Rules:**
-- A decision can only be applied once, and must apply to all of its employees together — if part of it cannot go through, none of it should.
-- Every employee's salary change must have a clear effective date, and must not overlap with their existing salary record.
-- Once applied, a decision cannot be silently deleted — only formally cancelled through a separate action.
+### User Story
 
-**Acceptance Criteria:**
-- Given a decision is ready, when I apply it, then I am shown a summary of its impact and asked to confirm first.
-- Given I confirm, when the decision is applied, then every included employee's salary is updated to the new grade as of the decision's effective date, and their prior salary is preserved as history.
-- Given something prevents one employee's change from being applied (e.g. a conflicting record), when the decision is applied, then no employee in that decision is updated, and I am told what needs to be fixed.
-- Given a decision has already been applied, when I try to apply it again, then this is blocked.
+**As an** HR Staff,\
+**I want to** search and filter salary review periods,\
+**so that** I can quickly find the review period I need to work with.
 
-### US-08: Look up an employee's salary history
+### Business Rules
 
-**As** HR Staff or an Approver, **I want** to look up an employee's full salary history, **so that** I can answer questions about a specific past date or audit how their salary changed over time.
+-   Review periods can be filtered by review date range, review type,
+    and status.
+-   Search and filters may be used together.
 
-**Business Rules:**
-- This is a read-only view; salary cannot be changed from here.
+### Acceptance Criteria
 
-**Acceptance Criteria:**
-- Given I search for an employee, when their history loads, then I see every past salary grade with its effective period and the reason/decision behind each change, newest first.
-- Given I want more detail on a change, when I open the decision behind it, then I see that decision in a read-only view.
+#### AC01 -- Filter review periods
 
-### US-09: List salary decisions and resume a draft
+**Given** multiple review periods exist\
+**When** I filter them by review date range, review type, or status\
+**Then** only review periods matching the selected criteria are
+returned.
 
-**As** an Approver, **I want** to see a list of all salary decisions (draft, applied, or cancelled) and reopen any draft, **so that** I don't lose track of a decision I started earlier or accidentally start a duplicate one.
+#### AC02 -- Combine filter criteria
 
-**Business Rules:**
-- The list shows every decision regardless of status, with which review period it belongs to.
-- Opening a draft from this list returns to the exact same drafting screen used in [US-06](#us-06-review-a-submitted-period-and-draft-a-salary-decision), with its previously added employees still there.
-- Applied or cancelled decisions open in read-only mode from this list (see [US-07](#us-07-apply-a-salary-decision)) — they cannot be edited.
-- "Create New" from this list requires picking a submitted review period first (see US-06, entry point 2), and only review periods without an existing non-cancelled decision can be picked.
+**Given** multiple review periods exist\
+**When** I apply more than one filter criterion\
+**Then** only review periods satisfying all applied criteria are
+returned.
 
-**Acceptance Criteria:**
-- Given decisions exist, when I open the list, then I see each one's decision number, review period, status, and effective date.
-- Given a decision in the list has Draft status, when I open it, then I return to drafting it with everything I previously added still there.
-- Given a decision in the list has Applied or Cancelled status, when I open it, then I see it in read-only mode.
-- Given I click "Create New", when I am asked to pick a review period, then only submitted periods without an existing non-cancelled decision are offered.
+#### AC03 -- No matching review periods
 
-### US-10: Cancel a salary decision
+**Given** no review period matches the applied criteria\
+**When** I perform the search\
+**Then** no matching review periods are returned.
 
-**As** an Approver, **I want** to formally cancel a salary decision (draft or already applied), **so that** a mistaken or no-longer-valid decision is clearly marked instead of left active or silently deleted.
+------------------------------------------------------------------------
 
-**Business Rules:**
-- Cancelling only marks the decision's status as Cancelled — it does not automatically revert any employee's salary that was already applied by that decision.
-- If a real salary change needs to be undone, that requires drafting and applying a separate new decision; cancelling by itself never changes `HrEmployeeSalary`.
-- A cancelled decision is permanent — it cannot be un-cancelled or edited afterward.
-- Cancelling a decision frees up its review period so a new decision can be drafted from it (see [US-06](#us-06-review-a-submitted-period-and-draft-a-salary-decision)'s "at most one non-cancelled decision" rule).
+## US-SGP-03 -- View Employees and Proposed Grades
 
-**Acceptance Criteria:**
-- Given a decision is a draft, when I cancel it, then its status becomes Cancelled and it can no longer be edited.
-- Given a decision has already been applied, when I cancel it, then its status becomes Cancelled, but every employee's salary it previously changed remains exactly as applied.
-- Given a decision is already Cancelled, when I try to cancel it again, then this is blocked.
-- Given a review period's only non-cancelled decision was just cancelled, when I try to draft a new decision from that period, then it is now offered again.
+### User Story
 
-### US-11: Cancel a review period
+**As an** HR Staff,\
+**I want to** view employees in a salary review period together with
+their eligibility and proposed salary grade,\
+**so that** I can understand who can be considered for salary grade
+promotion and why.
 
-**As** HR Staff, **I want** to cancel a review period that no longer needs to be carried forward, **so that** it stops cluttering the active list without deleting its record.
+### Business Rules
 
-**Business Rules:**
-- A review period can be cancelled at any status except Closed or already Cancelled.
-- A review period cannot be cancelled while it already has a non-cancelled decision drafted from it — that decision must be cancelled first (see [US-10](#us-10-cancel-a-salary-decision)).
-- Cancelling does not delete or change the employees already screened in it; their review outcomes remain as a record, they simply can no longer lead anywhere.
+-   The system determines eligibility automatically for employees
+    included in the review period.
+-   An employee is eligible for a proposal only when all of the
+    following are true:
+    1.  The employee has held the current salary grade for at least **24
+        months** as of the review date.
+    2.  At least one higher **active** salary grade exists within the
+        employee's current salary scale.
+    3.  The employee has not already received another proposal in the
+        same review period.
+-   For an eligible employee, the proposed salary grade is the first
+    active grade above the current grade in ascending grade order within
+    the same salary scale.
+-   Inactive salary grades are skipped when determining the proposed
+    grade.
+-   An employee who is not eligible has no proposed grade and must have
+    the reason for ineligibility recorded.
 
-**Acceptance Criteria:**
-- Given a review period is Draft, In Progress, or Submitted with no decision drafted from it, when I cancel it, then its status becomes Cancelled.
-- Given a review period already has a non-cancelled decision, when I try to cancel it, then this is blocked with a message telling me to deal with the decision first.
-- Given a review period is Closed, when I try to cancel it, then this is blocked — a period with an applied decision is never cancelled, only the decision itself can be (US-10).
+### Acceptance Criteria
+
+#### AC01 -- View eligible employee proposal
+
+**Given** an employee satisfies all eligibility rules\
+**When** I view the review period\
+**Then** I can see the employee's current salary grade\
+**And** the employee is shown as eligible\
+**And** the proposed salary grade is the next active grade in ascending
+order within the employee's current salary scale.
+
+#### AC02 -- Current grade held for less than 24 months
+
+**Given** an employee has held the current salary grade for less than 24
+months as of the review date\
+**When** eligibility is determined\
+**Then** the employee is shown as not eligible\
+**And** the 24-month requirement is identified as the reason\
+**And** no proposed salary grade is assigned.
+
+#### AC03 -- No higher active grade
+
+**Given** no active salary grade exists above the employee's current
+grade within the same salary scale\
+**When** eligibility is determined\
+**Then** the employee is shown as not eligible\
+**And** the absence of a higher active grade is identified as the
+reason\
+**And** no proposed salary grade is assigned.
+
+#### AC04 -- Skip inactive grades
+
+**Given** one or more salary grades immediately above an employee's
+current grade are inactive\
+**And** a higher active salary grade exists in the same scale\
+**When** the proposed salary grade is determined\
+**Then** the inactive grades are skipped\
+**And** the first higher active grade in ascending order is proposed.
+
+#### AC05 -- Prevent duplicate proposal in the same period
+
+**Given** an employee already has a proposal in the review period\
+**When** proposals for that period are determined\
+**Then** no additional proposal is created for that employee.
+
+#### AC06 -- Filter employees in the review period
+
+**Given** employees are included in a review period\
+**When** I filter them by Organizational Unit, eligibility, or review
+outcome\
+**Then** only employees matching the applied criteria are returned.
+
+------------------------------------------------------------------------
+
+## US-SGP-04 -- Review Proposed Grades
+
+### User Story
+
+**As an** HR Staff,\
+**I want to** approve or reject proposed salary grades for eligible
+employees,\
+**so that** each proposal is screened before the review period is
+submitted to the Approver.
+
+### Business Rules
+
+-   Only an eligible employee with a proposed salary grade can receive
+    an Approved or Rejected outcome.
+-   A rejection requires a reason.
+-   HR Staff may process proposals individually or in bulk.
+-   In a bulk action, each selected proposal is validated individually.
+-   An outcome can be changed only while the review period is
+    **IN_PROGRESS**.
+-   Once the review period is submitted, proposal outcomes cannot be
+    changed by HR Staff.
+
+### Acceptance Criteria
+
+#### AC01 -- Approve a proposal
+
+**Given** an eligible employee has a proposed salary grade\
+**And** the review period is IN_PROGRESS\
+**When** I approve the proposal\
+**Then** the employee's review outcome is recorded as Approved.
+
+#### AC02 -- Reject a proposal with a reason
+
+**Given** an eligible employee has a proposed salary grade\
+**And** the review period is IN_PROGRESS\
+**When** I reject the proposal and provide a reason\
+**Then** the employee's review outcome is recorded as Rejected\
+**And** the rejection reason is retained.
+
+#### AC03 -- Reject without a reason
+
+**Given** an eligible employee has a proposed salary grade\
+**When** I attempt to reject the proposal without a reason\
+**Then** the request is rejected\
+**And** the proposal outcome remains unchanged.
+
+#### AC04 -- Process proposals in bulk
+
+**Given** multiple employee proposals are selected\
+**And** the review period is IN_PROGRESS\
+**When** I apply the same review outcome to them in bulk\
+**Then** each selected proposal is validated individually\
+**And** valid proposals are updated\
+**And** invalid proposals remain unchanged\
+**And** the result identifies which proposals succeeded or failed and
+why.
+
+#### AC05 -- Attempt to change an outcome after submission
+
+**Given** the review period is no longer IN_PROGRESS\
+**When** I attempt to approve, reject, or change an employee's outcome\
+**Then** the request is rejected\
+**And** the existing outcome remains unchanged.
+
+------------------------------------------------------------------------
+
+## US-SGP-05 -- Submit Review Period
+
+### User Story
+
+**As an** HR Staff,\
+**I want to** submit a completed salary review period to the Approver,\
+**so that** approved promotion proposals can proceed to the salary
+decision stage.
+
+### Business Rules
+
+-   A review period can be submitted only while it is **IN_PROGRESS**.
+-   Every **eligible employee with a proposed salary grade** must have
+    an Approved or Rejected outcome before submission.
+-   Employees who are not eligible do not require a review outcome.
+-   After successful submission, the review period status becomes
+    **SUBMITTED**.
+-   Proposal outcomes cannot be changed by HR Staff after submission.
+
+### Acceptance Criteria
+
+#### AC01 -- Submit a completed review period
+
+**Given** the review period is IN_PROGRESS\
+**And** every eligible employee with a proposed salary grade has an
+outcome\
+**When** I submit the review period and confirm the action\
+**Then** the review period status becomes SUBMITTED\
+**And** it becomes available for the Approver to process.
+
+#### AC02 -- Eligible employee remains unprocessed
+
+**Given** at least one eligible employee with a proposed salary grade
+has no outcome\
+**When** I attempt to submit the review period\
+**Then** the submission is rejected\
+**And** the review period remains IN_PROGRESS\
+**And** the unprocessed proposals can be identified.
+
+#### AC03 -- Not-eligible employees have no outcomes
+
+**Given** all eligible employees with proposed salary grades have
+outcomes\
+**And** one or more not-eligible employees have no outcome\
+**When** I submit the review period\
+**Then** the review period can be submitted if all other business rules
+are satisfied.
+
+------------------------------------------------------------------------
+
+## 5. Salary Decision
+
+## US-SGP-06 -- Create Salary Decision
+
+### User Story
+
+**As an** Approver,\
+**I want to** create a draft salary decision from a submitted review
+period,\
+**so that** approved salary grade changes can be prepared before they
+take effect.
+
+### Business Rules
+
+-   A salary decision can be created only from a **SUBMITTED** review
+    period.
+-   Only employees with an **Approved** review outcome in that review
+    period can be included.
+-   Creating a draft salary decision does not change any employee's
+    current salary grade.
+-   A review period can have at most one non-cancelled salary decision
+    at a time.
+-   Employees to be included are selected when the draft decision is
+    created.
+-   An employee may be removed while the decision remains Draft.
+-   Additional employees cannot be added to an existing draft. If a
+    different employee set is required, the draft must be cancelled and
+    a new decision created.
+
+### Acceptance Criteria
+
+#### AC01 -- Create a draft salary decision
+
+**Given** a review period is SUBMITTED\
+**And** it has no existing non-cancelled salary decision\
+**When** I select approved employees and create a salary decision\
+**Then** a Draft salary decision is created for that review period\
+**And** only the selected approved employees are included\
+**And** no employee's current salary grade is changed.
+
+#### AC02 -- Attempt to include a non-approved employee
+
+**Given** an employee in the review period does not have an Approved
+outcome\
+**When** I attempt to include that employee in the salary decision\
+**Then** the employee cannot be included.
+
+#### AC03 -- Existing non-cancelled decision
+
+**Given** the review period already has a Draft or Applied salary
+decision\
+**When** I attempt to create another salary decision from the same
+period\
+**Then** the request is rejected.
+
+#### AC04 -- Remove an employee from a draft
+
+**Given** a salary decision is Draft\
+**And** an employee is included in it\
+**When** I remove that employee\
+**Then** the employee is removed from the draft\
+**And** the employee's current salary grade remains unchanged.
+
+#### AC05 -- Attempt to add an employee after draft creation
+
+**Given** a salary decision has already been created\
+**When** I attempt to add another employee to the existing draft\
+**Then** the request is rejected.
+
+------------------------------------------------------------------------
+
+## US-SGP-07 -- Apply Salary Decision
+
+### User Story
+
+**As an** Approver,\
+**I want to** apply a draft salary decision,\
+**so that** the approved salary grade changes become effective and are
+retained as part of each employee's salary history.
+
+### Business Rules
+
+-   Only a **Draft** salary decision can be applied.
+-   A salary decision can be applied only once.
+-   Each included employee's salary grade change has a defined effective
+    date.
+-   Applying a salary decision follows an **all-or-nothing** rule: all
+    included employee changes must succeed together.
+-   If any included employee's change cannot be applied, no employee
+    salary grade in the decision is changed.
+-   Applying the decision preserves each employee's prior salary
+    information as history.
+-   After successful application, the salary decision status becomes
+    **APPLIED**.
+-   The associated review period becomes **CLOSED** as part of the same
+    successful business operation.
+-   An Applied salary decision cannot be edited or cancelled.
+
+### Acceptance Criteria
+
+#### AC01 -- Apply a valid salary decision
+
+**Given** a salary decision is Draft\
+**And** all included employee salary grade changes are valid\
+**When** I apply and confirm the salary decision\
+**Then** every included employee is assigned the approved salary grade
+from the decision's effective date\
+**And** each employee's prior salary information is preserved as
+history\
+**And** the salary decision status becomes APPLIED\
+**And** the associated review period status becomes CLOSED.
+
+#### AC02 -- One employee change cannot be applied
+
+**Given** a Draft salary decision contains multiple employees\
+**And** at least one included employee's salary grade change cannot be
+applied\
+**When** I attempt to apply the decision\
+**Then** no included employee's salary grade is changed\
+**And** the salary decision remains Draft\
+**And** the review period remains SUBMITTED\
+**And** the reason the decision could not be applied can be identified.
+
+#### AC03 -- Attempt to apply an already applied decision
+
+**Given** a salary decision is APPLIED\
+**When** I attempt to apply it again\
+**Then** the request is rejected\
+**And** no employee salary information is changed.
+
+------------------------------------------------------------------------
+
+## US-SGP-08 -- View Employee Salary History
+
+### User Story
+
+**As an** HR Staff or Approver,\
+**I want to** view an employee's salary history,\
+**so that** I can review how the employee's salary grade has changed
+over time and trace changes to their source.
+
+### Business Rules
+
+-   Salary history is read-only within this capability.
+-   Historical salary records are retained when a new salary grade
+    becomes effective.
+-   Where a salary change originated from a salary decision, that
+    decision remains traceable from the historical record.
+
+### Acceptance Criteria
+
+#### AC01 -- View salary history
+
+**Given** an employee has salary history\
+**When** I view the employee's salary history\
+**Then** I can see the employee's past and current salary grades with
+their applicable effective periods\
+**And** the records are presented from newest to oldest.
+
+#### AC02 -- Trace a change to its salary decision
+
+**Given** a historical salary change originated from a salary decision\
+**When** I review that salary history record\
+**Then** the related salary decision can be identified and viewed as
+read-only.
+
+------------------------------------------------------------------------
+
+## US-SGP-09 -- View and Resume Salary Decisions
+
+### User Story
+
+**As an** Approver,\
+**I want to** view salary decisions and continue working with a draft
+decision,\
+**so that** I can track salary decisions and complete unfinished work
+without creating duplicates.
+
+### Business Rules
+
+-   Salary decisions can have the statuses **DRAFT**, **APPLIED**, or
+    **CANCELLED**.
+-   Draft decisions can be continued and modified only within the rules
+    defined for a Draft decision.
+-   Applied and Cancelled decisions are read-only.
+-   A new salary decision can be created only for a SUBMITTED review
+    period that has no non-cancelled salary decision.
+
+### Acceptance Criteria
+
+#### AC01 -- View salary decisions
+
+**Given** salary decisions exist\
+**When** I view salary decisions\
+**Then** I can identify each decision's decision number, associated
+review period, status, and effective date.
+
+#### AC02 -- Resume a Draft decision
+
+**Given** a salary decision has Draft status\
+**When** I continue working with it\
+**Then** its previously saved information and included employees are
+retained\
+**And** permitted Draft actions remain available.
+
+#### AC03 -- View an Applied or Cancelled decision
+
+**Given** a salary decision has Applied or Cancelled status\
+**When** I view it\
+**Then** its information is available as read-only.
+
+#### AC04 -- Determine whether a new decision can be created
+
+**Given** I want to create a salary decision\
+**When** eligible review periods are determined\
+**Then** only SUBMITTED review periods without a non-cancelled salary
+decision are eligible.
+
+------------------------------------------------------------------------
+
+## US-SGP-10 -- Cancel Draft Salary Decision
+
+### User Story
+
+**As an** Approver,\
+**I want to** cancel a draft salary decision that should no longer
+proceed,\
+**so that** it is formally discontinued without deleting its record or
+changing employee salary information.
+
+### Business Rules
+
+-   Only a **Draft** salary decision can be cancelled.
+-   Cancelling a Draft decision changes its status to **CANCELLED**.
+-   Cancelling a Draft decision does not change employee salary
+    information.
+-   A Cancelled salary decision cannot be edited, applied, or
+    reactivated.
+-   An **Applied** salary decision cannot be cancelled.
+-   After a Draft decision is cancelled, its SUBMITTED review period may
+    be used to create a new salary decision because no non-cancelled
+    decision remains.
+
+### Acceptance Criteria
+
+#### AC01 -- Cancel a Draft salary decision
+
+**Given** a salary decision is Draft\
+**When** I cancel it\
+**Then** its status becomes CANCELLED\
+**And** employee salary information remains unchanged\
+**And** the decision can no longer be edited or applied.
+
+#### AC02 -- Attempt to cancel an Applied decision
+
+**Given** a salary decision is APPLIED\
+**When** I attempt to cancel it\
+**Then** the request is rejected\
+**And** the decision remains APPLIED\
+**And** employee salary information remains unchanged.
+
+#### AC03 -- Attempt to cancel an already Cancelled decision
+
+**Given** a salary decision is CANCELLED\
+**When** I attempt to cancel it again\
+**Then** the request is rejected\
+**And** the decision remains CANCELLED.
+
+#### AC04 -- Create a replacement decision after cancellation
+
+**Given** a Draft salary decision for a SUBMITTED review period has been
+cancelled\
+**When** a new salary decision is created for that review period\
+**Then** the new decision can be created if all other business rules are
+satisfied.
+
+------------------------------------------------------------------------
+
+## US-SGP-11 -- Cancel Review Period
+
+### User Story
+
+**As an** HR Staff,\
+**I want to** cancel a salary review period that should no longer
+proceed,\
+**so that** the review cycle is formally discontinued without deleting
+its record.
+
+### Business Rules
+
+-   A review period can be cancelled while it is **IN_PROGRESS**.
+-   A **SUBMITTED** review period can be cancelled only when it has no
+    non-cancelled salary decision.
+-   A **CLOSED** or already **CANCELLED** review period cannot be
+    cancelled.
+-   Cancelling a review period changes its status to **CANCELLED**.
+-   Cancelling a review period does not delete employee eligibility,
+    proposals, or review outcomes already recorded for the period.
+-   A Cancelled review period cannot be submitted, modified, reopened,
+    or used to create a salary decision.
+
+### Acceptance Criteria
+
+#### AC01 -- Cancel an IN_PROGRESS review period
+
+**Given** a review period is IN_PROGRESS\
+**When** I cancel it\
+**Then** its status becomes CANCELLED\
+**And** its existing review information is retained\
+**And** it cannot be processed further.
+
+#### AC02 -- Cancel a SUBMITTED period without a non-cancelled decision
+
+**Given** a review period is SUBMITTED\
+**And** it has no non-cancelled salary decision\
+**When** I cancel the review period\
+**Then** its status becomes CANCELLED\
+**And** its existing review information is retained.
+
+#### AC03 -- Submitted period has a non-cancelled decision
+
+**Given** a SUBMITTED review period has a Draft or Applied salary
+decision\
+**When** I attempt to cancel the review period\
+**Then** the request is rejected\
+**And** the review period remains SUBMITTED.
+
+#### AC04 -- Attempt to cancel a CLOSED period
+
+**Given** a review period is CLOSED\
+**When** I attempt to cancel it\
+**Then** the request is rejected\
+**And** the review period remains CLOSED.
+
+#### AC05 -- Attempt to cancel an already CANCELLED period
+
+**Given** a review period is CANCELLED\
+**When** I attempt to cancel it again\
+**Then** the request is rejected\
+**And** the review period remains CANCELLED.
+
+------------------------------------------------------------------------
+
+## 6. Definition of Ready
+
+A User Story is considered ready for refinement and implementation when:
+
+-   The actor, goal, and business value are clear.
+-   Required business rules have been confirmed.
+-   Acceptance Criteria describe observable and testable outcomes.
+-   Required reference data and related modules are identified.
+-   Blocking business decisions have been resolved.
+-   The story is sufficiently small and clear for the development team
+    to estimate.
+
+------------------------------------------------------------------------
+
+## 7. References
+
+-   **Employee Profile** -- provides employee information and the
+    employee's current Organizational Unit.
+-   **Organization Management** -- provides Organizational Units used
+    for employee filtering and organizational context.
+-   **Salary Master Data** -- provides the base salary rate, salary
+    scales, ordered salary grades, coefficients, and active/inactive
+    grade status used by this feature.

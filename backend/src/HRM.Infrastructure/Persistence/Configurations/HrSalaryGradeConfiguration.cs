@@ -12,6 +12,7 @@ public class HrSalaryGradeConfiguration : IEntityTypeConfiguration<HrSalaryGrade
         builder.HasKey(g => g.Id);
         builder.Property(g => g.Coefficient).HasColumnType("decimal(5,2)");
         builder.Property(g => g.Status).HasMaxLength(30);
+        builder.Ignore(g => g.IsActive);
         builder.HasIndex(g => new { g.SalaryScaleId, g.GradeNumber }).IsUnique();
 
         builder.HasOne(g => g.SalaryScale)

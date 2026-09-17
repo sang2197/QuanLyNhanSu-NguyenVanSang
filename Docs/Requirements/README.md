@@ -1,6 +1,6 @@
-# Requirements Analysis - Salary Grade Promotion
+# Requirements Analysis
 
-Requirements analysis documents for the **Salary Grade Promotion** feature: the overall mind map, user stories, and the use case diagram derived from them.
+Requirements analysis documents for the HRM system: the overall mind map, user stories (centered on **Salary Grade Promotion**, plus the surrounding Organization Management / Employee Profile / Salary Master Data modules), and the use case diagram derived from them.
 
 ## Mind Map
 
@@ -9,6 +9,9 @@ Requirements analysis documents for the **Salary Grade Promotion** feature: the 
 ## User Stories
 
 - [`UserStories_SalaryGradePromotion.md`](UserStories_SalaryGradePromotion.md) — User stories with business rules and acceptance criteria (Given/When/Then) for the review-and-decision workflow. Written first, independent of any screen or database design.
+- [`UserStories_OrganizationManagement.md`](UserStories_OrganizationManagement.md) — Organizational units (as a tree, typed as Company/Division/Department/Team) and job titles.
+- [`UserStories_EmployeeProfile.md`](UserStories_EmployeeProfile.md) — Employee list/search/detail, employment status. Login account/role is out of scope, deferred to a future Identity & Access Management (IAM) module.
+- [`UserStories_SalaryMasterData.md`](UserStories_SalaryMasterData.md) — Base salary rate, salary scales, and salary grades.
 
 ## Use Case Diagram
 

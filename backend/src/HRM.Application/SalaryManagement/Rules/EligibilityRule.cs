@@ -22,10 +22,16 @@ public class EligibilityRule : IEligibilityRule
                 $"minimum required is {MinMonthsInGrade} months.");
         }
 
-        var nextGrade = gradesInScale.FirstOrDefault(g => g.GradeNumber == currentGrade.GradeNumber + 1);
+        // US-SAL-06: an inactive grade is never proposed — skip forward to the
+        // nearest active grade above the current one, regardless of any gap
+        // in grade numbers (not just an exact +1 match).
+        var nextGrade = gradesInScale
+            .Where(g => g.GradeNumber > currentGrade.GradeNumber && g.IsActive)
+            .OrderBy(g => g.GradeNumber)
+            .FirstOrDefault();
         if (nextGrade is null)
         {
-            return EligibilityResult.Ineligible("Employee is already at the highest grade of their salary scale.");
+            return EligibilityResult.Ineligible("Employee is already at the highest active grade of their salary scale.");
         }
 
         if (alreadyHasProposalThisPeriod)

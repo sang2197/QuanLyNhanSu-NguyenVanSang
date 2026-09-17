@@ -14,13 +14,14 @@ public class EligibilityRuleTests
 {
     private readonly EligibilityRule _rule = new();
 
-    private static HrSalaryGrade Grade(int id, int scaleId, int gradeNumber, decimal coefficient) => new()
+    private static HrSalaryGrade Grade(int id, int scaleId, int gradeNumber, decimal coefficient, string? status = null) => new()
     {
         Id = id,
         SalaryScaleId = scaleId,
         GradeNumber = gradeNumber,
         Coefficient = coefficient,
-        EffectiveFrom = new DateOnly(2020, 1, 1)
+        EffectiveFrom = new DateOnly(2020, 1, 1),
+        Status = status
     };
 
     [Fact]
@@ -92,7 +93,7 @@ public class EligibilityRuleTests
 
         result.IsEligible.Should().BeFalse();
         result.ProposedGrade.Should().BeNull();
-        result.Reason.Should().Contain("highest grade");
+        result.Reason.Should().Contain("highest active grade");
     }
 
     [Fact]
@@ -109,18 +110,72 @@ public class EligibilityRuleTests
         result.Reason.Should().Contain("already has a proposal");
     }
 
+    // US-SAL-06 AC03/AC04 — "next grade" is the nearest ACTIVE grade above the
+    // current one, in ascending order; a gap in grade numbers (whether from a
+    // number that was simply never used, or from a deactivated grade) does
+    // not stop the lookup — it just keeps looking further up.
+
     [Fact]
-    public void Evaluate_NextGradeMustBeExactlyOneNumberHigher_SkipsNonAdjacentGrades()
+    public void Evaluate_GapInGradeNumbers_NextHigherActiveGradeIsStillUsed()
     {
         var currentGrade = Grade(1, scaleId: 1, gradeNumber: 3, coefficient: 3.33m);
-        // Grade 5 exists but grade 4 does not — should not treat 5 as "next".
+        // Grade 5 exists but grade 4 does not — 5 is still the correct "next".
         var gradeFive = Grade(3, scaleId: 1, gradeNumber: 5, coefficient: 4.0m);
         var reviewDate = new DateOnly(2026, 3, 15);
         var effectiveFrom = new DateOnly(2020, 1, 1);
 
         var result = _rule.Evaluate(currentGrade, effectiveFrom, new[] { currentGrade, gradeFive }, reviewDate, alreadyHasProposalThisPeriod: false);
 
+        result.IsEligible.Should().BeTrue();
+        result.ProposedGrade.Should().Be(gradeFive);
+    }
+
+    [Fact]
+    public void Evaluate_ImmediateNextGradeIsInactive_SkipsToNextActiveGrade()
+    {
+        var currentGrade = Grade(1, scaleId: 1, gradeNumber: 3, coefficient: 3.33m);
+        var inactiveGradeFour = Grade(2, scaleId: 1, gradeNumber: 4, coefficient: 3.66m, status: "INACTIVE");
+        var activeGradeFive = Grade(3, scaleId: 1, gradeNumber: 5, coefficient: 4.0m);
+        var reviewDate = new DateOnly(2026, 3, 15);
+        var effectiveFrom = new DateOnly(2020, 1, 1);
+
+        var result = _rule.Evaluate(currentGrade, effectiveFrom, new[] { currentGrade, inactiveGradeFour, activeGradeFive }, reviewDate, alreadyHasProposalThisPeriod: false);
+
+        result.IsEligible.Should().BeTrue();
+        result.ProposedGrade.Should().Be(activeGradeFive);
+    }
+
+    [Fact]
+    public void Evaluate_MultipleConsecutiveInactiveGrades_SkipsAllToNextActiveGrade()
+    {
+        var currentGrade = Grade(1, scaleId: 1, gradeNumber: 1, coefficient: 1.0m);
+        var inactiveGradeTwo = Grade(2, scaleId: 1, gradeNumber: 2, coefficient: 1.2m, status: "INACTIVE");
+        var inactiveGradeThree = Grade(3, scaleId: 1, gradeNumber: 3, coefficient: 1.4m, status: "INACTIVE");
+        var activeGradeFour = Grade(4, scaleId: 1, gradeNumber: 4, coefficient: 1.6m);
+        var reviewDate = new DateOnly(2026, 3, 15);
+        var effectiveFrom = new DateOnly(2020, 1, 1);
+
+        var result = _rule.Evaluate(
+            currentGrade, effectiveFrom,
+            new[] { currentGrade, inactiveGradeTwo, inactiveGradeThree, activeGradeFour },
+            reviewDate, alreadyHasProposalThisPeriod: false);
+
+        result.IsEligible.Should().BeTrue();
+        result.ProposedGrade.Should().Be(activeGradeFour);
+    }
+
+    [Fact]
+    public void Evaluate_AllHigherGradesInactive_IsIneligible()
+    {
+        var currentGrade = Grade(1, scaleId: 1, gradeNumber: 3, coefficient: 3.33m);
+        var inactiveGradeFour = Grade(2, scaleId: 1, gradeNumber: 4, coefficient: 3.66m, status: "INACTIVE");
+        var reviewDate = new DateOnly(2026, 3, 15);
+        var effectiveFrom = new DateOnly(2020, 1, 1);
+
+        var result = _rule.Evaluate(currentGrade, effectiveFrom, new[] { currentGrade, inactiveGradeFour }, reviewDate, alreadyHasProposalThisPeriod: false);
+
         result.IsEligible.Should().BeFalse();
-        result.Reason.Should().Contain("highest grade");
+        result.ProposedGrade.Should().BeNull();
+        result.Reason.Should().Contain("highest active grade");
     }
 }

@@ -184,20 +184,26 @@ public class SalaryDecisionService : ISalaryDecisionService
 
         decision.Status = SalaryDecisionStatus.APPLIED;
         decision.UpdatedAt = DateTime.UtcNow;
+
+        // Terminal transition — CLOSED never reverts, since an Applied
+        // decision can never be cancelled (see CancelDecisionAsync below).
+        decision.ReviewPeriod.Status = ReviewPeriodStatus.CLOSED;
+        decision.ReviewPeriod.UpdatedAt = DateTime.UtcNow;
+
         await _salaryRepository.SaveChangesAsync(ct);
         return decision;
     }
 
-    // US-10 — status-only; never touches HrEmployeeSalary, even for an
-    // already-Applied decision.
+    // US-10 — only a Draft decision can be cancelled; an Applied decision is
+    // permanent and can never be cancelled or edited.
     public async Task<HrSalaryDecision> CancelDecisionAsync(int decisionId, CancellationToken ct = default)
     {
         var decision = await _salaryRepository.GetDecisionAsync(decisionId, ct)
             ?? throw new NotFoundException($"Salary decision {decisionId} not found.");
 
-        if (decision.Status == SalaryDecisionStatus.CANCELLED)
+        if (decision.Status != SalaryDecisionStatus.DRAFT)
         {
-            throw new ConflictException("Decision is already cancelled.");
+            throw new ConflictException($"Only a Draft decision can be cancelled — this decision is {decision.Status}.");
         }
 
         decision.Status = SalaryDecisionStatus.CANCELLED;

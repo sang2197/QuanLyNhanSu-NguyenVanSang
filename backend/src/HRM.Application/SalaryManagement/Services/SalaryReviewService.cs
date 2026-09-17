@@ -29,10 +29,17 @@ public class SalaryReviewService : ISalaryReviewService
     // for every eligible employee, synchronously, in this same call.
     public async Task<HrSalaryReviewPeriod> CreateReviewPeriodAsync(CreateReviewPeriodInput input, CancellationToken ct = default)
     {
-        var existing = await _salaryRepository.GetReviewPeriodByCodeAsync(input.Code, ct);
-        if (existing is not null)
+        var existingCode = await _salaryRepository.GetReviewPeriodByCodeAsync(input.Code, ct);
+        if (existingCode is not null)
         {
             throw new ConflictException($"A review period with code '{input.Code}' already exists.");
+        }
+
+        // US-SGP-01 AC03 — code and name are each independently unique.
+        var existingName = _salaryRepository.QueryReviewPeriods().Any(p => p.Name == input.Name);
+        if (existingName)
+        {
+            throw new ConflictException($"A review period with name '{input.Name}' already exists.");
         }
 
         var period = new HrSalaryReviewPeriod
@@ -135,11 +142,18 @@ public class SalaryReviewService : ISalaryReviewService
             EligibleCount: entries.Count(e => e.EligibilityStatus == EligibilityStatus.ELIGIBLE),
             ApprovedCount: entries.Count(e => e.ReviewStatus == ReviewOutcome.APPROVED),
             RejectedCount: entries.Count(e => e.ReviewStatus == ReviewOutcome.REJECTED),
-            PendingCount: entries.Count(e => e.ReviewStatus == ReviewOutcome.PENDING),
+            // Only an eligible employee ever has something to act on — an
+            // ineligible one has no proposal and stays PENDING forever, so
+            // it must never be counted as "still pending" (US-05).
+            PendingCount: entries.Count(e => e.EligibilityStatus == EligibilityStatus.ELIGIBLE && e.ReviewStatus == ReviewOutcome.PENDING),
             DecisionId: decision?.Id);
     }
 
-    // US-05 — blocked while any employee is still unprocessed.
+    // US-05 — blocked while any ELIGIBLE employee is still unprocessed. An
+    // ineligible employee has no proposal and can never be approved/rejected
+    // (see EnsureApprovableOrRejectable), so it must be excluded here —
+    // otherwise a period containing even one ineligible employee could never
+    // be submitted at all.
     public async Task<HrSalaryReviewPeriod> SubmitReviewPeriodAsync(int periodId, CancellationToken ct = default)
     {
         var period = await _salaryRepository.GetReviewPeriodAsync(periodId, ct)
@@ -151,10 +165,10 @@ public class SalaryReviewService : ISalaryReviewService
         }
 
         var unprocessedCount = _salaryRepository.QueryReviewEmployees(periodId)
-            .Count(e => e.ReviewStatus == ReviewOutcome.PENDING);
+            .Count(e => e.EligibilityStatus == EligibilityStatus.ELIGIBLE && e.ReviewStatus == ReviewOutcome.PENDING);
         if (unprocessedCount > 0)
         {
-            throw new ConflictException($"{unprocessedCount} employee(s) in this period are still unprocessed.");
+            throw new ConflictException($"{unprocessedCount} eligible employee(s) in this period are still unprocessed.");
         }
 
         period.Status = ReviewPeriodStatus.SUBMITTED;

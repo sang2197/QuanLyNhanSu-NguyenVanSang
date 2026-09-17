@@ -1,13 +1,12 @@
 namespace HRM.Domain.Enums;
 
 /// <summary>
-/// DRAFT is transient (only exists mid-creation); IN_PROGRESS is what a
-/// freshly created period is returned as, once proposed grades have been
-/// calculated synchronously in the same request (US-01).
+/// There is no Draft status — a successfully created period enters
+/// IN_PROGRESS directly, in the same request, once proposed grades have
+/// been calculated (US-01). CLOSED and CANCELLED are both terminal.
 /// </summary>
 public enum ReviewPeriodStatus
 {
-    DRAFT,
     IN_PROGRESS,
     SUBMITTED,
     CLOSED,

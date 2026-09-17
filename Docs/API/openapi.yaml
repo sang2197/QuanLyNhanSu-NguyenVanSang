@@ -48,7 +48,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
-          description: A review period with this code already exists
+          description: A review period with this code or this name already exists
           content:
             application/json:
               schema:
@@ -453,13 +453,13 @@ paths:
   /salary-decisions/{decisionId}/cancel:
     post:
       tags: [Salary Decisions]
-      summary: Cancel a salary decision
+      summary: Cancel a draft salary decision
       description: >
-        US-10 — formally cancels a decision (draft or applied) instead of
-        deleting it. Cancelling only marks the decision's status as
-        CANCELLED for audit purposes — it does not revert any employee's
-        salary that was already applied. Reversing a real salary change, if
-        needed, requires drafting and applying a separate new decision.
+        US-10 — formally discontinues a Draft decision instead of deleting
+        it. Only a Draft decision can be cancelled — once a decision has
+        been Applied it is permanent and can never be cancelled or edited;
+        undoing a real salary change, if ever needed, requires drafting and
+        applying a separate new decision.
       parameters:
         - $ref: "#/components/parameters/DecisionId"
       responses:
@@ -472,7 +472,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Decision is already cancelled
+          description: Decision is not a Draft (already Applied or already Cancelled)
           content:
             application/json:
               schema:
@@ -486,7 +486,9 @@ paths:
         US-07 — makes the decision official. Applied to all included
         employees together in a single transaction: if any employee's change
         cannot be applied (e.g. a conflicting record), none of them are
-        updated. A decision can only be applied once.
+        updated. A decision can only be applied once; its review period's
+        status becomes CLOSED as part of the same operation, and neither can
+        be reverted afterward.
       parameters:
         - $ref: "#/components/parameters/DecisionId"
       responses:
@@ -620,14 +622,13 @@ components:
     ReviewPeriodStatus:
       type: string
       description: >
-        DRAFT: transient, only exists mid-creation. IN_PROGRESS: proposed
-        grades have been calculated (synchronously, same request as create)
-        and HR Staff is screening employees — this is the status returned
-        right after a successful create. SUBMITTED: sent to the Approver
-        (US-05). CLOSED: a decision from this period has been applied.
-        CANCELLED: cancelled by HR Staff (US-11) before any decision was
-        drafted from it.
-      enum: [DRAFT, IN_PROGRESS, SUBMITTED, CLOSED, CANCELLED]
+        There is no Draft status — a successfully created period enters
+        IN_PROGRESS directly, in the same request (US-01). IN_PROGRESS:
+        proposed grades have been calculated and HR Staff is screening
+        employees. SUBMITTED: sent to the Approver (US-05). CLOSED: its
+        salary decision has been applied (US-07) — terminal, never reverts.
+        CANCELLED: cancelled by HR Staff (US-11) — terminal.
+      enum: [IN_PROGRESS, SUBMITTED, CLOSED, CANCELLED]
     EligibilityStatus:
       type: string
       enum: [ELIGIBLE, INELIGIBLE]

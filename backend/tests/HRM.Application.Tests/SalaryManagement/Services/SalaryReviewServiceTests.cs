@@ -20,6 +20,9 @@ public class SalaryReviewServiceTests
 
     public SalaryReviewServiceTests()
     {
+        // Default: no existing periods, so the US-SGP-01 AC03 duplicate-name
+        // check doesn't need explicit setup in every unrelated test.
+        _salaryRepo.Setup(r => r.QueryReviewPeriods()).Returns(Array.Empty<HrSalaryReviewPeriod>().AsQueryable());
         _sut = new SalaryReviewService(_salaryRepo.Object, _employeeRepo.Object, _eligibilityRule.Object);
     }
 
@@ -32,6 +35,21 @@ public class SalaryReviewServiceTests
             .ReturnsAsync(new HrSalaryReviewPeriod { Id = 1, Code = "RP-2026-001" });
 
         var input = new CreateReviewPeriodInput("RP-2026-001", "Annual Review", ReviewType.PERIODIC, new DateOnly(2026, 3, 15), null, null);
+
+        var act = () => _sut.CreateReviewPeriodAsync(input);
+
+        await act.Should().ThrowAsync<ConflictException>();
+    }
+
+    [Fact]
+    public async Task CreateReviewPeriod_DuplicateName_ThrowsConflict()
+    {
+        _salaryRepo.Setup(r => r.GetReviewPeriodByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HrSalaryReviewPeriod?)null);
+        _salaryRepo.Setup(r => r.QueryReviewPeriods())
+            .Returns(new[] { new HrSalaryReviewPeriod { Id = 1, Name = "Annual Review" } }.AsQueryable());
+
+        var input = new CreateReviewPeriodInput("RP-2026-002", "Annual Review", ReviewType.PERIODIC, new DateOnly(2026, 3, 15), null, null);
 
         var act = () => _sut.CreateReviewPeriodAsync(input);
 
@@ -100,6 +118,28 @@ public class SalaryReviewServiceTests
         capturedEntries.Should().BeEmpty();
     }
 
+    // ---------- GetReviewPeriodDetailAsync ----------
+
+    [Fact]
+    public async Task GetReviewPeriodDetail_PendingCount_ExcludesIneligibleEmployees()
+    {
+        var period = new HrSalaryReviewPeriod { Id = 1, Status = ReviewPeriodStatus.IN_PROGRESS };
+        _salaryRepo.Setup(r => r.GetReviewPeriodAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(period);
+        _salaryRepo.Setup(r => r.QueryReviewEmployees(1)).Returns(new[]
+        {
+            new HrSalaryReviewEmployee { ReviewPeriodId = 1, EmployeeId = 1, ReviewStatus = ReviewOutcome.PENDING, EligibilityStatus = EligibilityStatus.ELIGIBLE },
+            new HrSalaryReviewEmployee { ReviewPeriodId = 1, EmployeeId = 2, ReviewStatus = ReviewOutcome.PENDING, EligibilityStatus = EligibilityStatus.INELIGIBLE },
+            new HrSalaryReviewEmployee { ReviewPeriodId = 1, EmployeeId = 3, ReviewStatus = ReviewOutcome.PENDING, EligibilityStatus = EligibilityStatus.INELIGIBLE }
+        }.AsQueryable());
+        _salaryRepo.Setup(r => r.QueryDecisions()).Returns(Array.Empty<HrSalaryDecision>().AsQueryable());
+
+        var result = await _sut.GetReviewPeriodDetailAsync(1);
+
+        result.TotalEmployees.Should().Be(3);
+        result.EligibleCount.Should().Be(1);
+        result.PendingCount.Should().Be(1); // the 2 ineligible employees are not "pending" anything
+    }
+
     // ---------- SubmitReviewPeriod (US-05) ----------
 
     [Fact]
@@ -146,6 +186,25 @@ public class SalaryReviewServiceTests
         _salaryRepo.Setup(r => r.QueryReviewEmployees(1)).Returns(new[]
         {
             new HrSalaryReviewEmployee { ReviewPeriodId = 1, EmployeeId = 1, ReviewStatus = ReviewOutcome.APPROVED }
+        }.AsQueryable());
+
+        var result = await _sut.SubmitReviewPeriodAsync(1);
+
+        result.Status.Should().Be(ReviewPeriodStatus.SUBMITTED);
+    }
+
+    [Fact]
+    public async Task SubmitReviewPeriod_OnlyIneligibleEmployeesStillPending_StillSubmits()
+    {
+        // An ineligible employee is never approved/rejected (there is no
+        // proposal to act on) and stays PENDING forever — it must not block
+        // submission, or the period could never be submitted at all.
+        var period = new HrSalaryReviewPeriod { Id = 1, Status = ReviewPeriodStatus.IN_PROGRESS };
+        _salaryRepo.Setup(r => r.GetReviewPeriodAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(period);
+        _salaryRepo.Setup(r => r.QueryReviewEmployees(1)).Returns(new[]
+        {
+            new HrSalaryReviewEmployee { ReviewPeriodId = 1, EmployeeId = 1, ReviewStatus = ReviewOutcome.APPROVED, EligibilityStatus = EligibilityStatus.ELIGIBLE },
+            new HrSalaryReviewEmployee { ReviewPeriodId = 1, EmployeeId = 2, ReviewStatus = ReviewOutcome.PENDING, EligibilityStatus = EligibilityStatus.INELIGIBLE }
         }.AsQueryable());
 
         var result = await _sut.SubmitReviewPeriodAsync(1);

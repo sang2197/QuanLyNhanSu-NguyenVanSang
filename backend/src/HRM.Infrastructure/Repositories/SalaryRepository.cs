@@ -55,6 +55,7 @@ public class SalaryRepository : ISalaryRepository
             .Include(d => d.Details).ThenInclude(det => det.NewSalaryGrade)
             .Include(d => d.Details).ThenInclude(det => det.OldGrade)
             .Include(d => d.Details).ThenInclude(det => det.Employee)
+            .Include(d => d.ReviewPeriod)
             .FirstOrDefaultAsync(d => d.Id == decisionId, ct);
 
     public IQueryable<HrSalaryDecision> QueryDecisions() => _context.Decisions.AsQueryable();

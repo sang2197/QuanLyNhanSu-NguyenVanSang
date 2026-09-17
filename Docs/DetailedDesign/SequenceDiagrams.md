@@ -64,11 +64,11 @@ sequenceDiagram
     FE->>API: POST /review-periods/{periodId}/submit
     API->>SVC: SubmitReviewPeriod(periodId)
     SVC->>REPO: CountUnprocessedEmployees(periodId)
-    REPO->>DB: SELECT COUNT(*) WHERE ReviewOutcome='PENDING'
+    REPO->>DB: SELECT COUNT(*) WHERE EligibilityStatus='ELIGIBLE' AND ReviewOutcome='PENDING'
     DB-->>REPO: count
     REPO-->>SVC: count
     alt count > 0
-        SVC-->>API: 409 Conflict — employees still unprocessed
+        SVC-->>API: 409 Conflict — eligible employees still unprocessed
         API-->>FE: 409 Conflict
     else count == 0
         SVC->>REPO: UpdatePeriodStatus(periodId, SUBMITTED)
@@ -122,11 +122,13 @@ sequenceDiagram
         end
         SVC->>REPO: UpdateDecisionStatus(decisionId, APPLIED)
         REPO->>DB: UPDATE HrSalaryDecision SET Status='APPLIED'
+        SVC->>REPO: UpdatePeriodStatus(reviewPeriodId, CLOSED)
+        REPO->>DB: UPDATE HrSalaryReviewPeriod SET Status='CLOSED'
         SVC->>REPO: CommitTransaction()
         REPO-->>SVC: OK
         SVC-->>API: SalaryDecisionDetail
         API-->>FE: 200 OK
-        FE-->>APR: Decision applied — salaries updated
+        FE-->>APR: Decision applied — salaries updated, review period closed
     end
 ```
 
@@ -244,7 +246,7 @@ sequenceDiagram
     alt status is CLOSED or CANCELLED
         SVC-->>API: 409 Conflict — already Closed/Cancelled
         API-->>FE: 409 Conflict
-    else status is DRAFT, IN_PROGRESS, or SUBMITTED
+    else status is IN_PROGRESS or SUBMITTED
         SVC->>REPO: CheckNoExistingDecision(periodId)
         REPO->>DB: SELECT HrSalaryDecision WHERE ReviewPeriodId=... AND Status<>'CANCELLED'
         DB-->>REPO: row?
@@ -284,15 +286,15 @@ sequenceDiagram
     REPO->>DB: SELECT HrSalaryDecision
     DB-->>REPO: row
     REPO-->>SVC: decision
-    alt status is already CANCELLED
-        SVC-->>API: 409 Conflict
+    alt status is APPLIED or already CANCELLED
+        SVC-->>API: 409 Conflict — only a Draft decision can be cancelled (US-10)
         API-->>FE: 409 Conflict
-    else status is DRAFT or APPLIED
+    else status is DRAFT
         SVC->>REPO: UpdateDecisionStatus(decisionId, CANCELLED)
         REPO->>DB: UPDATE HrSalaryDecision SET Status='CANCELLED'
         DB-->>REPO: OK
         REPO-->>SVC: OK
-        Note over SVC,DB: HrEmployeeSalary is never touched here — cancelling<br/>is status-only, even if this decision was already Applied.
+        Note over SVC,DB: HrEmployeeSalary is never touched — a cancelled<br/>decision was never Applied, so there is nothing to revert.
         SVC-->>API: SalaryDecisionDetail
         API-->>FE: 200 OK
     end
