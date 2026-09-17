@@ -62,6 +62,20 @@ public class SalaryDecisionServiceTests
         await act.Should().ThrowAsync<ValidationException>();
     }
 
+    // US-SGP-06 AC06 — the decision cannot take effect before the review that produced it.
+    [Fact]
+    public async Task CreateDecision_EffectiveDateBeforeReviewDate_ThrowsValidation()
+    {
+        _salaryRepo.Setup(r => r.GetReviewPeriodAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HrSalaryReviewPeriod { Id = 1, Status = ReviewPeriodStatus.SUBMITTED, ReviewDate = new DateOnly(2026, 5, 1) });
+        _salaryRepo.Setup(r => r.HasNonCancelledDecisionAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        // Input() uses an effective date of 2026-04-01, earlier than the review date above.
+        var act = () => _sut.CreateDecisionAsync(Input(1, 5));
+
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
     [Fact]
     public async Task CreateDecision_AllApproved_CopiesProposedGradeIntoDetail_AsDraft()
     {
@@ -161,13 +175,14 @@ public class SalaryDecisionServiceTests
     public async Task ApplyDecision_NoConflicts_ClosesOldSalaryAndCreatesNew_ForEveryEmployee_AndClosesReviewPeriod()
     {
         var grade = new HrSalaryGrade { Id = 11, SalaryScaleId = 1, GradeNumber = 4, Coefficient = 3.66m };
-        var detail = new HrSalaryDecisionDetail { EmployeeId = 5, EffectiveFrom = new DateOnly(2026, 4, 1), NewSalaryGradeId = 11, NewCoefficient = 3.66m, NewSalaryGrade = grade };
+        var detail = new HrSalaryDecisionDetail { EmployeeId = 5, EffectiveFrom = new DateOnly(2026, 4, 1), OldGradeId = 10, NewSalaryGradeId = 11, NewCoefficient = 3.66m, NewSalaryGrade = grade };
         var reviewPeriod = new HrSalaryReviewPeriod { Id = 1, Status = ReviewPeriodStatus.SUBMITTED };
         var decision = new HrSalaryDecision { Id = 1, DecisionNumber = "SD-2026-001", Status = SalaryDecisionStatus.DRAFT, Details = new List<HrSalaryDecisionDetail> { detail }, ReviewPeriod = reviewPeriod };
         _salaryRepo.Setup(r => r.GetDecisionAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(decision);
         _salaryRepo.Setup(r => r.HasEffectiveDateConflictAsync(5, detail.EffectiveFrom, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var currentSalary = new HrEmployeeSalary { Id = 200, EmployeeId = 5, SalaryScaleId = 1, EffectiveFrom = new DateOnly(2020, 1, 1) };
+        // Current grade (10) still matches the snapshot captured in the detail (OldGradeId = 10).
+        var currentSalary = new HrEmployeeSalary { Id = 200, EmployeeId = 5, SalaryScaleId = 1, SalaryGradeId = 10, EffectiveFrom = new DateOnly(2020, 1, 1) };
         _salaryRepo.Setup(r => r.GetCurrentSalaryAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(currentSalary);
 
         var result = await _sut.ApplyDecisionAsync(1);
@@ -177,6 +192,34 @@ public class SalaryDecisionServiceTests
         _salaryRepo.Verify(r => r.CloseSalaryAsync(currentSalary, detail.EffectiveFrom.AddDays(-1), It.IsAny<CancellationToken>()), Times.Once);
         _salaryRepo.Verify(r => r.AddSalaryAsync(It.Is<HrEmployeeSalary>(s => s.EmployeeId == 5 && s.SalaryGradeId == 11 && s.DecisionId == 1), It.IsAny<CancellationToken>()), Times.Once);
         _salaryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // US-SGP-07 AC04 — the employee's grade moved since the decision snapshot was taken.
+    [Fact]
+    public async Task ApplyDecision_EmployeeGradeNoLongerMatchesSnapshot_ThrowsConflict_NoOneIsUpdated()
+    {
+        var grade = new HrSalaryGrade { Id = 11, SalaryScaleId = 1, GradeNumber = 4, Coefficient = 3.66m };
+        var detail1 = new HrSalaryDecisionDetail { EmployeeId = 5, EffectiveFrom = new DateOnly(2026, 4, 1), OldGradeId = 10, NewSalaryGradeId = 11, NewCoefficient = 3.66m, NewSalaryGrade = grade };
+        var detail2 = new HrSalaryDecisionDetail { EmployeeId = 6, EffectiveFrom = new DateOnly(2026, 4, 1), OldGradeId = 10, NewSalaryGradeId = 11, NewCoefficient = 3.66m, NewSalaryGrade = grade };
+        var decision = new HrSalaryDecision { Id = 1, DecisionNumber = "SD-2026-001", Status = SalaryDecisionStatus.DRAFT, Details = new List<HrSalaryDecisionDetail> { detail1, detail2 } };
+        _salaryRepo.Setup(r => r.GetDecisionAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(decision);
+
+        // Employee 5 still on the snapshotted grade (10); employee 6 has since moved to grade 12
+        // via some other path — the decision's snapshot for employee 6 is stale.
+        _salaryRepo.Setup(r => r.GetCurrentSalaryAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HrEmployeeSalary { EmployeeId = 5, SalaryGradeId = 10 });
+        _salaryRepo.Setup(r => r.GetCurrentSalaryAsync(6, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HrEmployeeSalary { EmployeeId = 6, SalaryGradeId = 12 });
+        _salaryRepo.Setup(r => r.HasEffectiveDateConflictAsync(5, detail1.EffectiveFrom, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var act = () => _sut.ApplyDecisionAsync(1);
+
+        await act.Should().ThrowAsync<ConflictException>();
+        // All-or-nothing: neither employee's salary should have been touched, including
+        // employee 5 whose own snapshot was still valid.
+        _salaryRepo.Verify(r => r.CloseSalaryAsync(It.IsAny<HrEmployeeSalary>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
+        _salaryRepo.Verify(r => r.AddSalaryAsync(It.IsAny<HrEmployeeSalary>(), It.IsAny<CancellationToken>()), Times.Never);
+        _salaryRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ---------- CancelDecision (US-10) — Draft only, Applied is permanent ----------

@@ -4,7 +4,11 @@ Requirements analysis documents for the HRM system: the overall mind map, user s
 
 ## Mind Map
 
-- [`Quản lý nhân sự.xmind`](Quản%20lý%20nhân%20sự.xmind) — Top-down mind map breaking down the whole HRM system into its 6 function groups, down to feature-level detail.
+Top-down mind map breaking down the whole HRM system into its 6 function groups, down to feature-level detail.
+
+![HRM Mind Map](HrmMindMap.png)
+
+- [`Quản lý nhân sự.xmind`](Quản%20lý%20nhân%20sự.xmind) — editable source file (requires XMind to open).
 
 ## User Stories
 
@@ -13,6 +17,9 @@ Requirements analysis documents for the HRM system: the overall mind map, user s
 - [`UserStories_EmployeeProfile.md`](UserStories_EmployeeProfile.md) — Employee list/search/detail, employment status. Login account/role is out of scope, deferred to a future Identity & Access Management (IAM) module.
 - [`UserStories_SalaryMasterData.md`](UserStories_SalaryMasterData.md) — Base salary rate, salary scales, and salary grades.
 
-## Use Case Diagram
+## Use Cases
 
 - [`UseCase_SalaryGradePromotion.md`](UseCase_SalaryGradePromotion.md) — Use case diagram and description (actors and main actions).
+- [`UseCase_EmployeeProfile.md`](UseCase_EmployeeProfile.md) — UML 2.5.1 use case diagram, Cockburn-style specifications (adjusted), and full Use Case ↔ User Story ↔ Business Rule traceability.
+- [`UseCase_OrganizationManagement.md`](UseCase_OrganizationManagement.md) — UML 2.5.1 use case diagram, Cockburn-style specifications (adjusted), and full Use Case ↔ User Story ↔ Business Rule traceability.
+- [`UseCase_SalaryMasterData.md`](UseCase_SalaryMasterData.md) — UML 2.5.1 use case diagram, Cockburn-style specifications (adjusted), and full Use Case ↔ User Story ↔ Business Rule traceability.

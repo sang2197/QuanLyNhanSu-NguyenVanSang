@@ -34,6 +34,14 @@ public class SalaryDecisionService : ISalaryDecisionService
             throw new ConflictException("This review period already has a non-cancelled decision drafted from it.");
         }
 
+        // US-SGP-06 AC06 — the decision cannot take effect before the review
+        // that produced it.
+        if (input.EffectiveDate < period.ReviewDate)
+        {
+            throw new ValidationException(
+                $"Effective date {input.EffectiveDate} cannot be earlier than the review period's review date {period.ReviewDate}.");
+        }
+
         var details = new List<HrSalaryDecisionDetail>();
         var notApproved = new List<int>();
         foreach (var employeeId in input.EmployeeIds)
@@ -146,8 +154,21 @@ public class SalaryDecisionService : ISalaryDecisionService
         }
 
         var conflicts = new List<int>();
+        var currentSalaries = new Dictionary<int, HrEmployeeSalary?>();
         foreach (var detail in decision.Details)
         {
+            var currentSalary = await _salaryRepository.GetCurrentSalaryAsync(detail.EmployeeId, ct);
+            currentSalaries[detail.EmployeeId] = currentSalary;
+
+            // US-SGP-07 AC04 — the employee's grade may have moved since the
+            // decision was drafted (e.g. via another applied decision); the
+            // snapshot this decision was built from is no longer valid.
+            if (currentSalary?.SalaryGradeId != detail.OldGradeId)
+            {
+                conflicts.Add(detail.EmployeeId);
+                continue;
+            }
+
             if (await _salaryRepository.HasEffectiveDateConflictAsync(detail.EmployeeId, detail.EffectiveFrom, ct))
             {
                 conflicts.Add(detail.EmployeeId);
@@ -162,7 +183,7 @@ public class SalaryDecisionService : ISalaryDecisionService
 
         foreach (var detail in decision.Details)
         {
-            var currentSalary = await _salaryRepository.GetCurrentSalaryAsync(detail.EmployeeId, ct);
+            var currentSalary = currentSalaries[detail.EmployeeId];
             if (currentSalary is not null)
             {
                 await _salaryRepository.CloseSalaryAsync(currentSalary, detail.EffectiveFrom.AddDays(-1), ct);

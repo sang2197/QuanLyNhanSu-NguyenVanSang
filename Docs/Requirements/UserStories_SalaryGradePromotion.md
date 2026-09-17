@@ -407,6 +407,8 @@ take effect.
 -   Additional employees cannot be added to an existing draft. If a
     different employee set is required, the draft must be cancelled and
     a new decision created.
+-   The decision's effective date must be on or after the review
+    period's review date.
 
 ### Acceptance Criteria
 
@@ -448,6 +450,14 @@ period\
 **When** I attempt to add another employee to the existing draft\
 **Then** the request is rejected.
 
+#### AC06 -- Effective date earlier than the review date
+
+**Given** a review period is SUBMITTED with a given review date\
+**When** I attempt to create a salary decision with an effective date
+earlier than the review date\
+**Then** the request is rejected\
+**And** no salary decision is created.
+
 ------------------------------------------------------------------------
 
 ## US-SGP-07 -- Apply Salary Decision
@@ -467,6 +477,10 @@ retained as part of each employee's salary history.
     date.
 -   Applying a salary decision follows an **all-or-nothing** rule: all
     included employee changes must succeed together.
+-   Before applying, each included employee's current salary grade must
+    still match the current grade captured when the decision was
+    created; if it no longer matches, that employee's change cannot be
+    applied.
 -   If any included employee's change cannot be applied, no employee
     salary grade in the decision is changed.
 -   Applying the decision preserves each employee's prior salary
@@ -508,6 +522,18 @@ applied\
 **When** I attempt to apply it again\
 **Then** the request is rejected\
 **And** no employee salary information is changed.
+
+#### AC04 -- Employee's current grade no longer matches the snapshot
+
+**Given** a Draft salary decision includes an employee\
+**And** that employee's current salary grade has changed since the
+decision was created, so it no longer matches the grade captured at
+that time\
+**When** I attempt to apply the decision\
+**Then** no included employee's salary grade is changed\
+**And** the salary decision remains Draft\
+**And** the review period remains SUBMITTED\
+**And** the employee whose grade no longer matches can be identified.
 
 ------------------------------------------------------------------------
 

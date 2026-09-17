@@ -137,6 +137,7 @@ containing ordered salary grades.
 -   A salary scale name must be unique.
 -   A newly created salary scale is available for salary grade
     definition while it is active.
+-   A newly created salary scale is Active by default.
 
 ### Acceptance Criteria
 
@@ -159,6 +160,12 @@ containing ordered salary grades.
 **When** I attempt to create the salary scale\
 **Then** the system rejects the request\
 **And** no salary scale is created.
+
+#### AC04 -- New salary scale is Active by default
+
+**Given** I create a valid salary scale\
+**When** the salary scale is saved\
+**Then** its status is Active without any additional action.
 
 ------------------------------------------------------------------------
 
@@ -226,6 +233,11 @@ through defined salary grades.
     Grade 3.
 -   A salary grade coefficient must be greater than zero.
 -   A new salary grade can only be created under an active salary scale.
+-   A newly created salary grade is Active by default.
+-   The initial coefficient recorded when a salary grade is created is
+    its current coefficient and does not require a separate effective
+    date; only subsequent coefficient changes are effective-dated (see
+    **US-SAL-05**).
 
 ### Acceptance Criteria
 
@@ -268,6 +280,14 @@ satisfied.
 **Then** the system rejects the request\
 **And** no salary grade is created.
 
+#### AC06 -- New salary grade is Active by default
+
+**Given** I create a valid salary grade\
+**When** the salary grade is saved\
+**Then** its status is Active without any additional action\
+**And** its initial coefficient applies immediately without a separate
+effective date.
+
 ------------------------------------------------------------------------
 
 ## US-SAL-05 -- Update Salary Grade Coefficient
@@ -291,6 +311,8 @@ overwriting historical values.
     effective date already recorded for that salary grade.
 -   A coefficient cannot be inserted between previously recorded
     effective dates for the salary grade.
+-   A new coefficient cannot be recorded while the salary grade is
+    inactive.
 
 ### Acceptance Criteria
 
@@ -336,6 +358,13 @@ than or equal to the latest recorded effective date\
 **Then** the system rejects the request\
 **And** no new coefficient is recorded.
 
+#### AC06 -- Reject a coefficient update for an inactive grade
+
+**Given** a salary grade is inactive\
+**When** I attempt to record a new coefficient for it\
+**Then** the system rejects the request\
+**And** no new coefficient is recorded.
+
 ------------------------------------------------------------------------
 
 ## US-SAL-06 -- Deactivate or Reactivate Salary Grade
@@ -360,6 +389,8 @@ assignments and promotion proposals without deleting historical data.
 -   When one or more consecutive grades are inactive, the next active
     grade in ascending grade order is used as the next grade.
 -   A deactivated salary grade can be reactivated.
+-   A deactivated salary grade can be reactivated only when its salary
+    scale is active.
 
 ### Acceptance Criteria
 
@@ -401,10 +432,20 @@ inactive\
 #### AC05 -- Reactivate a salary grade
 
 **Given** a salary grade is inactive\
+**And** its salary scale is active\
 **When** I reactivate it\
 **Then** its status becomes active\
 **And** it becomes available for use again subject to the applicable
 business rules.
+
+#### AC06 -- Reactivate a salary grade whose scale is inactive
+
+**Given** a salary grade is inactive\
+**And** its salary scale is also inactive\
+**When** I attempt to reactivate the salary grade\
+**Then** the system rejects the reactivation\
+**And** the salary grade remains inactive\
+**And** informs me that the salary scale must be reactivated first.
 
 ------------------------------------------------------------------------
 

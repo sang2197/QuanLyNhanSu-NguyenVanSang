@@ -212,6 +212,9 @@ recreating the affected unit.
 -   An organizational unit cannot be moved under one of its descendants.
 -   An organizational unit can only be moved under an active parent
     unit.
+-   A non-top-level organizational unit can only be moved to another
+    active parent; moving it to the top level (removing its parent) is
+    not allowed.
 -   After the move, the unit's name must remain unique among units under
     its new parent.
 -   Moving an organizational unit does not automatically detach or
@@ -256,6 +259,14 @@ name\
 **Then** the system rejects the move\
 **And** the existing hierarchy remains unchanged.
 
+#### AC06 -- Move a unit to the top level
+
+**Given** an organizational unit currently has a parent\
+**When** I attempt to move it to the top level, without selecting a new
+parent\
+**Then** the system rejects the move\
+**And** the existing hierarchy remains unchanged.
+
 ------------------------------------------------------------------------
 
 ## US-ORG-05 -- Deactivate or Reactivate Organizational Unit
@@ -281,6 +292,9 @@ without losing organizational records.
 -   A deactivated organizational unit remains visible in the
     organization hierarchy.
 -   A deactivated organizational unit can be reactivated.
+-   An organizational unit that has a parent can only be reactivated if
+    its parent is active; the parent must be reactivated first
+    otherwise.
 
 ### Acceptance Criteria
 
@@ -316,10 +330,20 @@ handled first\
 #### AC04 -- Reactivate an organizational unit
 
 **Given** an organizational unit is inactive\
+**And** its parent unit, if any, is active\
 **When** I reactivate it\
 **Then** its status becomes active\
 **And** it becomes available for use again subject to the applicable
 business rules.
+
+#### AC05 -- Reactivate a unit whose parent is inactive
+
+**Given** an organizational unit is inactive\
+**And** its parent unit is also inactive\
+**When** I attempt to reactivate the unit\
+**Then** the system rejects the reactivation\
+**And** the unit remains inactive\
+**And** informs me that the parent unit must be reactivated first.
 
 ------------------------------------------------------------------------
 
