@@ -2,3 +2,8 @@
 __pycache__/
 *.pyc
 Docs/UI-UX/*.html
+
+# .NET build artifacts (backend/)
+bin/
+obj/
+*.user
