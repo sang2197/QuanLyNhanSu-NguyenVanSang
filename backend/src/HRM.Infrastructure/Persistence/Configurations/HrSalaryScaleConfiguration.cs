@@ -13,7 +13,7 @@ public class HrSalaryScaleConfiguration : IEntityTypeConfiguration<HrSalaryScale
         builder.Property(s => s.Code).HasMaxLength(50).IsRequired();
         builder.HasIndex(s => s.Code).IsUnique();
         builder.Property(s => s.Name).HasMaxLength(255).IsRequired();
-        builder.Property(s => s.Description).HasMaxLength(500);
-        builder.Property(s => s.Status).HasMaxLength(30);
+        builder.HasIndex(s => s.Name).IsUnique();
+        builder.Property(s => s.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
     }
 }

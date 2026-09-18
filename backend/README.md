@@ -1,6 +1,23 @@
-# Backend - Salary Grade Promotion
+# Backend
 
-ASP.NET Core (.NET 8) implementation of the Salary Grade Promotion API, built strictly from [`Docs/`](../Docs/README.md) — see [`Docs/CodeStructure/BackendStructure.md`](../Docs/CodeStructure/BackendStructure.md) for the folder-structure rationale and [`Docs/API/openapi.yaml`](../Docs/API/openapi.yaml) for the API contract.
+ASP.NET Core (.NET 8) implementation of the full HRM system, built from [`Docs/`](../Docs/README.md) — see [`Docs/CodeStructure/BackendStructure.md`](../Docs/CodeStructure/BackendStructure.md) for the folder-structure rationale and [`Docs/API/openapi.yaml`](../Docs/API/openapi.yaml) for the API contract. Covers all 4 modules: Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion (12 tables, 49 endpoints across 10 tags).
+
+## Architecture
+
+Clean/Onion Architecture, one direction of dependency:
+
+```
+HRM.Domain → HRM.Application → HRM.Infrastructure → HRM.Api
+```
+
+- **HRM.Domain** — entities and enums only, no dependencies.
+- **HRM.Application** — business rules (`Services/`), the interfaces Infrastructure implements (`Interfaces/`), and small composite models the entities alone don't cover (`Models/`). No EF Core reference — repositories are consumed through `IQueryable<T>` with plain synchronous LINQ.
+- **HRM.Infrastructure** — `HrmDbContext`, EF Core configurations, repository implementations, `UnitOfWork`.
+- **HRM.Api** — controllers, request/response DTOs, mapping extensions, `ExceptionHandlingMiddleware`.
+
+Each layer is split into the same 4 domain subfolders (`EmployeeManagement/`, `OrganizationManagement/`, `SalaryMasterData/`, `SalaryGradePromotion/`) per ADR-03. A service may depend on another domain's *service interface* but never another domain's repository directly. Two genuine cross-domain dependencies resolve through `Lazy<T>` to avoid a DI constructor cycle: `OrganizationalUnitService ↔ EmployeeService`, and `SalaryGradeService → ISalaryHistoryService`.
+
+`IUnitOfWork` (`HRM.Application/Common/`, implemented in `HRM.Infrastructure/Persistence/`) wraps `HrmDbContext` transactions for the two flows that write across multiple repositories: `ReviewPeriodService.CreateReviewPeriodAsync` and `SalaryDecisionService.ApplyDecisionAsync`.
 
 ## Run
 
@@ -20,20 +37,12 @@ dotnet ef database update --project src/HRM.Infrastructure --startup-project src
 dotnet test
 ```
 
-- `tests/HRM.Application.Tests` — unit tests for the Service/Rules layer (mocked repositories, no database). This is where every business rule from `UserStories_SalaryGradePromotion.md` (US-01 → US-11) is covered, especially the eligibility rule (RISK-08).
-- `tests/HRM.Api.Tests` — integration tests through the real HTTP pipeline (`WebApplicationFactory` + EF Core InMemory), checking routing/status codes against `openapi.yaml`.
+- `tests/HRM.Application.Tests` — unit tests for the Service/Rules layer (Moq + FluentAssertions, no database). Every business rule and guard traced from `Docs/DetailedDesign/SequenceDiagrams.md`/`StateDiagrams.md` is covered here.
+- `tests/HRM.Api.Tests` — integration tests through the real HTTP pipeline (`WebApplicationFactory` + EF Core InMemory), checking routing/status codes against `openapi.yaml`. Business-rule edge cases are deliberately left to `HRM.Application.Tests`.
 
-## Known deviations from the docs
-
-**This backend was built against an earlier, Salary-Grade-Promotion-only database design (8 tables).** `Docs/Database/` has since been redesigned from scratch to cover the full analyzed system (Employee Profile, Organization Management, Salary Master Data, and Salary Grade Promotion — 12 tables), based on the current `UserStories_*.md`/`UseCase_*.md` for all four modules rather than on this implementation. The backend has not been migrated to the new schema yet. Notably: `HrOrganizationalUnit`/`HrJobTitle` are now real tables (this backend still uses bare `DepartmentId`/`PositionId` ints with no FK), salary-grade coefficients now have their own effective-dated history table instead of a single mutable column, and `HrSalaryDecision.DecisionType`/`FileUrl`/`SignerEmployeeId` were dropped (none are described by any current User Story/Use Case). Migrating this backend to the new schema is a separate, not-yet-started task.
-
-**`Docs/API/openapi.yaml` has also been redesigned from scratch**, the same way as the database, to cover all four modules (49 endpoints) with `integer` path IDs matching the new schema's `int IDENTITY` keys. This backend was built against the earlier, narrower spec, which is no longer in the docs — see `Docs/API/README.md`.
-
-One smaller, previously-noted deviation against the old schema/spec (still true today, and superseded by the redesign above rather than fixed):
-
-- `HrSalaryReviewPeriodConfiguration.cs` only enforces a unique index on `Code`, not `Name`, even though US-SGP-01 AC03 requires rejecting a duplicate name.
+Current state: 155 Application.Tests + 76 Api.Tests, all passing, 0 build warnings.
 
 ## Out of scope (see `Docs/API/README.md`)
 
-- JWT auth / `[Authorize]` — RISK-05 (role model) not finalized yet.
-- Master Data CRUD (Employees/Salary Scales/Salary Grades) — not designed; tests seed fixed data directly.
+- **JWT auth / `[Authorize]`** — [ADR-07](../Docs/Arc42/09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism) is Proposed but not implemented; the role model (RISK-05) isn't finalized yet. `openapi.yaml` declares the `bearerAuth` scheme for documentation purposes only — no endpoint enforces it.
+- **Identity & Access Management** (accounts, roles, permissions, the `/login` endpoint) — explicitly out of scope for every module's requirements.

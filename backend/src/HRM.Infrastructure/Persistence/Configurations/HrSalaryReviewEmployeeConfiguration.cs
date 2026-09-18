@@ -12,10 +12,9 @@ public class HrSalaryReviewEmployeeConfiguration : IEntityTypeConfiguration<HrSa
         builder.HasKey(e => e.Id);
         builder.Property(e => e.CurrentCoefficient).HasColumnType("decimal(5,2)");
         builder.Property(e => e.ProposedCoefficient).HasColumnType("decimal(5,2)");
-        builder.Property(e => e.EligibilityStatus).HasConversion<string>().HasMaxLength(30);
-        builder.Property(e => e.EligibilityReason).HasMaxLength(500);
-        builder.Property(e => e.ReviewStatus).HasConversion<string>().HasMaxLength(30).IsRequired();
-        builder.Property(e => e.Reason).HasMaxLength(500);
+        builder.Property(e => e.Outcome).HasConversion<string>().HasMaxLength(30);
+        builder.Property(e => e.IneligibleReason).HasMaxLength(500);
+        builder.Property(e => e.RejectionReason).HasMaxLength(500);
 
         builder.HasIndex(e => new { e.ReviewPeriodId, e.EmployeeId }).IsUnique();
 
@@ -29,19 +28,14 @@ public class HrSalaryReviewEmployeeConfiguration : IEntityTypeConfiguration<HrSa
             .HasForeignKey(e => e.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(e => e.CurrentSalary)
+        builder.HasOne(e => e.CurrentSalaryGrade)
             .WithMany()
-            .HasForeignKey(e => e.CurrentSalaryId)
+            .HasForeignKey(e => e.CurrentSalaryGradeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(e => e.CurrentGrade)
+        builder.HasOne(e => e.ProposedSalaryGrade)
             .WithMany()
-            .HasForeignKey(e => e.CurrentGradeId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(e => e.ProposedGrade)
-            .WithMany()
-            .HasForeignKey(e => e.ProposedGradeId)
+            .HasForeignKey(e => e.ProposedSalaryGradeId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

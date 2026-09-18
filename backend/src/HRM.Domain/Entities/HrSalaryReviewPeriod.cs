@@ -10,8 +10,8 @@ public class HrSalaryReviewPeriod
     public ReviewType ReviewType { get; set; }
     public DateOnly ReviewDate { get; set; }
     public DateOnly? EffectiveDate { get; set; }
-    public ReviewPeriodStatus Status { get; set; }
     public string? Description { get; set; }
+    public ReviewPeriodStatus Status { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 

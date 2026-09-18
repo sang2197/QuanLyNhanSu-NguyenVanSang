@@ -22,6 +22,31 @@ namespace HRM.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("HRM.Domain.Entities.HrBaseSalaryRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EffectiveDate")
+                        .IsUnique();
+
+                    b.ToTable("HrBaseSalaryRate", (string)null);
+                });
+
             modelBuilder.Entity("HRM.Domain.Entities.HrEmployee", b =>
                 {
                     b.Property<int>("Id")
@@ -33,28 +58,29 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("DepartmentId")
-                        .HasColumnType("int");
-
                     b.Property<string>("EmployeeCode")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("EmploymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<DateOnly?>("JoinDate")
-                        .HasColumnType("date");
-
-                    b.Property<int?>("PositionId")
+                    b.Property<int>("JobTitleId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<DateOnly>("JoinDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("OrganizationalUnitId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -63,6 +89,10 @@ namespace HRM.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EmployeeCode")
                         .IsUnique();
+
+                    b.HasIndex("JobTitleId");
+
+                    b.HasIndex("OrganizationalUnitId");
 
                     b.ToTable("HrEmployee", (string)null);
                 });
@@ -81,42 +111,114 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("DecisionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateOnly>("EffectiveFrom")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("EffectiveTo")
+                    b.Property<DateOnly>("EffectiveDate")
                         .HasColumnType("date");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
                     b.Property<string>("Reason")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("SalaryDecisionId")
+                        .HasColumnType("int");
 
                     b.Property<int>("SalaryGradeId")
                         .HasColumnType("int");
 
-                    b.Property<int>("SalaryScaleId")
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalaryDecisionId");
+
+                    b.HasIndex("SalaryGradeId");
+
+                    b.HasIndex("EmployeeId", "EffectiveDate")
+                        .IsUnique();
+
+                    b.ToTable("HrEmployeeSalary", (string)null);
+                });
+
+            modelBuilder.Entity("HRM.Domain.Entities.HrJobTitle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DecisionId");
+                    b.HasIndex("Name")
+                        .IsUnique();
 
-                    b.HasIndex("EmployeeId");
+                    b.ToTable("HrJobTitle", (string)null);
+                });
 
-                    b.HasIndex("SalaryGradeId");
+            modelBuilder.Entity("HRM.Domain.Entities.HrOrganizationalUnit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.HasIndex("SalaryScaleId");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.ToTable("HrEmployeeSalary", (string)null);
+                    b.Property<string>("ContactEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("UnitType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId", "Name")
+                        .IsUnique()
+                        .HasFilter("[ParentId] IS NOT NULL");
+
+                    b.ToTable("HrOrganizationalUnit", (string)null);
                 });
 
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryDecision", b =>
@@ -130,34 +232,15 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateOnly>("DecisionDate")
-                        .HasColumnType("date");
-
                     b.Property<string>("DecisionNumber")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("DecisionType")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<DateOnly>("EffectiveDate")
                         .HasColumnType("date");
 
-                    b.Property<string>("FileUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<int>("ReviewPeriodId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SignerEmployeeId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -178,8 +261,6 @@ namespace HRM.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("HrSalaryDecision_index_noncancelled_period")
                         .HasFilter("[Status] <> 'CANCELLED'");
 
-                    b.HasIndex("SignerEmployeeId");
-
                     b.ToTable("HrSalaryDecision", (string)null);
                 });
 
@@ -191,14 +272,14 @@ namespace HRM.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<decimal>("BaselineCoefficient")
+                        .HasColumnType("decimal(5,2)");
 
-                    b.Property<int>("DecisionId")
+                    b.Property<int>("BaselineSalaryGradeId")
                         .HasColumnType("int");
 
-                    b.Property<DateOnly>("EffectiveFrom")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
@@ -209,33 +290,22 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.Property<int>("NewSalaryGradeId")
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("OldCoefficient")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<int?>("OldGradeId")
+                    b.Property<int>("SalaryDecisionId")
                         .HasColumnType("int");
-
-                    b.Property<int?>("OldSalaryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DecisionId");
+                    b.HasIndex("BaselineSalaryGradeId");
 
                     b.HasIndex("EmployeeId");
 
                     b.HasIndex("NewSalaryGradeId");
 
-                    b.HasIndex("OldGradeId");
-
-                    b.HasIndex("OldSalaryId");
+                    b.HasIndex("SalaryDecisionId", "EmployeeId")
+                        .IsUnique();
 
                     b.ToTable("HrSalaryDecisionDetail", (string)null);
                 });
@@ -248,17 +318,8 @@ namespace HRM.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Coefficient")
-                        .HasColumnType("decimal(5,2)");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("EffectiveFrom")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("EffectiveTo")
-                        .HasColumnType("date");
 
                     b.Property<int>("GradeNumber")
                         .HasColumnType("int");
@@ -267,6 +328,7 @@ namespace HRM.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
+                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
@@ -281,6 +343,34 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.ToTable("HrSalaryGrade", (string)null);
                 });
 
+            modelBuilder.Entity("HRM.Domain.Entities.HrSalaryGradeCoefficient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Coefficient")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("SalaryGradeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalaryGradeId", "EffectiveDate")
+                        .IsUnique();
+
+                    b.ToTable("HrSalaryGradeCoefficient", (string)null);
+                });
+
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryReviewEmployee", b =>
                 {
                     b.Property<int>("Id")
@@ -289,66 +379,52 @@ namespace HRM.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("ApprovedBy")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal?>("CurrentCoefficient")
+                    b.Property<decimal>("CurrentCoefficient")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<int>("CurrentGradeId")
+                    b.Property<int>("CurrentSalaryGradeId")
                         .HasColumnType("int");
 
-                    b.Property<int>("CurrentSalaryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EligibilityReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("EligibilityStatus")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<bool>("Eligible")
+                        .HasColumnType("bit");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
+                    b.Property<string>("IneligibleReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<decimal?>("ProposedCoefficient")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<int?>("ProposedGradeId")
+                    b.Property<int?>("ProposedSalaryGradeId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Reason")
+                    b.Property<string>("RejectionReason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("ReviewPeriodId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ReviewStatus")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CurrentGradeId");
-
-                    b.HasIndex("CurrentSalaryId");
+                    b.HasIndex("CurrentSalaryGradeId");
 
                     b.HasIndex("EmployeeId");
 
-                    b.HasIndex("ProposedGradeId");
+                    b.HasIndex("ProposedSalaryGradeId");
 
                     b.HasIndex("ReviewPeriodId", "EmployeeId")
                         .IsUnique();
@@ -405,6 +481,9 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("HrSalaryReviewPeriod", (string)null);
                 });
 
@@ -424,22 +503,13 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateOnly>("EffectiveFrom")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("EffectiveTo")
-                        .HasColumnType("date");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Status")
+                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
@@ -451,21 +521,43 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("HrSalaryScale", (string)null);
+                });
+
+            modelBuilder.Entity("HRM.Domain.Entities.HrEmployee", b =>
+                {
+                    b.HasOne("HRM.Domain.Entities.HrJobTitle", "JobTitle")
+                        .WithMany("Employees")
+                        .HasForeignKey("JobTitleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HRM.Domain.Entities.HrOrganizationalUnit", "OrganizationalUnit")
+                        .WithMany("Employees")
+                        .HasForeignKey("OrganizationalUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("JobTitle");
+
+                    b.Navigation("OrganizationalUnit");
                 });
 
             modelBuilder.Entity("HRM.Domain.Entities.HrEmployeeSalary", b =>
                 {
-                    b.HasOne("HRM.Domain.Entities.HrSalaryDecision", "Decision")
-                        .WithMany()
-                        .HasForeignKey("DecisionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("HRM.Domain.Entities.HrEmployee", "Employee")
                         .WithMany("Salaries")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("HRM.Domain.Entities.HrSalaryDecision", "SalaryDecision")
+                        .WithMany()
+                        .HasForeignKey("SalaryDecisionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "SalaryGrade")
                         .WithMany()
@@ -473,19 +565,21 @@ namespace HRM.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HRM.Domain.Entities.HrSalaryScale", "SalaryScale")
-                        .WithMany("EmployeeSalaries")
-                        .HasForeignKey("SalaryScaleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Decision");
-
                     b.Navigation("Employee");
 
-                    b.Navigation("SalaryGrade");
+                    b.Navigation("SalaryDecision");
 
-                    b.Navigation("SalaryScale");
+                    b.Navigation("SalaryGrade");
+                });
+
+            modelBuilder.Entity("HRM.Domain.Entities.HrOrganizationalUnit", b =>
+                {
+                    b.HasOne("HRM.Domain.Entities.HrOrganizationalUnit", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryDecision", b =>
@@ -496,22 +590,15 @@ namespace HRM.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HRM.Domain.Entities.HrEmployee", "SignerEmployee")
-                        .WithMany()
-                        .HasForeignKey("SignerEmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("ReviewPeriod");
-
-                    b.Navigation("SignerEmployee");
                 });
 
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryDecisionDetail", b =>
                 {
-                    b.HasOne("HRM.Domain.Entities.HrSalaryDecision", "Decision")
-                        .WithMany("Details")
-                        .HasForeignKey("DecisionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "BaselineSalaryGrade")
+                        .WithMany()
+                        .HasForeignKey("BaselineSalaryGradeId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("HRM.Domain.Entities.HrEmployee", "Employee")
@@ -526,25 +613,19 @@ namespace HRM.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "OldGrade")
-                        .WithMany()
-                        .HasForeignKey("OldGradeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("HRM.Domain.Entities.HrSalaryDecision", "SalaryDecision")
+                        .WithMany("Details")
+                        .HasForeignKey("SalaryDecisionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasOne("HRM.Domain.Entities.HrEmployeeSalary", "OldSalary")
-                        .WithMany()
-                        .HasForeignKey("OldSalaryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Decision");
+                    b.Navigation("BaselineSalaryGrade");
 
                     b.Navigation("Employee");
 
                     b.Navigation("NewSalaryGrade");
 
-                    b.Navigation("OldGrade");
-
-                    b.Navigation("OldSalary");
+                    b.Navigation("SalaryDecision");
                 });
 
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryGrade", b =>
@@ -558,17 +639,22 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.Navigation("SalaryScale");
                 });
 
-            modelBuilder.Entity("HRM.Domain.Entities.HrSalaryReviewEmployee", b =>
+            modelBuilder.Entity("HRM.Domain.Entities.HrSalaryGradeCoefficient", b =>
                 {
-                    b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "CurrentGrade")
-                        .WithMany()
-                        .HasForeignKey("CurrentGradeId")
+                    b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "SalaryGrade")
+                        .WithMany("Coefficients")
+                        .HasForeignKey("SalaryGradeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HRM.Domain.Entities.HrEmployeeSalary", "CurrentSalary")
+                    b.Navigation("SalaryGrade");
+                });
+
+            modelBuilder.Entity("HRM.Domain.Entities.HrSalaryReviewEmployee", b =>
+                {
+                    b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "CurrentSalaryGrade")
                         .WithMany()
-                        .HasForeignKey("CurrentSalaryId")
+                        .HasForeignKey("CurrentSalaryGradeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -578,9 +664,9 @@ namespace HRM.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "ProposedGrade")
+                    b.HasOne("HRM.Domain.Entities.HrSalaryGrade", "ProposedSalaryGrade")
                         .WithMany()
-                        .HasForeignKey("ProposedGradeId")
+                        .HasForeignKey("ProposedSalaryGradeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HRM.Domain.Entities.HrSalaryReviewPeriod", "ReviewPeriod")
@@ -589,13 +675,11 @@ namespace HRM.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("CurrentGrade");
-
-                    b.Navigation("CurrentSalary");
+                    b.Navigation("CurrentSalaryGrade");
 
                     b.Navigation("Employee");
 
-                    b.Navigation("ProposedGrade");
+                    b.Navigation("ProposedSalaryGrade");
 
                     b.Navigation("ReviewPeriod");
                 });
@@ -609,9 +693,26 @@ namespace HRM.Infrastructure.Persistence.Migrations
                     b.Navigation("Salaries");
                 });
 
+            modelBuilder.Entity("HRM.Domain.Entities.HrJobTitle", b =>
+                {
+                    b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("HRM.Domain.Entities.HrOrganizationalUnit", b =>
+                {
+                    b.Navigation("Children");
+
+                    b.Navigation("Employees");
+                });
+
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryDecision", b =>
                 {
                     b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("HRM.Domain.Entities.HrSalaryGrade", b =>
+                {
+                    b.Navigation("Coefficients");
                 });
 
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryReviewPeriod", b =>
@@ -623,8 +724,6 @@ namespace HRM.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HRM.Domain.Entities.HrSalaryScale", b =>
                 {
-                    b.Navigation("EmployeeSalaries");
-
                     b.Navigation("Grades");
                 });
 #pragma warning restore 612, 618

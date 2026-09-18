@@ -10,13 +10,14 @@ public class HrSalaryDecisionDetailConfiguration : IEntityTypeConfiguration<HrSa
     {
         builder.ToTable("HrSalaryDecisionDetail");
         builder.HasKey(d => d.Id);
-        builder.Property(d => d.OldCoefficient).HasColumnType("decimal(5,2)");
+        builder.Property(d => d.BaselineCoefficient).HasColumnType("decimal(5,2)");
         builder.Property(d => d.NewCoefficient).HasColumnType("decimal(5,2)");
-        builder.Property(d => d.Reason).HasMaxLength(500);
 
-        builder.HasOne(d => d.Decision)
+        builder.HasIndex(d => new { d.SalaryDecisionId, d.EmployeeId }).IsUnique();
+
+        builder.HasOne(d => d.SalaryDecision)
             .WithMany(dec => dec.Details)
-            .HasForeignKey(d => d.DecisionId)
+            .HasForeignKey(d => d.SalaryDecisionId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(d => d.Employee)
@@ -24,14 +25,9 @@ public class HrSalaryDecisionDetailConfiguration : IEntityTypeConfiguration<HrSa
             .HasForeignKey(d => d.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(d => d.OldSalary)
+        builder.HasOne(d => d.BaselineSalaryGrade)
             .WithMany()
-            .HasForeignKey(d => d.OldSalaryId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(d => d.OldGrade)
-            .WithMany()
-            .HasForeignKey(d => d.OldGradeId)
+            .HasForeignKey(d => d.BaselineSalaryGradeId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(d => d.NewSalaryGrade)

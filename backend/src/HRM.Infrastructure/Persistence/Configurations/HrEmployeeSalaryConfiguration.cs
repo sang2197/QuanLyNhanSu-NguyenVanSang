@@ -11,16 +11,15 @@ public class HrEmployeeSalaryConfiguration : IEntityTypeConfiguration<HrEmployee
         builder.ToTable("HrEmployeeSalary");
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Coefficient).HasColumnType("decimal(5,2)");
-        builder.Property(s => s.Reason).HasMaxLength(255);
+        builder.Property(s => s.Reason).HasMaxLength(255).IsRequired();
+
+        // Append-only per-employee salary/grade history — no EffectiveTo
+        // column; a later row with a newer EffectiveDate supersedes it.
+        builder.HasIndex(s => new { s.EmployeeId, s.EffectiveDate }).IsUnique();
 
         builder.HasOne(s => s.Employee)
             .WithMany(e => e.Salaries)
             .HasForeignKey(s => s.EmployeeId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(s => s.SalaryScale)
-            .WithMany(sc => sc.EmployeeSalaries)
-            .HasForeignKey(s => s.SalaryScaleId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(s => s.SalaryGrade)
@@ -28,9 +27,9 @@ public class HrEmployeeSalaryConfiguration : IEntityTypeConfiguration<HrEmployee
             .HasForeignKey(s => s.SalaryGradeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(s => s.Decision)
+        builder.HasOne(s => s.SalaryDecision)
             .WithMany()
-            .HasForeignKey(s => s.DecisionId)
+            .HasForeignKey(s => s.SalaryDecisionId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
