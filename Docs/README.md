@@ -1,18 +1,20 @@
-# Docs - Salary Grade Promotion
+# Docs - HRM System
 
-Design documents for the **Salary Grade Promotion** feature (part of Salary Management).
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
+Analysis and design documents for the HRM system's four analyzed modules: **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion**. The backend for all four is implemented in [`backend/`](../backend/README.md); the frontend is design-only.
 
 ## Requirements Analysis
 
-- [`Requirements/`](Requirements/README.md) — Mind map, user stories, and use case diagram for the feature.
+- [`Requirements/`](Requirements/README.md) — Mind map, user stories, and use cases for all four modules.
 
 ## Screen Design (UI/UX)
 
-- [`UI-UX/`](UI-UX/README.md) — Wireframe & screen behavior, information architecture (sitemap), and the interactive HTML prototype.
+- [`UI-UX/`](UI-UX/README.md) — Information architecture (sitemap), screens hierarchy, wireframe & screen behavior, UX guidelines, and the final screen design images.
 
 ## C4 Architecture Diagrams
 
-- [`c4/`](c4/README.md) — C4 model architecture diagrams: System Context, Container, Component, and Code (all 4 levels done).
+- [`c4/`](c4/README.md) — C4 model architecture diagrams: System Context, Container, and Component (3 levels; the Code level is intentionally not included).
 
 ## Arc42 Architecture Documentation
 
@@ -24,12 +26,12 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 
 ## API Documentation
 
-- [`API/`](API/README.md) — OpenAPI 3.0 spec for the Salary Grade Promotion REST API, mapped 1-to-1 to the user stories.
+- [`API/`](API/README.md) — OpenAPI 3.0 spec for the full REST API (49 endpoints across 10 tags), mapped to the user stories and implemented by `backend/`.
 
 ## Code Structure
 
-- [`CodeStructure/`](CodeStructure/README.md) — Proposed frontend (React) and backend (ASP.NET Core, 3-layer) source folder layout, mapped to the C4 diagrams and Arc42 decisions.
+- [`CodeStructure/`](CodeStructure/README.md) — Frontend (React, design-only) and backend (ASP.NET Core, implemented) source folder layout, mapped to the C4 diagrams and Arc42 decisions.
 
 ## Detailed Design
 
-- [`DetailedDesign/`](DetailedDesign/README.md) — Class diagrams, sequence diagrams, and state diagrams for the API, derived from Code Structure, API Documentation, Database Design, and the C4 diagrams. The last design step before implementation.
+- [`DetailedDesign/`](DetailedDesign/README.md) — Class diagrams, sequence diagrams, and state diagrams for the API, derived from Code Structure, API Documentation, Database Design, and the C4 diagrams. The last design step before implementation; the backend was implemented from them.

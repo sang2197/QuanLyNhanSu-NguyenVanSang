@@ -1,5 +1,7 @@
 # C4 Model Diagrams
 
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
 Architecture diagrams for the HRM System following the C4 Model.
 
 The diagrams are written in Mermaid and can be rendered directly by GitHub.
@@ -10,12 +12,13 @@ This document uses the first three levels of the C4 Model:
 2. **Container** — shows the major applications and data stores that make up the HRM System.
 3. **Component** — shows the major functional components inside the Backend API.
 
-The Code level is intentionally not included in this document.
+The Code level (level 4) is intentionally not included in this document — the C4 diagrams stop at the Component level.
 
-Detailed application structure and runtime interactions will be designed separately using:
+Detailed application structure and runtime interactions are designed separately in [Detailed Design](../DetailedDesign/README.md) using:
 
 - **Class Diagrams** — classes, interfaces, responsibilities, and structural relationships.
 - **Sequence Diagrams** — runtime interactions for important use cases.
+- **State Diagrams** — status lifecycles.
 
 ## Design Basis
 
@@ -26,9 +29,7 @@ These architecture diagrams are derived from the current HRM design artifacts, i
 - Information Architecture and UI/UX design
 - Database Design
 
-The diagrams represent the intended architecture of the HRM System based on the current analyzed scope.
-
-Existing or previous backend implementations are not used as the architectural source of truth.
+The diagrams represent the architecture of the HRM System for the analyzed scope. They were derived from the requirements and design artifacts above, not from code; the backend in `backend/` was then implemented against them and all four components are built (see [`backend/README.md`](../../backend/README.md)). The React Web Application container is design-only — it has not been implemented yet.
 
 ---
 
@@ -183,9 +184,14 @@ For example:
 
 These relationships represent **business/data dependencies** between functional areas.
 
-They are intentionally not shown as direct component-to-component calls in the Component Diagram because the detailed internal interaction model has not yet been designed.
+They are intentionally not shown as direct component-to-component calls in the Component Diagram, which is kept at the level of business responsibilities. The detailed interaction model is defined in the [Class Diagram](../DetailedDesign/ClassDiagram.md) and implemented as in-process calls to the other component's **Service interface** (never its repository — see [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain)):
 
-The Component Diagram therefore does not assume relationships such as:
+- Employee Management → Organization Management (unit and job title must be active)
+- Organization Management → Employee Management (a unit with active employees cannot be deactivated)
+- Salary Master Data → Salary Grade Promotion (a grade with an assigned active employee cannot be deactivated)
+- Salary Grade Promotion → Employee Management and Salary Master Data (active employees, next active grade, current coefficient)
+
+The Component Diagram therefore does not draw relationships such as:
 
 ```text
 Salary Grade Promotion
@@ -201,7 +207,7 @@ Employee Management
 Organization Management Service
 ```
 
-Such dependencies should only be introduced after the detailed application design defines the required classes, interfaces, and interaction paths.
+These dependencies are documented at the class level rather than as component-level call arrows.
 
 ---
 
@@ -253,8 +259,8 @@ Sequence Diagrams
 Implementation
 ```
 
-Class Diagrams will define the internal classes, interfaces, responsibilities, and structural dependencies required by each component.
+Class Diagrams define the internal classes, interfaces, responsibilities, and structural dependencies of each component.
 
-Sequence Diagrams will describe how those elements collaborate at runtime to realize the defined Use Cases.
+Sequence Diagrams describe how those elements collaborate at runtime to realize the defined Use Cases.
 
-These detailed diagrams should be derived from the approved requirements and architecture rather than from a previous implementation.
+These detailed diagrams were derived from the approved requirements and architecture; the implementation then followed them.

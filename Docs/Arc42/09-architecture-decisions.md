@@ -1,6 +1,8 @@
 # 9. Architecture Decisions
 
-*Part of the [Arc42 Architecture Documentation](README.md) - HRM System (Salary Grade Promotion).*
+*Part of the [Arc42 Architecture Documentation](README.md) - HRM System.*
+
+> **Status:** Current (ADR-07: Proposed, not implemented) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
 ## ADR-01: Separate Frontend and Backend
 
@@ -13,6 +15,8 @@ The system needs a web UI usable by both HR Staff and Approver / Manager, callin
 **Decision**
 
 The React frontend communicates with the ASP.NET Core backend through REST APIs.
+
+**Implementation:** Backend REST API implemented (49 endpoints, matching `openapi.yaml`). The React frontend is design-only — no frontend code exists yet.
 
 **Consequences**
 
@@ -33,7 +37,9 @@ Salary changes must be auditable and reconstructable at any past date (supports 
 
 **Decision**
 
-The system does not overwrite the previous salary record when an employee moves to a new salary grade. Instead, the previous record is closed and a new salary record is created.
+The system does not overwrite the previous salary record when an employee moves to a new salary grade. Instead, a new salary record with a later effective date is added; earlier records are left untouched and are superseded by effective date (see [Section 8.1](08-crosscutting-concepts.md#81-audit--history)).
+
+**Implementation:** Implemented — applying a salary decision only inserts `HrEmployeeSalary` rows; no code path updates or deletes existing ones.
 
 **Consequences**
 
@@ -50,22 +56,24 @@ The system does not overwrite the previous salary record when an employee moves 
 
 **Context**
 
-Salary Grade Promotion's scope is expected to grow (e.g. a future Allowance Management feature), while Employee Management, Organization Management, and Salary Master Data are comparatively stable reference/core data, each owned by its own module per the current requirements analysis.
+Salary Grade Promotion's scope is expected to grow (e.g. a future Allowance Management feature), while Employee Management, Organization Management, and Salary Master Data are comparatively stable reference/core data, each owned by its own module per the requirements analysis.
 
 **Decision**
 
-Inside the Backend API, `Employee Management`, `Organization Management`, `Salary Master Data`, and `Salary Grade Promotion` are implemented as four separate components, split by business domain rather than by technical layer. Only `Salary Grade Promotion` (plus a minimal read-only employee lookup) is implemented in `backend/` today — the other three are analyzed and designed (see `Docs/Database/` and each module's `UserStories_*.md`/`UseCase_*.md`) but not yet built as backend components.
+Inside the Backend API, `Employee Management`, `Organization Management`, `Salary Master Data`, and `Salary Grade Promotion` are implemented as four separate components, split by business domain rather than by technical layer.
+
+**Implementation:** All four components are implemented in `backend/`. The domain split is mirrored as `EmployeeManagement/`, `OrganizationManagement/`, `SalaryMasterData/`, and `SalaryGradePromotion/` subfolders inside `HRM.Application`, `HRM.Infrastructure`, and `HRM.Api` (entities stay flat in `HRM.Domain`, since several are read across domains). The four components are co-deployed in one process ([Section 7](07-deployment-view.md)). Cross-domain access is an in-process call to the other domain's **Service interface**, never to its repository. Two dependencies are resolved with `Lazy<T>` injection: the genuine cycle `OrganizationalUnitService` ↔ `EmployeeService`, and `SalaryGradeService` → `ISalaryHistoryService` (one-way, kept lazy for consistency) — see [DEBT-04](11-risks-and-technical-debt.md#technical-debt).
 
 **Consequences**
 
 - *Positive:* Each component can evolve independently; smaller, more focused codebases.
-- *Negative:* Any cross-domain read (e.g. Salary Grade Promotion showing an employee's Organizational Unit) requires a call to another component instead of a single local query.
+- *Negative:* Any cross-domain read (e.g. Salary Grade Promotion showing an employee's Organizational Unit) requires a call to another component's Service instead of a single local query; the Employee ↔ Organization mutual dependency needed a `Lazy<T>` workaround.
 
 **Risks created:** RISK-03
 
 ---
 
-## ADR-04: Layered Design inside Salary Grade Promotion
+## ADR-04: Layered Design inside Each Backend Component
 
 **Status:** Accepted
 
@@ -75,7 +83,9 @@ Business rules (eligibility, approval, effective-dating) need one clear home so 
 
 **Decision**
 
-Within the Salary Grade Promotion component, requests flow through a Controller, then a Service, then a Repository (`ReviewPeriodsController` → `SalaryReviewService` → `SalaryRepository`, and equivalently for the decision and history slices). The same pattern is intended for the other three components once they are built.
+Within each of the four components, requests flow through a Controller, then a Service, then one or more Repositories (e.g. `ReviewPeriodsController` → `ReviewPeriodService` → `ReviewPeriodRepository`). Repositories are split per aggregate (10 in total). Service and Repository interfaces are defined in `HRM.Application` and implemented in `HRM.Infrastructure` (dependency inversion). Services that must write across several repositories atomically (`CreateReviewPeriod`, `ApplyDecision`) use the Application-owned `IUnitOfWork` abstraction instead of referencing `HrmDbContext` directly.
+
+**Implementation:** Implemented for all four components.
 
 **Consequences**
 
@@ -98,6 +108,8 @@ HR Staff and the Approver / Manager need to redo or reject proposals freely duri
 
 A review result (a proposed grade an employee is screened against) is stored separately from an official salary decision. Only an issued decision changes an employee's real salary.
 
+**Implementation:** Implemented — review results live in `HrSalaryReviewEmployee`, official decisions in `HrSalaryDecision`/`HrSalaryDecisionDetail`, and only `ApplyDecision` writes `HrEmployeeSalary`.
+
 **Consequences**
 
 - *Positive:* Safe experimentation during review; real salary only changes at a well-defined, auditable moment.
@@ -119,6 +131,8 @@ This stack was chosen early in the C4 modeling phase (see [`Docs/c4/`](../c4/REA
 
 Use Angular for the frontend, ASP.NET Core for the backend API, and SQL Server for the database.
 
+**Implementation:** Backend on ASP.NET Core (.NET 8) with EF Core and the SQL Server provider is implemented. The Angular part was superseded by ADR-08.
+
 **Consequences**
 
 - *Positive:* Mature, well-supported ecosystem; consistent tooling across the stack; matches what is already reflected in the C4 diagrams.
@@ -130,7 +144,7 @@ Use Angular for the frontend, ASP.NET Core for the backend API, and SQL Server f
 
 ## ADR-07: Authentication and Authorization Mechanism
 
-**Status:** Proposed *(new as of this review — not yet implemented or confirmed with the full team)*
+**Status:** Proposed — **not implemented** *(not confirmed with the full team; the backend currently has no authentication or authorization, and `openapi.yaml` declares the `bearerAuth` scheme for documentation only)*
 
 **Context**
 
@@ -160,6 +174,8 @@ ADR-06 originally chose Angular for the frontend, before any frontend implementa
 **Decision**
 
 Use React (instead of Angular) for the `HRM Web Application` frontend.
+
+**Implementation:** Design-only — the React folder structure is designed in [`Docs/CodeStructure/FrontendStructure.md`](../CodeStructure/FrontendStructure.md); no frontend code exists yet.
 
 **Consequences**
 

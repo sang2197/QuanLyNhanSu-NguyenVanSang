@@ -1,6 +1,8 @@
 # Database Design - HRM System
 
-Database design for the full HRM system as currently analyzed: **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — 12 tables, traced back to the Business Rules in each module's `UserStories_*.md` / `UseCase_*.md`.
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
+Database design for the full HRM system as currently analyzed: **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — 12 tables, traced back to the Business Rules in each module's `UserStories_*.md` / `UseCase_*.md`. The backend maps these 12 tables one-to-one through EF Core (12 entity configurations and a single `Initial` migration in `backend/src/HRM.Infrastructure/Persistence/`).
 
 ## ER Diagram (Mermaid)
 

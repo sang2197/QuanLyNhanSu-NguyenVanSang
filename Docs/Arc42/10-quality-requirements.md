@@ -1,8 +1,10 @@
 # 10. Quality Requirements
 
-*Part of the [Arc42 Architecture Documentation](README.md) - HRM System (Salary Grade Promotion).*
+*Part of the [Arc42 Architecture Documentation](README.md) - HRM System.*
 
-> No implementation exists yet, so none of the success measures below have been measured in production. All are example/draft targets pending confirmation with the business — tracked collectively as RISK-09.
+> **Status:** Draft (targets not yet measured) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
+> The backend is implemented (see the baseline commit above), but none of the success measures below have been measured: there is no deployment, no load test, and no health-check endpoint yet. All are example/draft targets pending confirmation with the business — tracked collectively as RISK-09. Automated tests (unit + HTTP-level) cover the business-rule rejection behind QS-03; nothing yet covers QS-02 or QS-05.
 
 | ID | Quality Goal | Scenario | Environment | Example Success Measure *(draft)* |
 |---|---|---|---|---|

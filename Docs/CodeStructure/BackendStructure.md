@@ -1,10 +1,12 @@
-# Backend Folder Structure (ASP.NET Core, 3-layer)
+# Backend Folder Structure (ASP.NET Core)
 
-Proposed `backend/` project layout for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — mapping the [C4 `HRM Backend API` container and its 4 components](../c4/README.md#3-component-diagram) to actual source projects. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
-Follows [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain) (split the backend by business domain) and [ADR-04](../Arc42/09-architecture-decisions.md#adr-04-layered-design-inside-salary-grade-promotion) (Controller → Service → Repository within each domain — ADR-04 names Salary Grade Promotion specifically but states the same pattern is intended for the other three components once they are built).
+`backend/` project layout for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — mapping the [C4 `HRM Backend API` container and its 4 components](../c4/README.md#3-component-diagram) to actual source projects. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
 
-Only Salary Grade Promotion is actually implemented in `backend/` today, against an earlier, narrower database/API design — see `backend/README.md`'s "Known deviations from the docs". This layout is the target structure for all four components once they are built/migrated against the current [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml).
+Follows [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain) (split the backend by business domain) and [ADR-04](../Arc42/09-architecture-decisions.md#adr-04-layered-design-inside-each-backend-component) (Controller → Service → Repository within each domain).
+
+All four components are implemented in `backend/` with this layout, against the current [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml) — see [`backend/README.md`](../../backend/README.md).
 
 ```
 backend/

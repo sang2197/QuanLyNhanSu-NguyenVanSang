@@ -1,5 +1,7 @@
 # Backend
 
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
 ASP.NET Core (.NET 8) implementation of the full HRM system, built from [`Docs/`](../Docs/README.md) — see [`Docs/CodeStructure/BackendStructure.md`](../Docs/CodeStructure/BackendStructure.md) for the folder-structure rationale and [`Docs/API/openapi.yaml`](../Docs/API/openapi.yaml) for the API contract. Covers all 4 modules: Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion (12 tables, 49 endpoints across 10 tags).
 
 ## Architecture

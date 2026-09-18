@@ -1,13 +1,15 @@
 # Class Diagram - HRM System
 
-UML class diagrams for the full HRM system — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — derived from [Database Design](../Database/README.md) (entity fields), [`openapi.yaml`](../API/openapi.yaml) (operations, request/response shapes, enums), [C4 Component Diagram](../c4/README.md#3-component-diagram) (the 4 components), and [`CodeStructure/`](../CodeStructure/README.md) (class/interface names and their domain folders). The existing backend implementation is not used as a source — see `backend/README.md`'s "Known deviations from the docs".
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
+UML class diagrams for the full HRM system — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — derived from [Database Design](../Database/README.md) (entity fields), [`openapi.yaml`](../API/openapi.yaml) (operations, request/response shapes, enums), [C4 Component Diagram](../c4/README.md#3-component-diagram) (the 4 components), and [`CodeStructure/`](../CodeStructure/README.md) (class/interface names and their domain folders). The diagrams were derived from those documents, not from code; the backend in [`backend/`](../../backend/README.md) was then implemented from them.
 
 **Notation**
 
 - Attributes: `name : type [multiplicity]`. A field that is nullable in [`HRM_System.dbml`](../Database/HRM_System.dbml) is given multiplicity `[0..1]`; a required field has none (implicitly `[1]`).
 - Operations: `name(param : type, ...) : returnType [multiplicity]`. A lookup that may find nothing returns `[0..1]`; a method returning a collection returns `[0..*]`; a method with no return value (void) has none.
 - `filter` parameters (`EmployeeFilter`, `ReviewPeriodFilter`, ...) are this document's own DTOs bundling the query parameters `openapi.yaml` lists individually for that search/list endpoint — a reasonable detail-design shape, not a literal schema name from the spec.
-- Repository operations take and return **domain entities** (`Hr*`, matching `HRM.Domain/Entities/`); Controller/Service operations take and return **API DTOs** (matching `openapi.yaml` schema names, e.g. `Employee`, `CreateEmployeeRequest`). Mapping between the two happens in `HRM.Api/Mappings/` (see [`BackendStructure.md`](../CodeStructure/BackendStructure.md)) and is not modeled as its own class here.
+- Repository operations take and return **domain entities** (`Hr*`, matching `HRM.Domain/Entities/`); Controller/Service operations are written with **API DTO names** (matching `openapi.yaml` schema names, e.g. `Employee`, `CreateEmployeeRequest`) for readability. In the implementation, Controllers use the API DTOs, but Services take and return domain entities or small Application-owned input/result models (`HRM.Application/*/Models/`), so that `HRM.Application` does not depend on `HRM.Api`. Mapping between the two happens in `HRM.Api/Mappings/` (see [`BackendStructure.md`](../CodeStructure/BackendStructure.md)) and is not modeled as its own class here.
 - Long business-rule/acceptance-criteria references are kept out of operation signatures and collected in a `note for <Class>` UML note on the implementing class instead, one line per constrained operation.
 - Each Service and Repository is coded behind an interface (`<<interface>>`), shown explicitly with UML realization (`..|>`) — this is how [`BackendStructure.md`](../CodeStructure/BackendStructure.md)'s `Interfaces/` folders are implemented, and makes the Dependency Inversion between `HRM.Application` and `HRM.Infrastructure` visible.
 
@@ -687,7 +689,6 @@ classDiagram
         <<interface>>
         +GetCurrent(employeeId : int) : HrEmployeeSalary [0..1]
         +GetHistory(employeeId : int, filter : SalaryHistoryFilter) : HrEmployeeSalary [0..*]
-        +CloseCurrent(employeeId : int, effectiveDate : DateTime)
         +Add(employeeSalary : HrEmployeeSalary)
         +HasActiveEmployeeOnGrade(gradeId : int) : bool
     }
@@ -723,7 +724,7 @@ classDiagram
     SalaryDecisionService --> ISalaryDecisionRepository
     SalaryDecisionService --> IReviewPeriodRepository : validates SUBMITTED status and review date (US-SGP-06 AC01, AC06)
     SalaryDecisionService --> IReviewEmployeeRepository : validates employees are Approved in the period (US-SGP-06 AC02)
-    SalaryDecisionService --> IEmployeeSalaryRepository : closes and creates HrEmployeeSalary rows on ApplyDecision (US-SGP-07)
+    SalaryDecisionService --> IEmployeeSalaryRepository : reads the current grade, then appends new HrEmployeeSalary rows on ApplyDecision (US-SGP-07; history is append-only)
 
     SalaryHistoryService --> IEmployeeSalaryRepository
 ```

@@ -1,6 +1,8 @@
 # 12. Glossary
 
-*Part of the [Arc42 Architecture Documentation](README.md) - HRM System (Salary Grade Promotion).*
+*Part of the [Arc42 Architecture Documentation](README.md) - HRM System.*
+
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
 | Term | Meaning |
 |---|---|

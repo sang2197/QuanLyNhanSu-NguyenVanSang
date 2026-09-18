@@ -1,5 +1,7 @@
 # Sequence Diagrams - HRM System
 
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
 UML sequence diagrams for the full HRM system's key business-rule flows — the ones with validation, guard conditions, branching, or a transaction, one per module. Simple unguarded CRUD (plain create/update/list/view with only "required field" validation — e.g. creating a Job Title or a Salary Scale, updating a Salary Scale's name, reactivating a Salary Scale, or opening/resuming a Salary Decision by id) is intentionally not diagrammed; its request/response shape is already fully specified in [`openapi.yaml`](../API/openapi.yaml) and its class/method is in [ClassDiagram.md](ClassDiagram.md).
 
 Class, interface, and repository names match [ClassDiagram.md](ClassDiagram.md). Endpoints match [`openapi.yaml`](../API/openapi.yaml). A cross-domain call (per [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain)) always targets another domain's Service interface, never its Repository — see the Traceability note in [ClassDiagram.md](ClassDiagram.md#traceability).
@@ -9,7 +11,7 @@ Class, interface, and repository names match [ClassDiagram.md](ClassDiagram.md).
 - Guard conditions on `alt`/`else`/`opt`/`break`/`loop` fragments are written in UML's `[condition]` form.
 - `break [condition] ... end` marks a validation failure that ends the interaction right there, used instead of nesting further `alt`/`else`. The messages that follow a chain of `break` blocks are the success path, reached only when none of them fired. `alt`/`else` is kept for a genuine branch between two valid, non-error outcomes that both continue (e.g. "Deactivate requested" vs. "Reactivate requested" were previously modeled that way — see the "split" note below).
 - Activation bars (`+`/`-` on the triggering/replying arrow) mark Controller, Service, and Repository (and cross-domain Service) participants for as long as they are doing work for their caller. A `break` block's error reply does not close the Controller/Service's outer activation early — the bar closes once, at the diagram's actual final reply — matching how Mermaid renders activation continuously across `alt`/`break` fragments.
-- A transaction (`BeginTransaction`/`CommitTransaction`/`RollbackTransaction`) is owned by the shared `HrmDbContext` (participant `UOW`, used only in the 2 flows below that write across more than one repository), never by a single Repository. Every repository in [ClassDiagram.md](ClassDiagram.md) already shares one injected `HrmDbContext` instance per request, so the context — not an arbitrarily chosen repository — is what's actually able to coordinate a transaction spanning more than one of them.
+- A transaction (`BeginTransaction`/`CommitTransaction`/`RollbackTransaction`) is owned by the shared `HrmDbContext` (participant `UOW`, used only in the 2 flows below that write across more than one repository), never by a single Repository. Every repository in [ClassDiagram.md](ClassDiagram.md) already shares one injected `HrmDbContext` instance per request, so the context — not an arbitrarily chosen repository — is what's actually able to coordinate a transaction spanning more than one of them. In the implementation, Services reach it through the Application-owned `IUnitOfWork` abstraction (implemented in `HRM.Infrastructure` by a class wrapping `HrmDbContext`), so `HRM.Application` never references the DbContext directly.
 - Diagrams that used to bundle independent scenarios behind a top-level `alt` (Deactivate vs. Reactivate; Approve vs. Reject; list/resume/create) are now split one scenario per diagram, each numbered separately.
 
 ---
@@ -766,9 +768,6 @@ sequenceDiagram
     SVC->>+UOW: BeginTransaction()
     UOW-->>-SVC: transaction
     loop [for each employee in details]
-        SVC->>+SALREPO: CloseCurrent(employeeId, effectiveDate)
-        SALREPO->>DB: UPDATE HrEmployeeSalary — close the prior effective range
-        SALREPO-->>-SVC: OK
         SVC->>+SALREPO: Add(new HrEmployeeSalary row, SalaryDecisionId=decisionId)
         SALREPO->>DB: INSERT HrEmployeeSalary
         SALREPO-->>-SVC: OK

@@ -1,6 +1,8 @@
 # 8. Crosscutting Concepts
 
-*Part of the [Arc42 Architecture Documentation](README.md) - HRM System (Salary Grade Promotion).*
+*Part of the [Arc42 Architecture Documentation](README.md) - HRM System.*
+
+> **Status:** Current (§8.2 Security: Proposed, not implemented) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
 ## 8.1 Audit & History
 
@@ -12,7 +14,7 @@
 
 ## 8.2 Security
 
-> This subsection proposes a mechanism to close a previously open gap (see [RISK-05](11-risks-and-technical-debt.md)); it has not been implemented or confirmed with the full team yet — see [ADR-07](09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism).
+> This subsection proposes a mechanism to close a previously open gap (see [RISK-05](11-risks-and-technical-debt.md)). **It is not implemented**: the current backend has no authentication or authorization (no auth middleware, no `[Authorize]` on any endpoint), and it has not been confirmed with the full team — see [ADR-07](09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism). Until then, every endpoint is callable without credentials and no actor identity is recorded on salary changes.
 
 - **Authentication**: users log in through ASP.NET Core Identity, which issues a JWT bearer token. The Web Application attaches this token to every Backend API request.
 - **Authorization**: role-based access control. HR Staff and Approver / Manager are distinct roles; each API endpoint enforces which role(s) may call it (e.g. only Approver / Manager may draft/apply a decision — see [User Stories](../Requirements/UserStories_SalaryGradePromotion.md)). Enforced in the API, not just hidden in the UI.

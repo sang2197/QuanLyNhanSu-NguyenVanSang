@@ -1,8 +1,10 @@
 # API Documentation - HRM System
 
-REST API design for the full HRM system as currently analyzed — Employee Profile, Organization Management, Salary Master Data, and Salary Grade Promotion — written as an [OpenAPI 3.0](https://swagger.io/specification/) spec.
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
-Designed from the current User Stories / Use Cases (INVEST), Information Architecture / Screens Hierarchy / UI-UX, the C4 model (`Docs/c4/`), and the database design (`Docs/Database/HRM_System.dbml`). The existing backend and its Class/Sequence diagrams predate this analysis and were not used as a reference — see `backend/README.md`'s "Known deviations from the docs".
+REST API for the full HRM system — Employee Profile, Organization Management, Salary Master Data, and Salary Grade Promotion — written as an [OpenAPI 3.0](https://swagger.io/specification/) spec and implemented by [`backend/`](../../backend/README.md).
+
+Designed from the current User Stories / Use Cases (INVEST), Information Architecture / Screens Hierarchy / UI-UX, the C4 model (`Docs/c4/`), and the database design (`Docs/Database/HRM_System.dbml`). The backend was then implemented against this spec: the 49 operations (method + path) of the generated Swagger document match `openapi.yaml` exactly, across the same 10 tags.
 
 - [`openapi.yaml`](openapi.yaml) — the spec. Paste its content into the [Swagger Editor](https://editor.swagger.io/) to view it as interactive documentation, or run `npx @redocly/cli lint openapi.yaml` to validate it.
 
@@ -23,13 +25,13 @@ Designed from the current User Stories / Use Cases (INVEST), Information Archite
 | Salary Decisions | Draft, list, view detail, save draft, remove employee, apply, cancel | US-SGP-06, 07, 09, 10 |
 | Salary History | Look up an employee's history (read-only) | US-SGP-08 |
 
-All resource IDs are `integer` (matching the `int IDENTITY` primary keys in `Docs/Database/HRM_System.dbml`) — this resolves a known mismatch the previous, Salary-Grade-Promotion-only version of this spec had against the database (it declared `uuid`).
+All resource IDs are `integer`, matching the `int IDENTITY` primary keys in `Docs/Database/HRM_System.dbml`.
 
 ## Design decisions worth noting
 
 - **No CRUD endpoint fields beyond what a User Story/Business Rule supports.** For example, `HrSalaryDecision` in the database has no `decisionType`, `signerEmployeeId`, or `fileUrl` — none of those appear in any current User Story/Use Case, so the request/response schemas don't expose them either. `decisionNumber` is system-generated (read-only), matching the Wireframe.
-- **`GET /organizational-units` returns the full hierarchy unpaginated** as a flat list (each unit carries `parentId`) — the UI needs the whole tree at once to render collapsible nodes, matching how the HTML prototype holds its data.
-- **A dedicated `PUT /salary-decisions/{decisionId}` ("Save Draft")** exists for the effective date, matching the Wireframe's "Save Draft" action, which the earlier version of this spec didn't have.
+- **`GET /organizational-units` returns the full hierarchy unpaginated** as a flat list (each unit carries `parentId`) — the UI needs the whole tree at once to render collapsible nodes, so the client does not need one request per level.
+- **A dedicated `PUT /salary-decisions/{decisionId}` ("Save Draft")** exists for the effective date, matching the Wireframe's "Save Draft" action.
 - **`GET /salary-decisions/eligible-review-periods`** backs the "Pick a Review Period" step (Screens Hierarchy) when starting a new decision from the Salary Decision list.
 
 ## Out of scope
@@ -37,7 +39,10 @@ All resource IDs are `integer` (matching the `int IDENTITY` primary keys in `Doc
 - **Login endpoint** — [ADR-07](../Arc42/09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism) proposes JWT bearer auth via ASP.NET Core Identity, and the spec declares the `bearerAuth` security scheme accordingly, but the actual `/login` (token-issuing) endpoint itself is not designed here.
 - **Identity & Access Management** (accounts, roles, permissions) — explicitly out of scope for every module's requirements; not modeled here.
 
-## Notes
+## Implementation status
 
-- All endpoints use path/response shapes only — no example server has been built yet (the existing `backend/` targets the earlier, narrower schema — see its README).
-- Enum values (`ReviewPeriodStatus`, `SalaryDecisionStatus`, `EmploymentStatus`, `ActiveStatus`, etc.) match the current database design and business rules, not the earlier backend implementation.
+- **All 49 endpoints are implemented** in `backend/` (ASP.NET Core, one controller per tag) and covered by HTTP-level integration tests that check routing and status codes against this spec.
+- **Error responses:** `ExceptionHandlingMiddleware` returns the `Error` schema with 400 (validation), 404 (not found), 409 (conflict), and 500 (unexpected). The generated Swagger only declares success responses, so the error responses documented here are not yet visible in Swagger UI — see [DEBT-03](../Arc42/11-risks-and-technical-debt.md#technical-debt).
+- **Server URL / versioning:** the spec lists the placeholder server `https://api.example.com/v1`; the implementation serves routes from the root without a version prefix — see [DEBT-05](../Arc42/11-risks-and-technical-debt.md#technical-debt).
+- **Authentication:** the `bearerAuth` scheme is declared for documentation only. No endpoint enforces it — the backend has no authentication or authorization yet ([ADR-07](../Arc42/09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism), [RISK-05](../Arc42/11-risks-and-technical-debt.md)).
+- Enum values (`ReviewPeriodStatus`, `SalaryDecisionStatus`, `EmploymentStatus`, `ActiveStatus`, etc.) match the database design and are the same enums used by the backend.

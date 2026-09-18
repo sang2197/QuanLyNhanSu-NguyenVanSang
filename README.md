@@ -1,5 +1,7 @@
 # HRM (Human Resource Management) System
 
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
 This project covers the analysis, design, and implementation of a Human Resource Management (HRM) system.
 
 The overall HRM scope is organized into six functional areas:
@@ -13,9 +15,27 @@ The overall HRM scope is organized into six functional areas:
 
 The current repository provides detailed requirements and design artifacts for **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion**.
 
-**Salary Grade Promotion** ("Xét nâng bậc lương") is the primary implementation focus and is developed through the full workflow from requirements and UI/UX design to architecture, database/API design, backend implementation, and automated testing.
-
 The repository is organized by development phase, from requirements and design to implementation and testing.
+
+---
+
+## Project Status
+
+Scope tracked in this repository: **Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion** (4 of the 6 functional areas above — Reward/Discipline, Attendance, and Contract Management are not yet started).
+
+| # | Phase | Scope covered | Status |
+|---|-------|----------------|--------|
+| 1 | Requirements — User Stories (INVEST) & Use Cases | 4/4 modules | 100% |
+| 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for 4/4 modules; final design images for the 8 key screens of Employee Profile, Organization, and Salary Grade Promotion | 100% |
+| 3 | Architecture — C4 (Context, Container, Component) | 4/4 components | 100% |
+| 4 | Database Design & API Documentation (OpenAPI 3.0) | 12 tables, 49 endpoints | 100% |
+| 5 | Code Structure Design — Frontend & Backend | Both designed; backend structure matches the implementation below | 100% |
+| 6 | Detailed Design — Class, Sequence & State Diagrams | 4/4 modules, 20 sequence diagrams | 100% |
+| 7 | API Implementation & Unit Testing | 4/4 modules, 231 tests passing (155 unit + 76 integration), 0 build warnings | 100% |
+
+Frontend implementation (React) is design-only at this stage — no application code has been written yet, only the structure design (item 5) and the screen designs (item 2).
+
+Every folder README and Arc42 section carries review metadata (**Status**, **Owner**, **Last Reviewed**, **Implementation Baseline Commit** — the commit of `backend/` that the documents were checked against). Known gaps between the documents and the implementation (no authentication, no health-check endpoint, no tests against SQL Server, …) are tracked in the [Risk Register and Technical Debt](Docs/Arc42/11-risks-and-technical-debt.md).
 
 ---
 
@@ -47,7 +67,7 @@ Screen design is developed progressively from information structure to detailed 
 1. **Information Architecture** — page-level information organization and sitemap across the currently specified HRM modules.
 2. **Screens Hierarchy** — pages, modals, dialogs, and key transitions required by each module.
 3. **Wireframes & Screen Behavior** — screen structure, behavior, validation, and actor interactions.
-4. **UI/UX Design** — interactive HTML prototypes for all four modules, sharing one common design system.
+4. **UI/UX Design** — final screen designs as PNG images (the images below are the authoritative visual design).
 
 ### Salary Grade Promotion
 
@@ -82,8 +102,6 @@ Key documents:
 * [`InformationArchitecture_HRM.md`](Docs/UI-UX/InformationArchitecture_HRM.md) — HRM information architecture and sitemap
 * [`ScreensHierarchy_SalaryGradePromotion.md`](Docs/UI-UX/ScreensHierarchy_SalaryGradePromotion.md) — pages, dialogs, and screen transitions for Salary Grade Promotion
 * [`Wireframe_SalaryGradePromotion.md`](Docs/UI-UX/Wireframe_SalaryGradePromotion.md) — form fields, list columns, and data sources per screen for Salary Grade Promotion
-* [`SalaryGradePromotion_Screens.html`](Docs/UI-UX/NewDesign/SalaryGradePromotion_Screens.html) — interactive HTML prototype for Salary Grade Promotion
-* [`EmployeeProfile_Screens.html`](Docs/UI-UX/NewDesign/EmployeeProfile_Screens.html), [`OrganizationManagement_Screens.html`](Docs/UI-UX/NewDesign/OrganizationManagement_Screens.html), [`SalaryMasterData_Screens.html`](Docs/UI-UX/NewDesign/SalaryMasterData_Screens.html) — interactive HTML prototypes for the other three modules, cross-linked with the one above
 
 → Full folder: [`Docs/UI-UX/`](Docs/UI-UX/README.md)
 
@@ -154,7 +172,7 @@ flowchart TB
     SGP -->|Reads/writes data| DB
 ```
 
-Only **Salary Grade Promotion** (plus minimal read-only employee lookup) is actually implemented in `backend/` today; the other three components are analyzed and designed but not yet built — see [`Docs/c4/README.md`](Docs/c4/README.md#3-component-diagram) and `backend/README.md`'s "Known deviations from the docs". Cross-component data dependencies (e.g. Salary Grade Promotion reading employee/organizational unit/salary grade data) are documented in prose there rather than as call arrows, since the internal interaction model isn't designed yet — see [Cross-component Data Dependencies](Docs/c4/README.md#cross-component-data-dependencies).
+All four components are implemented in `backend/`, each split by capability across all layers (`HRM.Domain` → `HRM.Application` → `HRM.Infrastructure` → `HRM.Api`) per [`Docs/CodeStructure/BackendStructure.md`](Docs/CodeStructure/BackendStructure.md) — see [`Docs/c4/README.md`](Docs/c4/README.md#3-component-diagram). Cross-component data dependencies (e.g. Salary Grade Promotion reading employee/organizational unit/salary grade data) are documented in prose there rather than as call arrows — see [Cross-component Data Dependencies](Docs/c4/README.md#cross-component-data-dependencies); in code, this is a Service-to-Service-interface call, never a direct cross-domain repository access.
 
 → Full folder: [`Docs/c4/`](Docs/c4/README.md)
 
@@ -302,7 +320,7 @@ The source structure is designed before implementation and aligned with the docu
 
 ### Frontend — React
 
-The frontend uses a feature-oriented structure with areas such as:
+The frontend structure is **design-only** (no `frontend/` code exists yet). It uses a feature-oriented structure with areas such as:
 
 * `components/`
 * `pages/`
@@ -317,6 +335,8 @@ The backend is organized into four projects:
 * `HRM.Application` — application services and business rules
 * `HRM.Domain` — domain entities and core models
 * `HRM.Infrastructure` — EF Core, repositories, and infrastructure concerns
+
+Each project is split by business domain (`EmployeeManagement`, `OrganizationManagement`, `SalaryMasterData`, `SalaryGradePromotion`); a service may call another domain only through that domain's service interface, never its repository.
 
 Detailed structure:
 
@@ -345,11 +365,13 @@ Key documents:
 
 ## 7. Implementation & Testing
 
-The Salary Grade Promotion backend is implemented with **ASP.NET Core / .NET 8**, using the same 3-tier project layout (`HRM.Api` / `HRM.Application` / `HRM.Domain` / `HRM.Infrastructure`) described in section 5.
+The full HRM backend — all four modules (Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion) — is implemented with **ASP.NET Core / .NET 8**, using the project layout (`HRM.Api` / `HRM.Application` / `HRM.Domain` / `HRM.Infrastructure`) described in section 5.
 
 Automated tests are organized into:
 
 * `tests/HRM.Application.Tests` — unit tests for application services and business rules using mocked dependencies.
 * `tests/HRM.Api.Tests` — integration tests through the HTTP pipeline, including API routing, request handling, and response status behavior.
+
+231 tests passing (155 unit + 76 integration), 0 build warnings.
 
 → [`backend/`](backend/README.md)

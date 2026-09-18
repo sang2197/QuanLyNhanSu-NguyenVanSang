@@ -6,7 +6,13 @@ info:
     Organization Management, Salary Master Data, and Salary Grade Promotion.
     Designed from the current User Stories / Use Cases, Information
     Architecture / Screens Hierarchy / UI-UX, the C4 model (`Docs/c4/`), and
-    the database design (`Docs/Database/HRM_System.dbml`)
+    the database design (`Docs/Database/HRM_System.dbml`).
+
+    Implementation status (baseline commit 77e5716, reviewed 2026-09-18): all
+    endpoints are implemented in `backend/`. The backend has no authentication
+    yet (`bearerAuth` is declared for documentation only), serves routes
+    without a version prefix, and the server URL below is a placeholder. See
+    `Docs/API/README.md`.
   version: "0.2.0"
 servers:
   - url: https://api.example.com/v1

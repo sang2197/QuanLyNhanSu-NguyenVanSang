@@ -1,6 +1,8 @@
 # Frontend Folder Structure (React)
 
-Proposed `frontend/` project layout for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — mapping the [C4 `HRM Web Application` container](../c4/README.md#2-container-diagram) to an actual source folder. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
+> **Status:** Design only (no frontend code exists) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
+`frontend/` project layout (design only — not yet implemented) for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — mapping the [C4 `HRM Web Application` container](../c4/README.md#2-container-diagram) to an actual source folder. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
 
 Feature-based structure: folders are organized by business capability, matching the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap and each module's Screens Hierarchy — not by technical file type. See [ADR-08](../Arc42/09-architecture-decisions.md#adr-08-switch-frontend-framework-to-react). No `frontend/` implementation exists yet; this is the target structure.
 

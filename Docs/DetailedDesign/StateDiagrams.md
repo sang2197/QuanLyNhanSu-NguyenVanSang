@@ -1,5 +1,7 @@
 # State Diagrams - HRM System
 
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
 UML state machine diagrams for every status-bearing entity across the full HRM system, derived from the `Status`/enum fields in [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml), and the guard conditions in each module's Use Cases.
 
 **Notation** — transitions are written in UML's `event [guard] / effect` form: a short event name, an optional `[guard]` stating the condition that must hold for the transition to fire (phrased positively, as what *allows* it, not what blocks it), and an optional `/ effect` for a side effect worth calling out. User Story/Acceptance-Criteria/Business-Rule references and any longer explanation are kept out of the diagram and given as prose underneath instead.

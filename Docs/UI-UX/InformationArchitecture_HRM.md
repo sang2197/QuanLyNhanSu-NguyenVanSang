@@ -1,5 +1,7 @@
 # Information Architecture - HRM System
 
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
 This document defines the page-level information architecture and sitemap of the HRM system based on the modules currently specified in `Docs/Requirements/`.
 
 The current scope covers:
@@ -209,20 +211,20 @@ Creating, updating, deactivating, and reactivating Salary Grades are interaction
 | Page / Information Location | Type           | Domain                  | Parent                 | Current Design Status         |
 | ---------------------------- | -------------- | ----------------------- | ---------------------- | ------------------------------ |
 | Dashboard                   | Page           | HRM                     | HRM System             | TBD — no current requirements |
-| Employees                   | Page           | Employee Management     | Employee Management    | Prototyped (HTML)             |
-| Employee Detail             | Page           | Employee Management     | Employees              | Prototyped (HTML)             |
-| Organization Structure      | Page           | Organization Management | Organization           | Prototyped (HTML)             |
-| Job Titles                  | Page           | Organization Management | Organization           | Prototyped (HTML)             |
-| Review Periods              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Prototyped (HTML)             |
-| Review Period Detail        | Page           | Salary Grade Promotion  | Review Periods         | Prototyped (HTML)             |
-| Employee Review Detail      | Page           | Salary Grade Promotion  | Review Period Detail   | Prototyped (HTML)             |
-| Salary Decisions            | Page           | Salary Grade Promotion  | Salary Grade Promotion | Prototyped (HTML)             |
-| Salary Decision Detail      | Page           | Salary Grade Promotion  | Salary Decisions       | Prototyped (HTML)             |
-| Salary History              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Prototyped (HTML)             |
-| Base Salary Rate            | Page           | Salary Master Data      | Salary Master Data     | Prototyped (HTML)             |
-| Salary Scales               | Page           | Salary Master Data      | Salary Master Data     | Prototyped (HTML)             |
-| Salary Scale Detail         | Page           | Salary Master Data      | Salary Scales          | Prototyped (HTML)             |
-| Salary Grades               | Nested Section | Salary Master Data      | Salary Scale Detail    | Prototyped (HTML)             |
+| Employees                   | Page           | Employee Management     | Employee Management    | Designed (image)              |
+| Employee Detail             | Page           | Employee Management     | Employees              | Wireframe specified             |
+| Organization Structure      | Page           | Organization Management | Organization           | Designed (image)              |
+| Job Titles                  | Page           | Organization Management | Organization           | Wireframe specified             |
+| Review Periods              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Designed (image)              |
+| Review Period Detail        | Page           | Salary Grade Promotion  | Review Periods         | Designed (image)              |
+| Employee Review Detail      | Page           | Salary Grade Promotion  | Review Period Detail   | Designed (image)              |
+| Salary Decisions            | Page           | Salary Grade Promotion  | Salary Grade Promotion | Designed (image)              |
+| Salary Decision Detail      | Page           | Salary Grade Promotion  | Salary Decisions       | Designed (image)              |
+| Salary History              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Designed (image)              |
+| Base Salary Rate            | Page           | Salary Master Data      | Salary Master Data     | Wireframe specified             |
+| Salary Scales               | Page           | Salary Master Data      | Salary Master Data     | Wireframe specified             |
+| Salary Scale Detail         | Page           | Salary Master Data      | Salary Scales          | Wireframe specified             |
+| Salary Grades               | Nested Section | Salary Master Data      | Salary Scale Detail    | Wireframe specified             |
 
 ---
 

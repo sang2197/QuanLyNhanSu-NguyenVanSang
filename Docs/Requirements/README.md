@@ -1,6 +1,8 @@
 # Requirements Analysis
 
-Requirements analysis documents for the HRM system: the overall mind map, user stories (centered on **Salary Grade Promotion**, plus the surrounding Organization Management / Employee Profile / Salary Master Data modules), and the use case diagram derived from them.
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+
+Requirements analysis documents for the HRM system: the overall mind map, user stories and use cases for the four analyzed modules — **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion**.
 
 ## Mind Map
 
