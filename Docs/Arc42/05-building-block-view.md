@@ -8,7 +8,7 @@ This view is the C4 model, documented in detail in [`Docs/c4/`](../c4/README.md)
 2. **Container** — HRM Web Application, HRM Backend API, HRM Database.
 3. **Component** (inside HRM Backend API) — Employee Management, Salary Management.
 
-**Database building blocks** — see [Database Design](../Database/README.md) ([DBML source](../Database/HRM_Salary_Grade_Promotion.dbml), [Mermaid ER diagram](../Database/README.md#er-diagram-mermaid)): 8 tables — `HrEmployee`, `HrSalaryScale`, `HrSalaryGrade`, `HrEmployeeSalary`, `HrSalaryReviewPeriod`, `HrSalaryReviewEmployee`, `HrSalaryDecision`, `HrSalaryDecisionDetail`.
+**Database building blocks** — see [Database Design](../Database/README.md) ([DBML source](../Database/HRM_System.dbml), [Mermaid ER diagram](../Database/README.md#er-diagram-mermaid)): 12 tables across all four analyzed modules — `HrOrganizationalUnit`, `HrJobTitle`, `HrEmployee`, `HrBaseSalaryRate`, `HrSalaryScale`, `HrSalaryGrade`, `HrSalaryGradeCoefficient`, `HrEmployeeSalary`, `HrSalaryReviewPeriod`, `HrSalaryReviewEmployee`, `HrSalaryDecision`, `HrSalaryDecisionDetail`. Note: the backend implementation (`backend/`) still targets the earlier 8-table, Salary-Grade-Promotion-only schema — see `backend/README.md`.
 
 **Source code locations:** see [`Docs/CodeStructure/`](../CodeStructure/README.md) for how each container/component maps to an actual frontend/backend folder.
 

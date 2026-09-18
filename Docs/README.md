@@ -20,7 +20,7 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 
 ## Database Design
 
-- [`Database/`](Database/README.md) — Database design for the 8 tables: Mermaid ER diagram, DBML source, generated SQL, and the design write-up (English + Vietnamese).
+- [`Database/`](Database/README.md) — Database design for the full analyzed system (12 tables across all four modules): Mermaid ER diagram and DBML source.
 
 ## API Documentation
 

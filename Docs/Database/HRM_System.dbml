@@ -1,0 +1,217 @@
+// HRM System — full database design, redesigned from the current requirements
+// (UserStories/UseCase for all four analyzed modules: Employee Profile,
+// Organization Management, Salary Master Data, Salary Grade Promotion).
+// This replaces the earlier Salary-Grade-Promotion-only schema; the old schema
+// and the existing backend implementation predate this analysis and are not
+// used as a reference here.
+//
+// Each table's Note distinguishes two kinds of statements:
+//   - Requirement: behavior explicitly mandated by a cited BR/US/AC/UC id.
+//     The schema must support it, but the id itself dictates the behavior,
+//     not the specific table/column shape used to store it.
+//   - Design decision: how this schema chooses to structurally satisfy that
+//     requirement (e.g. a separate history table, a persisted snapshot
+//     column, an audit column, a chosen key type). A reasonable choice made
+//     here, not the only one possible, and not itself spelled out verbatim
+//     by any requirement doc.
+
+Table HrOrganizationalUnit {
+  Id int [pk, increment]
+  Name varchar(255) [not null]
+  ParentId int
+  UnitType varchar(30) [not null]
+  ContactEmail varchar(255)
+  ContactPhone varchar(30)
+  Status varchar(30) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Indexes {
+    (ParentId, Name) [unique]
+  }
+
+  Note: 'BR-ORG-03: name unique among units sharing the same parent, including among top-level (ParentId is null) units. A plain composite unique index treats multiple NULL ParentId values as distinct in SQL Server, so it will NOT by itself enforce uniqueness among top-level units — that case needs an application-layer check (or a computed non-null surrogate key) in addition to this index. UnitType is free text (varchar), not an enum/lookup table, because OQ-ORG-03 (whether the unit-type set must be configurable) is still open. No stable business Code column: OQ-ORG-01 (whether units need one in addition to Name) is still open.'
+}
+
+Table HrJobTitle {
+  Id int [pk, increment]
+  Name varchar(255) [not null, unique]
+  Status varchar(30) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Note: 'BR-ORG-17: name unique across the whole catalog (job titles are not owned by any Organizational Unit). No stable business Code column: OQ-ORG-02 is still open.'
+}
+
+Table HrEmployee {
+  Id int [pk, increment]
+  EmployeeCode varchar(50) [not null, unique]
+  FullName varchar(255) [not null]
+  OrganizationalUnitId int [not null]
+  JobTitleId int [not null]
+  JoinDate date [not null]
+  EmploymentStatus varchar(30) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Note: 'BR-EMP-01/02: unique EmployeeCode, all listed fields required. BR-EMP-04/05: OrganizationalUnitId/JobTitleId must reference an Active row at the time they are assigned — enforced at the application layer, not by a DB constraint (a later deactivation of the referenced unit/title must not retroactively invalidate the employee row). EmploymentStatus is one of Active / On Leave / Terminated (BR-EMP-10).'
+}
+
+Table HrBaseSalaryRate {
+  Id int [pk, increment]
+  Rate decimal(12,2) [not null]
+  EffectiveDate date [not null, unique]
+  CreatedAt datetime
+
+  Note: 'BR-SAL-01/02/03/04: one org-wide rate history, append-only — a new row must have EffectiveDate later than the latest existing one (enforced at the application layer; the unique index here only prevents two rows sharing the exact same date). Rate must be > 0 (app-layer check; DBML has no CHECK-constraint syntax).'
+}
+
+Table HrSalaryScale {
+  Id int [pk, increment]
+  Code varchar(50) [not null, unique]
+  Name varchar(255) [not null, unique]
+  Status varchar(30) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Note: 'BR-SAL-05/06/05A: Code and Name both unique, Code fixed at creation (BR-SAL-07 — enforced at the application layer, not by the schema), Active by default. No Description/EffectiveFrom/EffectiveTo columns: the current requirements do not describe the scale itself as effective-dated or needing a description — only the coefficients of its grades are (see HrSalaryGradeCoefficient).'
+}
+
+Table HrSalaryGrade {
+  Id int [pk, increment]
+  SalaryScaleId int [not null]
+  GradeNumber int [not null]
+  Status varchar(30) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Indexes {
+    (SalaryScaleId, GradeNumber) [unique]
+  }
+
+  Note: 'BR-SAL-09/09A: grade number unique within its scale, Active by default. Coefficient is intentionally NOT a column here — see HrSalaryGradeCoefficient. A single mutable Coefficient/EffectiveFrom column on this table (as in the earlier schema) cannot represent more than one historical value per grade, which BR-SAL-12/13 requires.'
+}
+
+Table HrSalaryGradeCoefficient {
+  Id int [pk, increment]
+  SalaryGradeId int [not null]
+  Coefficient decimal(5,2) [not null]
+  EffectiveDate date [not null]
+  CreatedAt datetime
+
+  Indexes {
+    (SalaryGradeId, EffectiveDate) [unique]
+  }
+
+  Note: 'BR-SAL-12/13: append-only effective-dated history per grade — the initial coefficient of the grade (set at creation, no separate effective date required) is simply the first row. A new row must have EffectiveDate later than the latest existing one for that grade, and Coefficient must be > 0 (both enforced at the application layer). BR-SAL-13A: a new row cannot be added while the grade is Inactive (application-layer check).'
+}
+
+Table HrEmployeeSalary {
+  Id int [pk, increment]
+  EmployeeId int [not null]
+  SalaryGradeId int [not null]
+  Coefficient decimal(5,2) [not null]
+  EffectiveDate date [not null]
+  Reason varchar(255) [not null]
+  SalaryDecisionId int
+  CreatedAt datetime
+
+  Indexes {
+    (EmployeeId, EffectiveDate) [unique]
+  }
+
+  Note: 'Append-only per-employee salary/grade history. Coefficient is copied (frozen) from HrSalaryGradeCoefficient at the time this row is written, so a later coefficient change for the grade does not retroactively rewrite past history. SalaryDecisionId is set when the row originated from an applied Salary Decision (US-SGP-08 AC02 traceability) and left null otherwise (e.g. Reason = "Initial assignment"). How an employee receives their very first salary-grade assignment is not explicitly specified by the current Employee Profile or Salary Master Data requirements — modeled here as an ordinary row with a null SalaryDecisionId; worth confirming as a follow-up requirement.'
+}
+
+Table HrSalaryReviewPeriod {
+  Id int [pk, increment]
+  Code varchar(50) [not null, unique]
+  Name varchar(255) [not null, unique]
+  ReviewType varchar(30) [not null]
+  ReviewDate date [not null]
+  EffectiveDate date
+  Description varchar(500)
+  Status varchar(30) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Note: 'US-SGP-01 AC02/AC03: both Code and Name unique. EffectiveDate and Description are optional (US-SGP-01). Status: IN_PROGRESS / SUBMITTED / CANCELLED / CLOSED.'
+}
+
+Table HrSalaryReviewEmployee {
+  Id int [pk, increment]
+  ReviewPeriodId int [not null]
+  EmployeeId int [not null]
+  CurrentSalaryGradeId int [not null]
+  CurrentCoefficient decimal(5,2) [not null]
+  Eligible bit [not null]
+  ProposedSalaryGradeId int
+  ProposedCoefficient decimal(5,2)
+  IneligibleReason varchar(500)
+  Outcome varchar(30)
+  RejectionReason varchar(500)
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Indexes {
+    (ReviewPeriodId, EmployeeId) [unique]
+  }
+
+  Note: 'Requirement (UC-SGP-01/03): eligibility, current/proposed grade, and the reason an employee is not eligible are a frozen per-period snapshot — never recalculated afterward, even if the real salary of the employee or Salary Master Data changes later. Design decision: IneligibleReason is persisted as its own column rather than derived on read, specifically so it stays frozen along with Eligible — a value computed live from current master data would silently drift from what was actually true when the period was created. Requirement (US-SGP-04): Outcome is null until HR Staff records Approved/Rejected; RejectionReason is cleared when a Rejected outcome is changed to Approved (AC08). Design decision: Organizational Unit is not duplicated here — the Wireframe filter by Organizational Unit reads the current unit of the employee via EmployeeId, since no requirement mandates freezing it.'
+}
+
+Table HrSalaryDecision {
+  Id int [pk, increment]
+  ReviewPeriodId int [not null]
+  DecisionNumber varchar(100) [not null, unique]
+  EffectiveDate date [not null]
+  Status varchar(30) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Note: 'US-SGP-06: at most one non-cancelled decision per ReviewPeriodId — DBML has no filtered-index syntax, so this must be a filtered unique index (WHERE Status <> "CANCELLED") in the actual database, not a plain [unique] here. Status: DRAFT / APPLIED / CANCELLED. No DecisionType, Description, FileUrl, or SignerEmployeeId columns — none of these are described by the current User Stories/Use Cases; actor identity in particular belongs to Identity & Access Management, which is explicitly out of scope for this module.'
+}
+
+Table HrSalaryDecisionDetail {
+  Id int [pk, increment]
+  SalaryDecisionId int [not null]
+  EmployeeId int [not null]
+  BaselineSalaryGradeId int [not null]
+  BaselineCoefficient decimal(5,2) [not null]
+  NewSalaryGradeId int [not null]
+  NewCoefficient decimal(5,2) [not null]
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Indexes {
+    (SalaryDecisionId, EmployeeId) [unique]
+  }
+
+  Note: 'Requirement (US-SGP-07 AC04): at Apply time, only BaselineSalaryGradeId is revalidated against the actual current grade of the employee — if the grade no longer matches, that employee change cannot be applied. BaselineCoefficient is NOT itself a separate revalidation trigger; it is stored purely for display/traceability (the coefficient that was current for that grade when the Draft was created). This schema does not add an independent coefficient-mismatch rule beyond what AC04 states — a matching grade already implies a well-defined coefficient via HrSalaryGradeCoefficient. Design decision: no per-line EffectiveDate — the effective date is a single attribute of the parent HrSalaryDecision, applied atomically to every included employee (US-SGP-07), so it is not duplicated here.'
+}
+
+// Relationships
+
+Ref: HrOrganizationalUnit.ParentId > HrOrganizationalUnit.Id
+
+Ref: HrEmployee.OrganizationalUnitId > HrOrganizationalUnit.Id
+Ref: HrEmployee.JobTitleId > HrJobTitle.Id
+
+Ref: HrSalaryGrade.SalaryScaleId > HrSalaryScale.Id
+Ref: HrSalaryGradeCoefficient.SalaryGradeId > HrSalaryGrade.Id
+
+Ref: HrEmployeeSalary.EmployeeId > HrEmployee.Id
+Ref: HrEmployeeSalary.SalaryGradeId > HrSalaryGrade.Id
+Ref: HrEmployeeSalary.SalaryDecisionId > HrSalaryDecision.Id
+
+Ref: HrSalaryReviewEmployee.ReviewPeriodId > HrSalaryReviewPeriod.Id
+Ref: HrSalaryReviewEmployee.EmployeeId > HrEmployee.Id
+Ref: HrSalaryReviewEmployee.CurrentSalaryGradeId > HrSalaryGrade.Id
+Ref: HrSalaryReviewEmployee.ProposedSalaryGradeId > HrSalaryGrade.Id
+
+Ref: HrSalaryDecision.ReviewPeriodId > HrSalaryReviewPeriod.Id
+
+Ref: HrSalaryDecisionDetail.SalaryDecisionId > HrSalaryDecision.Id
+Ref: HrSalaryDecisionDetail.EmployeeId > HrEmployee.Id
+Ref: HrSalaryDecisionDetail.BaselineSalaryGradeId > HrSalaryGrade.Id
+Ref: HrSalaryDecisionDetail.NewSalaryGradeId > HrSalaryGrade.Id

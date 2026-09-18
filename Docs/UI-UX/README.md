@@ -41,11 +41,22 @@ Screen design for the HRM system, in design order: information architecture, scr
 
 ### Salary Grade Promotion (prototype)
 
+#### Review Period List
 ![Review Period List](Review%20Period%20List.png)
+
+#### Review Period Detail
 ![Review Period Detail](Review%20Period%20Detail.png)
+
+#### Employee Review Detail
 ![Employee Review Detail](Employee%20Review%20Detail.png)
+
+#### Salary Decision List
 ![Salary Decision List](Salary%20Decision%20List.png)
+
+#### Salary Decision Detail
 ![Salary Decision Detail](Salary%20Decision%20Detail.png)
+
+#### Employee Salary History
 ![Employee Salary History](Employee%20Salary%20History.png)
 
 [`SalaryGradePromotion_Screens.html`](NewDesign/SalaryGradePromotion_Screens.html) — Interactive HTML prototype covering all 6 Salary Grade Promotion pages and their 9 modals/dialogs (Review Period List plus Create/Cancel; Review Period Detail plus Bulk Approve/Bulk Reject/Submit/Cancel/Decision Access; Employee Review Detail plus Approve/Reject; Salary Decision List plus Pick a Review Period; Salary Decision Detail plus Save Draft/Issue-Apply/Cancel; Employee Salary History), built from `Wireframe_SalaryGradePromotion.md`. Reuses the same app shell/design system as the other three prototypes; all four sidebars now cross-link to each other.

@@ -51,16 +51,30 @@ Screen design is developed progressively from information structure to detailed 
 
 ### Salary Grade Promotion
 
+#### Review Period List
 ![Review Period List](Docs/UI-UX/Review%20Period%20List.png)
+
+#### Review Period Detail
 ![Review Period Detail](Docs/UI-UX/Review%20Period%20Detail.png)
+
+#### Employee Review Detail
 ![Employee Review Detail](Docs/UI-UX/Employee%20Review%20Detail.png)
+
+#### Salary Decision List
 ![Salary Decision List](Docs/UI-UX/Salary%20Decision%20List.png)
+
+#### Salary Decision Detail
 ![Salary Decision Detail](Docs/UI-UX/Salary%20Decision%20Detail.png)
+
+#### Employee Salary History
 ![Employee Salary History](Docs/UI-UX/Employee%20Salary%20History.png)
 
 ### Employee Profile & Organization Management
 
+#### Employee List
 ![Employee List](Docs/UI-UX/Employee%20List.png)
+
+#### Organization Structure
 ![Organization Structure](Docs/UI-UX/Organization%20Structure.png)
 
 Key documents:
@@ -164,36 +178,123 @@ Architectural decisions, quality requirements, constraints, and risks are docume
 
 ## 4. Database Design & API Documentation
 
-The database design covers the core data required by Salary Grade Promotion, including employees, salary scales and grades, salary history, review periods, and salary decisions.
+The database design covers the full HRM system as analyzed — Employee Profile, Organization Management, Salary Master Data, and Salary Grade Promotion — 12 tables traced back to the Business Rules in each module's requirements.
 
 ```mermaid
 erDiagram
+    HrOrganizationalUnit ||--o{ HrOrganizationalUnit : "parent of"
+    HrOrganizationalUnit ||--o{ HrEmployee : "assigned to"
+    HrJobTitle ||--o{ HrEmployee : "assigned to"
+
+    HrSalaryScale ||--o{ HrSalaryGrade : contains
+    HrSalaryGrade ||--o{ HrSalaryGradeCoefficient : "coefficient history"
+    HrSalaryGrade ||--o{ HrEmployeeSalary : "assigned as"
+    HrSalaryGrade ||--o{ HrSalaryReviewEmployee : "current / proposed grade"
+    HrSalaryGrade ||--o{ HrSalaryDecisionDetail : "baseline / new grade"
+
     HrEmployee ||--o{ HrEmployeeSalary : has
     HrEmployee ||--o{ HrSalaryReviewEmployee : "is reviewed in"
     HrEmployee ||--o{ HrSalaryDecisionDetail : "affected by"
-    HrEmployee ||--o{ HrSalaryDecision : signs
-
-    HrSalaryScale ||--o{ HrSalaryGrade : contains
-    HrSalaryScale ||--o{ HrEmployeeSalary : "used in"
-
-    HrSalaryGrade ||--o{ HrEmployeeSalary : "assigned as"
-    HrSalaryGrade ||--o{ HrSalaryReviewEmployee : "current / proposed grade"
-    HrSalaryGrade ||--o{ HrSalaryDecisionDetail : "old / new grade"
 
     HrSalaryReviewPeriod ||--o{ HrSalaryReviewEmployee : contains
     HrSalaryReviewPeriod ||--o{ HrSalaryDecision : "drafted from"
-
     HrSalaryDecision ||--o{ HrSalaryDecisionDetail : contains
     HrSalaryDecision ||--o{ HrEmployeeSalary : causes
 
-    HrEmployeeSalary ||--o{ HrSalaryReviewEmployee : "current salary"
-    HrEmployeeSalary ||--o{ HrSalaryDecisionDetail : "old salary"
+    HrOrganizationalUnit {
+        int Id PK
+        string Name
+        int ParentId FK
+        string UnitType
+        string ContactEmail
+        string ContactPhone
+        string Status
+    }
+    HrJobTitle {
+        int Id PK
+        string Name UK
+        string Status
+    }
+    HrEmployee {
+        int Id PK
+        string EmployeeCode UK
+        string FullName
+        int OrganizationalUnitId FK
+        int JobTitleId FK
+        date JoinDate
+        string EmploymentStatus
+    }
+    HrBaseSalaryRate {
+        int Id PK
+        decimal Rate
+        date EffectiveDate UK
+    }
+    HrSalaryScale {
+        int Id PK
+        string Code UK
+        string Name UK
+        string Status
+    }
+    HrSalaryGrade {
+        int Id PK
+        int SalaryScaleId FK
+        int GradeNumber
+        string Status
+    }
+    HrSalaryGradeCoefficient {
+        int Id PK
+        int SalaryGradeId FK
+        decimal Coefficient
+        date EffectiveDate
+    }
+    HrEmployeeSalary {
+        int Id PK
+        int EmployeeId FK
+        int SalaryGradeId FK
+        decimal Coefficient
+        date EffectiveDate
+        string Reason
+        int SalaryDecisionId FK
+    }
+    HrSalaryReviewPeriod {
+        int Id PK
+        string Code UK
+        string Name UK
+        string ReviewType
+        date ReviewDate
+        date EffectiveDate
+        string Status
+    }
+    HrSalaryReviewEmployee {
+        int Id PK
+        int ReviewPeriodId FK
+        int EmployeeId FK
+        int CurrentSalaryGradeId FK
+        bool Eligible
+        int ProposedSalaryGradeId FK
+        string Outcome
+    }
+    HrSalaryDecision {
+        int Id PK
+        int ReviewPeriodId FK
+        string DecisionNumber UK
+        date EffectiveDate
+        string Status
+    }
+    HrSalaryDecisionDetail {
+        int Id PK
+        int SalaryDecisionId FK
+        int EmployeeId FK
+        int BaselineSalaryGradeId FK
+        int NewSalaryGradeId FK
+    }
 ```
+
+`HrBaseSalaryRate` has no relationships to other tables — it is a single organization-wide effective-dated value, not joined per employee or grade.
 
 Key database documents:
 
-* [`Gen_Table.sql`](Docs/Database/Gen_Table.sql) — SQL schema, keys, indexes, and foreign keys
-* [`HRM_Salary_Grade_Promotion.dbml`](Docs/Database/HRM_Salary_Grade_Promotion.dbml) — DBML source
+* [`HRM_System.dbml`](Docs/Database/HRM_System.dbml) — DBML source, the single source of truth for the schema alongside the Mermaid diagram above
 
 → Full folder: [`Docs/Database/`](Docs/Database/README.md)
 

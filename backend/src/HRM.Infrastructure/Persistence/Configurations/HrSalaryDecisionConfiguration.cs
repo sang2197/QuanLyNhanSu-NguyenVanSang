@@ -17,8 +17,9 @@ public class HrSalaryDecisionConfiguration : IEntityTypeConfiguration<HrSalaryDe
         builder.Property(d => d.Description).HasMaxLength(500);
         builder.Property(d => d.FileUrl).HasMaxLength(500);
 
-        // At most one non-cancelled decision per review period (US-06) —
-        // matches the filtered unique index in Docs/Database/Gen_Table.sql.
+        // At most one non-cancelled decision per review period (US-06).
+        // DBML has no filtered-index syntax, so this rule is enforced only here
+        // (see the Note on HrSalaryDecision in Docs/Database/HRM_Salary_Grade_Promotion.dbml).
         builder.HasIndex(d => d.ReviewPeriodId)
             .IsUnique()
             .HasFilter("[Status] <> 'CANCELLED'")

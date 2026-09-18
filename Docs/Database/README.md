@@ -1,68 +1,89 @@
-# Database Design - Salary Grade Promotion
+# Database Design - HRM System
 
-Database design for the **Salary Grade Promotion** feature: 8 tables covering employees, salary scales/grades, salary history, review periods, and salary decisions.
+Database design for the full HRM system as currently analyzed: **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — 12 tables, traced back to the Business Rules in each module's `UserStories_*.md` / `UseCase_*.md`.
 
 ## ER Diagram (Mermaid)
 
 ```mermaid
 erDiagram
+    HrOrganizationalUnit ||--o{ HrOrganizationalUnit : "parent of"
+    HrOrganizationalUnit ||--o{ HrEmployee : "assigned to"
+    HrJobTitle ||--o{ HrEmployee : "assigned to"
+
+    HrSalaryScale ||--o{ HrSalaryGrade : contains
+    HrSalaryGrade ||--o{ HrSalaryGradeCoefficient : "coefficient history"
+    HrSalaryGrade ||--o{ HrEmployeeSalary : "assigned as"
+    HrSalaryGrade ||--o{ HrSalaryReviewEmployee : "current / proposed grade"
+    HrSalaryGrade ||--o{ HrSalaryDecisionDetail : "baseline / new grade"
+
     HrEmployee ||--o{ HrEmployeeSalary : has
     HrEmployee ||--o{ HrSalaryReviewEmployee : "is reviewed in"
     HrEmployee ||--o{ HrSalaryDecisionDetail : "affected by"
-    HrEmployee ||--o{ HrSalaryDecision : signs
-    HrSalaryScale ||--o{ HrSalaryGrade : contains
-    HrSalaryScale ||--o{ HrEmployeeSalary : "used in"
-    HrSalaryGrade ||--o{ HrEmployeeSalary : "assigned as"
-    HrSalaryGrade ||--o{ HrSalaryReviewEmployee : "current / proposed grade"
-    HrSalaryGrade ||--o{ HrSalaryDecisionDetail : "old / new grade"
+
     HrSalaryReviewPeriod ||--o{ HrSalaryReviewEmployee : contains
     HrSalaryReviewPeriod ||--o{ HrSalaryDecision : "drafted from"
     HrSalaryDecision ||--o{ HrSalaryDecisionDetail : contains
     HrSalaryDecision ||--o{ HrEmployeeSalary : causes
-    HrEmployeeSalary ||--o{ HrSalaryReviewEmployee : "current salary"
-    HrEmployeeSalary ||--o{ HrSalaryDecisionDetail : "old salary"
 
+    HrOrganizationalUnit {
+        int Id PK
+        string Name
+        int ParentId FK
+        string UnitType
+        string ContactEmail
+        string ContactPhone
+        string Status
+    }
+    HrJobTitle {
+        int Id PK
+        string Name UK
+        string Status
+    }
     HrEmployee {
         int Id PK
         string EmployeeCode UK
         string FullName
-        int DepartmentId
-        int PositionId
+        int OrganizationalUnitId FK
+        int JobTitleId FK
         date JoinDate
-        string Status
+        string EmploymentStatus
+    }
+    HrBaseSalaryRate {
+        int Id PK
+        decimal Rate
+        date EffectiveDate UK
     }
     HrSalaryScale {
         int Id PK
         string Code UK
-        string Name
-        date EffectiveFrom
-        date EffectiveTo
+        string Name UK
         string Status
     }
     HrSalaryGrade {
         int Id PK
         int SalaryScaleId FK
         int GradeNumber
-        decimal Coefficient
-        date EffectiveFrom
-        date EffectiveTo
         string Status
+    }
+    HrSalaryGradeCoefficient {
+        int Id PK
+        int SalaryGradeId FK
+        decimal Coefficient
+        date EffectiveDate
     }
     HrEmployeeSalary {
         int Id PK
         int EmployeeId FK
-        int SalaryScaleId FK
         int SalaryGradeId FK
         decimal Coefficient
-        date EffectiveFrom
-        date EffectiveTo
+        date EffectiveDate
         string Reason
-        int DecisionId FK
+        int SalaryDecisionId FK
     }
     HrSalaryReviewPeriod {
         int Id PK
         string Code UK
-        string Name
+        string Name UK
         string ReviewType
         date ReviewDate
         date EffectiveDate
@@ -72,50 +93,46 @@ erDiagram
         int Id PK
         int ReviewPeriodId FK
         int EmployeeId FK
-        int CurrentSalaryId FK
-        int CurrentGradeId FK
-        int ProposedGradeId FK
-        string EligibilityStatus
-        string ReviewStatus
+        int CurrentSalaryGradeId FK
+        bool Eligible
+        int ProposedSalaryGradeId FK
+        string Outcome
     }
     HrSalaryDecision {
         int Id PK
         int ReviewPeriodId FK
         string DecisionNumber UK
-        date DecisionDate
         date EffectiveDate
-        string DecisionType
         string Status
-        int SignerEmployeeId FK
     }
     HrSalaryDecisionDetail {
         int Id PK
-        int DecisionId FK
+        int SalaryDecisionId FK
         int EmployeeId FK
-        int OldSalaryId FK
-        int OldGradeId FK
+        int BaselineSalaryGradeId FK
         int NewSalaryGradeId FK
-        decimal NewCoefficient
-        date EffectiveFrom
     }
 ```
+
+`HrBaseSalaryRate` has no relationships to other tables — it is a single organization-wide effective-dated value, not joined per employee or grade (see the Business Rules note in the `.dbml`).
 
 ## Mapping Tables to the UI
 
 | Table | UI Role |
 |---|---|
-| `HrEmployee` | Employee information on detail, history, and review-list screens. |
-| `HrSalaryScale` | Salary scale master data source; usually not edited directly in the review workflow. |
-| `HrSalaryGrade` | Source of current and proposed grades/coefficients. |
-| `HrEmployeeSalary` | Current salary and salary-history timeline. |
+| `HrOrganizationalUnit` | Organization Structure tree, and the Organizational Unit picker on Employee/Review screens. |
+| `HrJobTitle` | Job Titles catalog, and the Job Title picker on Employee screens. |
+| `HrEmployee` | Employee List/Detail, and the employee identity shown on review/history/decision screens. |
+| `HrBaseSalaryRate` | Base Salary Rate screen and its effective-dated history. |
+| `HrSalaryScale` | Salary Scales list and Salary Scale Detail header. |
+| `HrSalaryGrade` | Salary Grades table within Salary Scale Detail. |
+| `HrSalaryGradeCoefficient` | Coefficient history shown when updating a Salary Grade. |
+| `HrEmployeeSalary` | Employee Salary History timeline, and the "current salary" facts on Employee Review Detail. |
 | `HrSalaryReviewPeriod` | Review Period List / Review Period Detail. |
-| `HrSalaryReviewEmployee` | Employee list and review results for each period. |
-| `HrSalaryDecision` | Decision header/general information. |
-| `HrSalaryDecisionDetail` | Employee list and old/new changes included in the decision. |
+| `HrSalaryReviewEmployee` | Employee list and review results within a Review Period; Employee Review Detail. |
+| `HrSalaryDecision` | Salary Decision List / Salary Decision Detail header. |
+| `HrSalaryDecisionDetail` | Included-employees table within Salary Decision Detail. |
 
 ## Files
 
-- [`HRM_Salary_Grade_Promotion.dbml`](HRM_Salary_Grade_Promotion.dbml) — DBML source code (from dbdiagram.io). This, together with the Mermaid diagram above, is the source of truth for the schema — edit here first, then re-export SQL/PNG if the schema changes.
-- [`DB_Diagram.png`](DB_Diagram.png) — Entity-relationship diagram exported from dbdiagram.io (legacy reference; the Mermaid diagram above is the standardized version).
-- [`Gen_Table.sql`](Gen_Table.sql) — SQL script (generated from dbdiagram.io) to create the 8 tables, keys, indexes, and foreign keys.
-- [`HRM_Salary_Grade_Promotion_Database_Design_EN.docx`](HRM_Salary_Grade_Promotion_Database_Design_EN.docx) — Database design write-up (English): purpose, keys, indexes, and business notes per table.
+- [`HRM_System.dbml`](HRM_System.dbml) — DBML source code. Together with the Mermaid diagram above, this is the single source of truth for the schema — edit here first, then update the Mermaid diagram to match.
