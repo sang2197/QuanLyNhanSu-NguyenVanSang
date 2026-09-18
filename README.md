@@ -91,7 +91,7 @@ Key documents:
 
 ## 3. Architecture — C4 Model
 
-The system architecture is documented using the **C4 model**, covering System Context, Container, Component, and a code-level view of Salary Management.
+The system architecture is documented using the **C4 model**, covering System Context, Container, and Component. The Code level is intentionally not included — detailed application structure is covered separately by Class Diagrams and Sequence Diagrams (see [Detailed Design](Docs/DetailedDesign/README.md)).
 
 The diagrams are written in **Mermaid** so they can be viewed and versioned directly in the repository.
 
@@ -100,11 +100,11 @@ The diagrams are written in **Mermaid** so they can be viewed and versioned dire
 ```mermaid
 flowchart LR
     HR([HR Staff<br/>Person])
-    APR([Approver<br/>Person])
-    SYS[["HRM System<br/>Software System<br/>Manages employee information and HR processes"]]
+    APR([Approver / Manager<br/>Person])
+    SYS[["HRM System<br/>Software System<br/>Manages employee, organization, salary, and salary promotion processes"]]
 
-    HR -->|Uses to manage HR operations| SYS
-    APR -->|Reviews and approves| SYS
+    HR -->|Manages HR information and review processes| SYS
+    APR -->|Manages salary decisions| SYS
 ```
 
 ### Container
@@ -112,18 +112,18 @@ flowchart LR
 ```mermaid
 flowchart TB
     HR([HR Staff])
-    APR([Approver])
+    APR([Approver / Manager])
 
     subgraph HRM["HRM System"]
-        WEB[["HRM Web Application<br/>Container: JavaScript / React<br/>Provides the UI for HR operations"]]
-        API[["HRM Backend API<br/>Container: ASP.NET Core<br/>Handles HR business logic"]]
-        DB[("HRM Database<br/>Container: SQL Server<br/>Stores HRM operational data")]
+        WEB[["HRM Web Application<br/>Container: JavaScript / React<br/>Provides the user interface for HR operations"]]
+        API[["HRM Backend API<br/>Container: ASP.NET Core<br/>Handles HR business logic and exposes APIs"]]
+        DB[("HRM Database<br/>Container: SQL Server<br/>Stores HRM operational and historical data")]
     end
 
-    HR -->|Use| WEB
-    APR -->|Use| WEB
-    WEB -->|HTTPS / REST / JSON| API
-    API -->|Reads from and writes to<br/>SQL| DB
+    HR -->|Uses| WEB
+    APR -->|Uses| WEB
+    WEB -->|Makes API requests<br/>HTTPS / REST / JSON| API
+    API -->|Reads and writes data<br/>SQL| DB
 ```
 
 ### Component
@@ -136,35 +136,25 @@ flowchart TB
 
     subgraph API["HRM Backend API"]
         EMP[["Employee Management<br/>Component<br/>Manages employee profiles and employment information"]]
-        SAL[["Salary Management<br/>Component<br/>Handles salary grades, reviews, decisions, and history"]]
+        ORG[["Organization Management<br/>Component<br/>Manages organizational units and job titles"]]
+        SAL[["Salary Master Data<br/>Component<br/>Manages base salary rates, salary scales, grades, and coefficients"]]
+        SGP[["Salary Grade Promotion<br/>Component<br/>Handles salary review periods, salary decisions, and salary history"]]
     end
 
     DB[("HRM Database")]
 
     WEB -->|HTTPS / REST / JSON| EMP
+    WEB -->|HTTPS / REST / JSON| ORG
     WEB -->|HTTPS / REST / JSON| SAL
+    WEB -->|HTTPS / REST / JSON| SGP
 
-    EMP -->|Reads from and writes to SQL| DB
-    SAL -->|Reads from and writes to SQL| DB
-
-    SAL -.->|Uses employee information| EMP
+    EMP -->|Reads/writes data| DB
+    ORG -->|Reads/writes data| DB
+    SAL -->|Reads/writes data| DB
+    SGP -->|Reads/writes data| DB
 ```
 
-### Code-Level View
-
-Inside the Salary Management component:
-
-```mermaid
-flowchart TB
-    subgraph SAL["Salary Management"]
-        CTRL[["SalaryReviewController<br/>Class<br/>Handles salary review requests"]]
-        SVC[["SalaryReviewService<br/>Class<br/>Handles salary review business logic"]]
-        REPO[["SalaryRepository<br/>Class<br/>Handles salary data access"]]
-    end
-
-    CTRL -->|Delegates processing to| SVC
-    SVC -->|Accesses salary data through| REPO
-```
+Only **Salary Grade Promotion** (plus minimal read-only employee lookup) is actually implemented in `backend/` today; the other three components are analyzed and designed but not yet built — see [`Docs/c4/README.md`](Docs/c4/README.md#3-component-diagram) and `backend/README.md`'s "Known deviations from the docs". Cross-component data dependencies (e.g. Salary Grade Promotion reading employee/organizational unit/salary grade data) are documented in prose there rather than as call arrows, since the internal interaction model isn't designed yet — see [Cross-component Data Dependencies](Docs/c4/README.md#cross-component-data-dependencies).
 
 → Full folder: [`Docs/c4/`](Docs/c4/README.md)
 

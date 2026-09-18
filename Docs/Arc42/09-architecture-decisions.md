@@ -8,7 +8,7 @@
 
 **Context**
 
-The system needs a web UI usable by both HR Staff and Approver, calling a shared business-logic layer that could later support other clients (e.g. a future mobile app or integration).
+The system needs a web UI usable by both HR Staff and Approver / Manager, calling a shared business-logic layer that could later support other clients (e.g. a future mobile app or integration).
 
 **Decision**
 
@@ -50,22 +50,22 @@ The system does not overwrite the previous salary record when an employee moves 
 
 **Context**
 
-Salary Management's scope is expected to grow (e.g. a future Allowance Management feature), while Employee Management is comparatively stable core data.
+Salary Grade Promotion's scope is expected to grow (e.g. a future Allowance Management feature), while Employee Management, Organization Management, and Salary Master Data are comparatively stable reference/core data, each owned by its own module per the current requirements analysis.
 
 **Decision**
 
-Inside the Backend API, `Employee Management` and `Salary Management` are implemented as separate components, split by business domain rather than by technical layer.
+Inside the Backend API, `Employee Management`, `Organization Management`, `Salary Master Data`, and `Salary Grade Promotion` are implemented as four separate components, split by business domain rather than by technical layer. Only `Salary Grade Promotion` (plus a minimal read-only employee lookup) is implemented in `backend/` today — the other three are analyzed and designed (see `Docs/Database/` and each module's `UserStories_*.md`/`UseCase_*.md`) but not yet built as backend components.
 
 **Consequences**
 
-- *Positive:* Salary Management can evolve independently; smaller, more focused codebases.
-- *Negative:* Any cross-domain read (e.g. Salary Management showing an employee's department) requires a call to Employee Management instead of a single local query.
+- *Positive:* Each component can evolve independently; smaller, more focused codebases.
+- *Negative:* Any cross-domain read (e.g. Salary Grade Promotion showing an employee's Organizational Unit) requires a call to another component instead of a single local query.
 
 **Risks created:** RISK-03
 
 ---
 
-## ADR-04: Layered Design inside Salary Management
+## ADR-04: Layered Design inside Salary Grade Promotion
 
 **Status:** Accepted
 
@@ -75,7 +75,7 @@ Business rules (eligibility, approval, effective-dating) need one clear home so 
 
 **Decision**
 
-Within the Salary Management component, requests flow through a Controller, then a Service, then a Repository (`SalaryReviewController` → `SalaryReviewService` → `SalaryRepository`).
+Within the Salary Grade Promotion component, requests flow through a Controller, then a Service, then a Repository (`ReviewPeriodsController` → `SalaryReviewService` → `SalaryRepository`, and equivalently for the decision and history slices). The same pattern is intended for the other three components once they are built.
 
 **Consequences**
 
@@ -92,7 +92,7 @@ Within the Salary Management component, requests flow through a Controller, then
 
 **Context**
 
-HR Staff and the Approver need to redo or reject proposals freely during a review period without any risk of accidentally changing real payroll data.
+HR Staff and the Approver / Manager need to redo or reject proposals freely during a review period without any risk of accidentally changing real payroll data.
 
 **Decision**
 
@@ -134,11 +134,11 @@ Use Angular for the frontend, ASP.NET Core for the backend API, and SQL Server f
 
 **Context**
 
-The system manages sensitive salary data and has 2 distinct roles (HR Staff, Approver) with different permitted actions (see [User Stories](../Requirements/UserStories_SalaryGradePromotion.md)). Before this ADR, no authentication/authorization mechanism had been decided — this was tracked as an open gap (RISK-05).
+The system manages sensitive salary data and has 2 distinct roles (HR Staff, Approver / Manager) with different permitted actions (see [User Stories](../Requirements/UserStories_SalaryGradePromotion.md)). Before this ADR, no authentication/authorization mechanism had been decided — this was tracked as an open gap (RISK-05).
 
 **Decision**
 
-Use ASP.NET Core Identity to issue JWT bearer tokens after login. The Web Application attaches the token to every Backend API request. The Backend API enforces role-based access control (HR Staff vs. Approver) on each endpoint.
+Use ASP.NET Core Identity to issue JWT bearer tokens after login. The Web Application attaches the token to every Backend API request. The Backend API enforces role-based access control (HR Staff vs. Approver / Manager) on each endpoint.
 
 **Consequences**
 

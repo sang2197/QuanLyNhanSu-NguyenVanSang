@@ -1,177 +1,739 @@
-# Class Diagram - Salary Grade Promotion
+# Class Diagram - HRM System
 
-Derived from [Database Design](../Database/README.md) (fields), [Code Structure](../CodeStructure/README.md) (class/interface names), and [C4 Component/Code diagrams](../c4/README.md).
+UML class diagrams for the full HRM system — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — derived from [Database Design](../Database/README.md) (entity fields), [`openapi.yaml`](../API/openapi.yaml) (operations, request/response shapes, enums), [C4 Component Diagram](../c4/README.md#3-component-diagram) (the 4 components), and [`CodeStructure/`](../CodeStructure/README.md) (class/interface names and their domain folders). The existing backend implementation is not used as a source — see `backend/README.md`'s "Known deviations from the docs".
+
+**Notation**
+
+- Attributes: `name : type [multiplicity]`. A field that is nullable in [`HRM_System.dbml`](../Database/HRM_System.dbml) is given multiplicity `[0..1]`; a required field has none (implicitly `[1]`).
+- Operations: `name(param : type, ...) : returnType [multiplicity]`. A lookup that may find nothing returns `[0..1]`; a method returning a collection returns `[0..*]`; a method with no return value (void) has none.
+- `filter` parameters (`EmployeeFilter`, `ReviewPeriodFilter`, ...) are this document's own DTOs bundling the query parameters `openapi.yaml` lists individually for that search/list endpoint — a reasonable detail-design shape, not a literal schema name from the spec.
+- Repository operations take and return **domain entities** (`Hr*`, matching `HRM.Domain/Entities/`); Controller/Service operations take and return **API DTOs** (matching `openapi.yaml` schema names, e.g. `Employee`, `CreateEmployeeRequest`). Mapping between the two happens in `HRM.Api/Mappings/` (see [`BackendStructure.md`](../CodeStructure/BackendStructure.md)) and is not modeled as its own class here.
+- Long business-rule/acceptance-criteria references are kept out of operation signatures and collected in a `note for <Class>` UML note on the implementing class instead, one line per constrained operation.
+- Each Service and Repository is coded behind an interface (`<<interface>>`), shown explicitly with UML realization (`..|>`) — this is how [`BackendStructure.md`](../CodeStructure/BackendStructure.md)'s `Interfaces/` folders are implemented, and makes the Dependency Inversion between `HRM.Application` and `HRM.Infrastructure` visible.
 
 ## 1. Domain Model
 
-The 8 entities from the [Database Design](../Database/README.md), shown as domain classes with their relationships (same relationships as the [Mermaid ER diagram](../Database/README.md#er-diagram-mermaid), plus the enums used by the [OpenAPI spec](../API/openapi.yaml)).
+All 12 entities from the [Database Design](../Database/README.md) (`HRM_System.dbml` is the source of truth for fields), plus the 6 enums used by [`openapi.yaml`](../API/openapi.yaml). Composition (`*--`) is used where the child row has no independent existence or business meaning outside its parent (a Salary Grade's coefficient history, a Review Period's employee snapshot, a Salary Decision's detail lines); plain association is used for ordinary foreign-key references.
 
 ```mermaid
 classDiagram
+    %% ---------- Employee Management ----------
     class HrEmployee {
-        +int Id
-        +string EmployeeCode
-        +string FullName
-        +int DepartmentId
-        +int PositionId
-        +DateTime JoinDate
-        +string Status
+        +Id : int
+        +EmployeeCode : string
+        +FullName : string
+        +OrganizationalUnitId : int
+        +JobTitleId : int
+        +JoinDate : DateTime
+        +EmploymentStatus : EmploymentStatus
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
+    }
+
+    %% ---------- Organization Management ----------
+    class HrOrganizationalUnit {
+        +Id : int
+        +Name : string
+        +ParentId : int [0..1]
+        +UnitType : string
+        +ContactEmail : string [0..1]
+        +ContactPhone : string [0..1]
+        +Status : ActiveStatus
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
+    }
+    class HrJobTitle {
+        +Id : int
+        +Name : string
+        +Status : ActiveStatus
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
+    }
+
+    %% ---------- Salary Master Data ----------
+    class HrBaseSalaryRate {
+        +Id : int
+        +Rate : decimal
+        +EffectiveDate : DateTime
+        +CreatedAt : DateTime
     }
     class HrSalaryScale {
-        +int Id
-        +string Code
-        +string Name
-        +DateTime EffectiveFrom
-        +DateTime EffectiveTo
-        +string Status
+        +Id : int
+        +Code : string
+        +Name : string
+        +Status : ActiveStatus
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
     }
     class HrSalaryGrade {
-        +int Id
-        +int SalaryScaleId
-        +int GradeNumber
-        +decimal Coefficient
-        +DateTime EffectiveFrom
-        +DateTime EffectiveTo
-        +string Status
+        +Id : int
+        +SalaryScaleId : int
+        +GradeNumber : int
+        +Status : ActiveStatus
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
     }
+    class HrSalaryGradeCoefficient {
+        +Id : int
+        +SalaryGradeId : int
+        +Coefficient : decimal
+        +EffectiveDate : DateTime
+        +CreatedAt : DateTime
+    }
+
+    %% ---------- Salary Grade Promotion ----------
     class HrEmployeeSalary {
-        +int Id
-        +int EmployeeId
-        +int SalaryScaleId
-        +int SalaryGradeId
-        +decimal Coefficient
-        +DateTime EffectiveFrom
-        +DateTime EffectiveTo
-        +string Reason
-        +int DecisionId
+        +Id : int
+        +EmployeeId : int
+        +SalaryGradeId : int
+        +Coefficient : decimal
+        +EffectiveDate : DateTime
+        +Reason : string
+        +SalaryDecisionId : int [0..1]
+        +CreatedAt : DateTime
     }
     class HrSalaryReviewPeriod {
-        +int Id
-        +string Code
-        +string Name
-        +ReviewType ReviewType
-        +DateTime ReviewDate
-        +DateTime EffectiveDate
-        +ReviewPeriodStatus Status
+        +Id : int
+        +Code : string
+        +Name : string
+        +ReviewType : ReviewType
+        +ReviewDate : DateTime
+        +EffectiveDate : DateTime [0..1]
+        +Description : string [0..1]
+        +Status : ReviewPeriodStatus
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
     }
     class HrSalaryReviewEmployee {
-        +int Id
-        +int ReviewPeriodId
-        +int EmployeeId
-        +int CurrentSalaryId
-        +int CurrentGradeId
-        +int ProposedGradeId
-        +EligibilityStatus EligibilityStatus
-        +ReviewOutcome ReviewOutcome
-        +string Reason
+        +Id : int
+        +ReviewPeriodId : int
+        +EmployeeId : int
+        +CurrentSalaryGradeId : int
+        +CurrentCoefficient : decimal
+        +Eligible : bool
+        +ProposedSalaryGradeId : int [0..1]
+        +ProposedCoefficient : decimal [0..1]
+        +IneligibleReason : string [0..1]
+        +Outcome : ReviewOutcome [0..1]
+        +RejectionReason : string [0..1]
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
     }
     class HrSalaryDecision {
-        +int Id
-        +int ReviewPeriodId
-        +string DecisionNumber
-        +DateTime DecisionDate
-        +DateTime EffectiveDate
-        +DecisionType DecisionType
-        +SalaryDecisionStatus Status
-        +int SignerEmployeeId
+        +Id : int
+        +ReviewPeriodId : int
+        +DecisionNumber : string
+        +EffectiveDate : DateTime
+        +Status : SalaryDecisionStatus
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
     }
     class HrSalaryDecisionDetail {
-        +int Id
-        +int DecisionId
-        +int EmployeeId
-        +int OldSalaryId
-        +int OldGradeId
-        +int NewSalaryGradeId
-        +decimal NewCoefficient
-        +DateTime EffectiveFrom
+        +Id : int
+        +SalaryDecisionId : int
+        +EmployeeId : int
+        +BaselineSalaryGradeId : int
+        +BaselineCoefficient : decimal
+        +NewSalaryGradeId : int
+        +NewCoefficient : decimal
+        +CreatedAt : DateTime
+        +UpdatedAt : DateTime
     }
 
-    HrSalaryScale "1" --> "*" HrSalaryGrade : contains
-    HrEmployee "1" --> "*" HrEmployeeSalary : has
-    HrSalaryScale "1" --> "*" HrEmployeeSalary : used in
-    HrSalaryGrade "1" --> "*" HrEmployeeSalary : assigned as
-    HrSalaryDecision "1" --> "*" HrEmployeeSalary : causes
-    HrSalaryReviewPeriod "1" --> "0..1" HrSalaryDecision : drafted from
-    HrSalaryReviewPeriod "1" --> "*" HrSalaryReviewEmployee : contains
-    HrEmployee "1" --> "*" HrSalaryReviewEmployee : is reviewed in
-    HrEmployeeSalary "1" --> "*" HrSalaryReviewEmployee : current salary
-    HrSalaryGrade "1" --> "*" HrSalaryReviewEmployee : current or proposed grade
-    HrSalaryDecision "1" --> "*" HrSalaryDecisionDetail : contains
-    HrEmployee "1" --> "*" HrSalaryDecisionDetail : affected by
-    HrEmployeeSalary "1" --> "*" HrSalaryDecisionDetail : old salary
-    HrSalaryGrade "1" --> "*" HrSalaryDecisionDetail : old or new grade
-    HrEmployee "1" --> "*" HrSalaryDecision : signs
+    %% ---------- Enumerations ----------
+    class ActiveStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+    }
+    class EmploymentStatus {
+        <<enumeration>>
+        ACTIVE
+        ON_LEAVE
+        TERMINATED
+    }
+    class ReviewType {
+        <<enumeration>>
+        ANNUAL
+        MID_YEAR
+        SPECIAL
+    }
+    class ReviewPeriodStatus {
+        <<enumeration>>
+        IN_PROGRESS
+        SUBMITTED
+        CLOSED
+        CANCELLED
+    }
+    class ReviewOutcome {
+        <<enumeration>>
+        PENDING
+        APPROVED
+        REJECTED
+    }
+    class SalaryDecisionStatus {
+        <<enumeration>>
+        DRAFT
+        APPLIED
+        CANCELLED
+    }
+
+    %% ---------- Relationships ----------
+    HrOrganizationalUnit "0..1" o-- "0..*" HrOrganizationalUnit : parent of
+    HrOrganizationalUnit "1" --> "0..*" HrEmployee : assigned to
+    HrJobTitle "1" --> "0..*" HrEmployee : assigned to
+
+    HrSalaryScale "1" *-- "0..*" HrSalaryGrade : contains
+    HrSalaryGrade "1" *-- "0..*" HrSalaryGradeCoefficient : coefficient history
+
+    HrEmployee "1" --> "0..*" HrEmployeeSalary : has
+    HrSalaryGrade "1" --> "0..*" HrEmployeeSalary : assigned as
+    HrSalaryDecision "0..1" --> "0..*" HrEmployeeSalary : causes
+
+    HrSalaryReviewPeriod "1" *-- "0..*" HrSalaryReviewEmployee : contains (snapshot)
+    HrEmployee "1" --> "0..*" HrSalaryReviewEmployee : is reviewed in
+    HrSalaryGrade "1" --> "0..*" HrSalaryReviewEmployee : current grade
+    HrSalaryGrade "0..1" --> "0..*" HrSalaryReviewEmployee : proposed grade
+
+    HrSalaryReviewPeriod "1" --> "0..*" HrSalaryDecision : drafted from
+    HrSalaryDecision "1" *-- "0..*" HrSalaryDecisionDetail : contains
+    HrEmployee "1" --> "0..*" HrSalaryDecisionDetail : affected by
+    HrSalaryGrade "1" --> "0..*" HrSalaryDecisionDetail : baseline grade
+    HrSalaryGrade "1" --> "0..*" HrSalaryDecisionDetail : new grade
+
+    HrOrganizationalUnit ..> ActiveStatus
+    HrJobTitle ..> ActiveStatus
+    HrSalaryScale ..> ActiveStatus
+    HrSalaryGrade ..> ActiveStatus
+    HrEmployee ..> EmploymentStatus
+    HrSalaryReviewPeriod ..> ReviewType
+    HrSalaryReviewPeriod ..> ReviewPeriodStatus
+    HrSalaryReviewEmployee ..> ReviewOutcome
+    HrSalaryDecision ..> SalaryDecisionStatus
 ```
 
-## 2. API / Service / Repository Layer (Salary Management)
+**Notes**
 
-Matches [`BackendStructure.md`](../CodeStructure/BackendStructure.md) — Controller → Service → Repository per [ADR-04](../Arc42/09-architecture-decisions.md#adr-04-layered-design-inside-salary-management). Controller methods map directly to [`openapi.yaml`](../API/openapi.yaml) operations.
+- `HrOrganizationalUnit.ParentId` is `[0..1]` both as an attribute and as the `parent of` relationship's multiplicity (a top-level unit has no parent) — modeled as aggregation (`o--`), not composition: `BR-ORG-08` requires that moving a unit carries its subtree with it, and a unit's lifecycle is independent of any specific parent (it can be re-parented — `UC-ORG-04`).
+- `HrSalaryReviewEmployee`'s `proposed grade` relationship to `HrSalaryGrade` is `"0..1"`, matching `ProposedSalaryGradeId [0..1]`: a not-eligible employee has no proposed grade at all (`ineligibleReason` is populated instead). The `current grade` relationship stays `"1"` — every snapshot row has a current grade by definition.
+- `HrSalaryDecision --> HrEmployeeSalary : causes` is `"0..1" --> "0..*"`, not `"1" --> "0..*"`: most `HrEmployeeSalary` rows have no causing decision (`SalaryDecisionId [0..1]`, e.g. `Reason = "Initial assignment"`) — only rows written by `ApplyDecision` do.
+- `HrSalaryReviewPeriod --> HrSalaryDecision` is `"1" --> "0..*"`, not `"0..1"`: `US-SGP-10` AC04 allows a cancelled Draft to be replaced by a new Decision from the same period, so a period can accumulate several `HrSalaryDecision` rows over its lifetime — the "at most one **non-cancelled**" rule (`US-SGP-06`) is an application-layer invariant, not a structural multiplicity.
+- `HrBaseSalaryRate` has no relationships — a single, organization-wide effective-dated value (see [Database Design](../Database/README.md)).
 
-> Each Service/Repository is coded behind an interface (`ISalaryReviewService`, `ISalaryRepository`, etc. — see [`BackendStructure.md`](../CodeStructure/BackendStructure.md)) for dependency injection. Those interfaces are real in the code but omitted here as separate boxes — they add no fields/methods of their own and only made this diagram wider without adding information.
+## 2. Employee Management
+
+```mermaid
+classDiagram
+    class EmployeesController {
+        +CreateEmployee(request : CreateEmployeeRequest) : Employee
+        +SearchEmployees(filter : EmployeeFilter) : EmployeePage
+        +GetEmployee(employeeId : int) : Employee
+        +UpdateEmployee(employeeId : int, request : UpdateEmployeeRequest) : Employee
+        +ChangeEmploymentStatus(employeeId : int, request : ChangeEmploymentStatusRequest) : Employee
+    }
+
+    class IEmployeeService {
+        <<interface>>
+        +CreateEmployee(request : CreateEmployeeRequest) : Employee
+        +SearchEmployees(filter : EmployeeFilter) : EmployeePage
+        +GetEmployee(employeeId : int) : Employee
+        +UpdateEmployee(employeeId : int, request : UpdateEmployeeRequest) : Employee
+        +ChangeEmploymentStatus(employeeId : int, newStatus : EmploymentStatus) : Employee
+        +HasActiveEmployeesInUnit(unitId : int) : bool
+        +GetActiveEmployees() : Employee [0..*]
+    }
+    class EmployeeService {
+        +CreateEmployee(request : CreateEmployeeRequest) : Employee
+        +SearchEmployees(filter : EmployeeFilter) : EmployeePage
+        +GetEmployee(employeeId : int) : Employee
+        +UpdateEmployee(employeeId : int, request : UpdateEmployeeRequest) : Employee
+        +ChangeEmploymentStatus(employeeId : int, newStatus : EmploymentStatus) : Employee
+        +HasActiveEmployeesInUnit(unitId : int) : bool
+        +GetActiveEmployees() : Employee [0..*]
+        note for EmployeeService "CreateEmployee — unique code (BR-EMP-01), unit and job title must be active (BR-EMP-04, BR-EMP-05)<br/>SearchEmployees — combinable filters by code, name, unit, title, status (BR-EMP-06, BR-EMP-07)<br/>UpdateEmployee — code stays unique (BR-EMP-08), re-validates unit or title if changed (BR-EMP-04, BR-EMP-05)<br/>ChangeEmploymentStatus — Terminated to another status is unresolved (OQ-EMP-01)<br/>HasActiveEmployeesInUnit — exposed for Organization Management's deactivate guard (BR-ORG-11)<br/>GetActiveEmployees — exposed for Salary Grade Promotion's review-period snapshot (US-SGP-01)"
+    }
+    EmployeeService ..|> IEmployeeService
+
+    class IEmployeeRepository {
+        <<interface>>
+        +FindByCode(employeeCode : string) : HrEmployee [0..1]
+        +FindById(employeeId : int) : HrEmployee [0..1]
+        +Search(filter : EmployeeFilter) : HrEmployee [0..*]
+        +Add(employee : HrEmployee)
+        +Update(employee : HrEmployee)
+        +CountActive(organizationalUnitId : int) : int
+        +ListActive() : HrEmployee [0..*]
+    }
+    class EmployeeRepository {
+        -context : HrmDbContext
+    }
+    EmployeeRepository ..|> IEmployeeRepository
+
+    class IOrganizationalUnitService {
+        <<interface>>
+        note for IOrganizationalUnitService "Defined in Organization Management (Section 3) — shown here only as a dependency target."
+    }
+    class IJobTitleService {
+        <<interface>>
+        note for IJobTitleService "Defined in Organization Management (Section 3) — shown here only as a dependency target."
+    }
+
+    EmployeesController --> IEmployeeService
+    EmployeeService --> IEmployeeRepository
+    EmployeeService ..> IOrganizationalUnitService : IsUnitActive(unitId) — BR-EMP-04
+    EmployeeService ..> IJobTitleService : IsJobTitleActive(jobTitleId) — BR-EMP-05
+```
+
+## 3. Organization Management
+
+```mermaid
+classDiagram
+    class OrganizationalUnitsController {
+        +CreateUnit(request : CreateOrganizationalUnitRequest) : OrganizationalUnit
+        +GetStructure() : OrganizationalUnit [0..*]
+        +UpdateUnit(unitId : int, request : UpdateOrganizationalUnitRequest) : OrganizationalUnit
+        +MoveUnit(unitId : int, request : MoveOrganizationalUnitRequest) : OrganizationalUnit
+        +DeactivateUnit(unitId : int) : OrganizationalUnit
+        +ReactivateUnit(unitId : int) : OrganizationalUnit
+    }
+    class JobTitlesController {
+        +CreateJobTitle(request : CreateJobTitleRequest) : JobTitle
+        +ListJobTitles() : JobTitle [0..*]
+        +UpdateJobTitle(jobTitleId : int, request : UpdateJobTitleRequest) : JobTitle
+        +DeactivateJobTitle(jobTitleId : int) : JobTitle
+        +ReactivateJobTitle(jobTitleId : int) : JobTitle
+    }
+
+    class IOrganizationalUnitService {
+        <<interface>>
+        +CreateUnit(request : CreateOrganizationalUnitRequest) : OrganizationalUnit
+        +GetStructure() : OrganizationalUnit [0..*]
+        +UpdateUnit(unitId : int, request : UpdateOrganizationalUnitRequest) : OrganizationalUnit
+        +MoveUnit(unitId : int, targetParentId : int) : OrganizationalUnit
+        +DeactivateUnit(unitId : int) : OrganizationalUnit
+        +ReactivateUnit(unitId : int) : OrganizationalUnit
+        +IsUnitActive(unitId : int) : bool
+    }
+    class OrganizationalUnitService {
+        +CreateUnit(request : CreateOrganizationalUnitRequest) : OrganizationalUnit
+        +GetStructure() : OrganizationalUnit [0..*]
+        +UpdateUnit(unitId : int, request : UpdateOrganizationalUnitRequest) : OrganizationalUnit
+        +MoveUnit(unitId : int, targetParentId : int) : OrganizationalUnit
+        +DeactivateUnit(unitId : int) : OrganizationalUnit
+        +ReactivateUnit(unitId : int) : OrganizationalUnit
+        +IsUnitActive(unitId : int) : bool
+        note for OrganizationalUnitService "CreateUnit — parent must be active (BR-ORG-04), name unique under parent (BR-ORG-03), email format (BR-ORG-22)<br/>GetStructure — all units, active and inactive (BR-ORG-15)<br/>UpdateUnit — name, type, contact only, parent not editable (BR-ORG-05, BR-ORG-06)<br/>MoveUnit — not self or descendant (BR-ORG-07), target active (BR-ORG-04), non-top-level only (BR-ORG-09), name unique under new parent (BR-ORG-03)<br/>DeactivateUnit — blocked by active children (BR-ORG-10) or active employees (BR-ORG-11)<br/>ReactivateUnit — blocked unless parent is active (BR-ORG-14)<br/>IsUnitActive — exposed for Employee Management (BR-EMP-04)"
+    }
+    OrganizationalUnitService ..|> IOrganizationalUnitService
+
+    class IJobTitleService {
+        <<interface>>
+        +CreateJobTitle(request : CreateJobTitleRequest) : JobTitle
+        +ListJobTitles() : JobTitle [0..*]
+        +UpdateJobTitle(jobTitleId : int, request : UpdateJobTitleRequest) : JobTitle
+        +DeactivateJobTitle(jobTitleId : int) : JobTitle
+        +ReactivateJobTitle(jobTitleId : int) : JobTitle
+        +IsJobTitleActive(jobTitleId : int) : bool
+    }
+    class JobTitleService {
+        +CreateJobTitle(request : CreateJobTitleRequest) : JobTitle
+        +ListJobTitles() : JobTitle [0..*]
+        +UpdateJobTitle(jobTitleId : int, request : UpdateJobTitleRequest) : JobTitle
+        +DeactivateJobTitle(jobTitleId : int) : JobTitle
+        +ReactivateJobTitle(jobTitleId : int) : JobTitle
+        +IsJobTitleActive(jobTitleId : int) : bool
+        note for JobTitleService "CreateJobTitle — name unique catalog-wide (BR-ORG-17)<br/>UpdateJobTitle — name unique (BR-ORG-17, BR-ORG-18)<br/>DeactivateJobTitle — no guard, existing holders are unaffected (BR-ORG-19)<br/>ReactivateJobTitle — no guard (BR-ORG-20)<br/>IsJobTitleActive — exposed for Employee Management (BR-EMP-05)"
+    }
+    JobTitleService ..|> IJobTitleService
+
+    class IOrganizationalUnitRepository {
+        <<interface>>
+        +FindById(unitId : int) : HrOrganizationalUnit [0..1]
+        +FindByNameUnderParent(parentId : int [0..1], name : string) : HrOrganizationalUnit [0..1]
+        +GetAll() : HrOrganizationalUnit [0..*]
+        +GetDescendantIds(unitId : int) : int [0..*]
+        +Add(unit : HrOrganizationalUnit)
+        +Update(unit : HrOrganizationalUnit)
+        +CountActiveChildren(unitId : int) : int
+    }
+    class OrganizationalUnitRepository {
+        -context : HrmDbContext
+    }
+    OrganizationalUnitRepository ..|> IOrganizationalUnitRepository
+
+    class IJobTitleRepository {
+        <<interface>>
+        +FindById(jobTitleId : int) : HrJobTitle [0..1]
+        +FindByName(name : string) : HrJobTitle [0..1]
+        +GetAll() : HrJobTitle [0..*]
+        +Add(jobTitle : HrJobTitle)
+        +Update(jobTitle : HrJobTitle)
+    }
+    class JobTitleRepository {
+        -context : HrmDbContext
+    }
+    JobTitleRepository ..|> IJobTitleRepository
+
+    class IEmployeeService {
+        <<interface>>
+        note for IEmployeeService "Defined in Employee Management (Section 2) — shown here only as a dependency target."
+    }
+
+    OrganizationalUnitsController --> IOrganizationalUnitService
+    JobTitlesController --> IJobTitleService
+    OrganizationalUnitService --> IOrganizationalUnitRepository
+    JobTitleService --> IJobTitleRepository
+    OrganizationalUnitService ..> IEmployeeService : HasActiveEmployeesInUnit(unitId) — BR-ORG-11
+```
+
+## 4. Salary Master Data
+
+```mermaid
+classDiagram
+    class BaseSalaryRatesController {
+        +AddRate(request : AddBaseSalaryRateRequest) : BaseSalaryRate
+        +ListRates(asOfDate : DateTime [0..1]) : BaseSalaryRate [0..*]
+    }
+    class SalaryScalesController {
+        +CreateScale(request : CreateSalaryScaleRequest) : SalaryScale
+        +ListScales() : SalaryScale [0..*]
+        +GetScaleDetail(scaleId : int) : SalaryScaleDetail
+        +UpdateScale(scaleId : int, request : UpdateSalaryScaleRequest) : SalaryScale
+        +DeactivateScale(scaleId : int) : SalaryScale
+        +ReactivateScale(scaleId : int) : SalaryScale
+        +CreateGrade(scaleId : int, request : CreateSalaryGradeRequest) : SalaryGrade
+    }
+    class SalaryGradesController {
+        +AddCoefficient(gradeId : int, request : AddSalaryGradeCoefficientRequest) : SalaryGradeCoefficient
+        +ListCoefficients(gradeId : int) : SalaryGradeCoefficient [0..*]
+        +DeactivateGrade(gradeId : int) : SalaryGrade
+        +ReactivateGrade(gradeId : int) : SalaryGrade
+    }
+
+    class IBaseSalaryRateService {
+        <<interface>>
+        +AddRate(request : AddBaseSalaryRateRequest) : BaseSalaryRate
+        +ListRates(asOfDate : DateTime [0..1]) : BaseSalaryRate [0..*]
+        +GetRateAsOf(date : DateTime) : BaseSalaryRate [0..1]
+    }
+    class BaseSalaryRateService {
+        +AddRate(request : AddBaseSalaryRateRequest) : BaseSalaryRate
+        +ListRates(asOfDate : DateTime [0..1]) : BaseSalaryRate [0..*]
+        +GetRateAsOf(date : DateTime) : BaseSalaryRate [0..1]
+        note for BaseSalaryRateService "AddRate — rate greater than zero (BR-SAL-04), effective date later than latest (BR-SAL-03)"
+    }
+    BaseSalaryRateService ..|> IBaseSalaryRateService
+
+    class ISalaryScaleService {
+        <<interface>>
+        +CreateScale(request : CreateSalaryScaleRequest) : SalaryScale
+        +ListScales() : SalaryScale [0..*]
+        +GetScaleDetail(scaleId : int) : SalaryScaleDetail
+        +UpdateScale(scaleId : int, request : UpdateSalaryScaleRequest) : SalaryScale
+        +DeactivateScale(scaleId : int) : SalaryScale
+        +ReactivateScale(scaleId : int) : SalaryScale
+        +CreateGrade(scaleId : int, request : CreateSalaryGradeRequest) : SalaryGrade
+        +IsScaleActive(scaleId : int) : bool
+    }
+    class SalaryScaleService {
+        +CreateScale(request : CreateSalaryScaleRequest) : SalaryScale
+        +ListScales() : SalaryScale [0..*]
+        +GetScaleDetail(scaleId : int) : SalaryScaleDetail
+        +UpdateScale(scaleId : int, request : UpdateSalaryScaleRequest) : SalaryScale
+        +DeactivateScale(scaleId : int) : SalaryScale
+        +ReactivateScale(scaleId : int) : SalaryScale
+        +CreateGrade(scaleId : int, request : CreateSalaryGradeRequest) : SalaryGrade
+        +IsScaleActive(scaleId : int) : bool
+        note for SalaryScaleService "CreateScale — code and name unique (BR-SAL-05, BR-SAL-06), Active by default (BR-SAL-05A)<br/>GetScaleDetail — includes its grades<br/>UpdateScale — name only, code fixed at creation (BR-SAL-07, BR-SAL-08)<br/>DeactivateScale — blocked while any active grade remains (BR-SAL-20)<br/>CreateGrade — scale must be active (BR-SAL-11), grade number unique in scale (BR-SAL-09), coefficient greater than zero (BR-SAL-10, BR-SAL-12)<br/>IsScaleActive — exposed for SalaryGradeService.ReactivateGrade (BR-SAL-18)"
+    }
+    SalaryScaleService ..|> ISalaryScaleService
+
+    class ISalaryGradeService {
+        <<interface>>
+        +AddCoefficient(gradeId : int, request : AddSalaryGradeCoefficientRequest) : SalaryGradeCoefficient
+        +ListCoefficients(gradeId : int) : SalaryGradeCoefficient [0..*]
+        +DeactivateGrade(gradeId : int) : SalaryGrade
+        +ReactivateGrade(gradeId : int) : SalaryGrade
+        +GetNextActiveGrade(scaleId : int, currentGradeNumber : int) : SalaryGrade [0..1]
+        +GetCurrentCoefficient(gradeId : int) : decimal
+    }
+    class SalaryGradeService {
+        +AddCoefficient(gradeId : int, request : AddSalaryGradeCoefficientRequest) : SalaryGradeCoefficient
+        +ListCoefficients(gradeId : int) : SalaryGradeCoefficient [0..*]
+        +DeactivateGrade(gradeId : int) : SalaryGrade
+        +ReactivateGrade(gradeId : int) : SalaryGrade
+        +GetNextActiveGrade(scaleId : int, currentGradeNumber : int) : SalaryGrade [0..1]
+        +GetCurrentCoefficient(gradeId : int) : decimal
+        note for SalaryGradeService "AddCoefficient — grade must be active (BR-SAL-13A), coefficient greater than zero (BR-SAL-10), effective date later than latest (BR-SAL-13)<br/>DeactivateGrade — blocked while an active employee is assigned (BR-SAL-15)<br/>ReactivateGrade — blocked unless the salary scale is active (BR-SAL-18)<br/>GetNextActiveGrade — first active grade above, ascending order, inactive skipped (BR-SAL-17), returns none if there is no higher active grade"
+    }
+    SalaryGradeService ..|> ISalaryGradeService
+
+    class IBaseSalaryRateRepository {
+        <<interface>>
+        +GetLatest() : HrBaseSalaryRate [0..1]
+        +GetAsOf(date : DateTime) : HrBaseSalaryRate [0..1]
+        +List(asOfDate : DateTime [0..1]) : HrBaseSalaryRate [0..*]
+        +Add(rate : HrBaseSalaryRate)
+    }
+    class BaseSalaryRateRepository {
+        -context : HrmDbContext
+    }
+    BaseSalaryRateRepository ..|> IBaseSalaryRateRepository
+
+    class ISalaryScaleRepository {
+        <<interface>>
+        +FindById(scaleId : int) : HrSalaryScale [0..1]
+        +FindByCode(code : string) : HrSalaryScale [0..1]
+        +FindByName(name : string) : HrSalaryScale [0..1]
+        +GetAll() : HrSalaryScale [0..*]
+        +Add(scale : HrSalaryScale)
+        +Update(scale : HrSalaryScale)
+    }
+    class SalaryScaleRepository {
+        -context : HrmDbContext
+    }
+    SalaryScaleRepository ..|> ISalaryScaleRepository
+
+    class ISalaryGradeRepository {
+        <<interface>>
+        +FindById(gradeId : int) : HrSalaryGrade [0..1]
+        +FindByScaleAndNumber(scaleId : int, gradeNumber : int) : HrSalaryGrade [0..1]
+        +ListByScale(scaleId : int) : HrSalaryGrade [0..*]
+        +CountActiveByScale(scaleId : int) : int
+        +Add(grade : HrSalaryGrade)
+        +Update(grade : HrSalaryGrade)
+        +AddCoefficient(coefficient : HrSalaryGradeCoefficient)
+        +GetLatestCoefficient(gradeId : int) : HrSalaryGradeCoefficient [0..1]
+        +ListCoefficients(gradeId : int) : HrSalaryGradeCoefficient [0..*]
+    }
+    class SalaryGradeRepository {
+        -context : HrmDbContext
+    }
+    SalaryGradeRepository ..|> ISalaryGradeRepository
+
+    class ISalaryHistoryService {
+        <<interface>>
+        note for ISalaryHistoryService "Defined in Salary Grade Promotion (Section 5) — shown here only as a dependency target."
+    }
+
+    BaseSalaryRatesController --> IBaseSalaryRateService
+    SalaryScalesController --> ISalaryScaleService
+    SalaryGradesController --> ISalaryGradeService
+    BaseSalaryRateService --> IBaseSalaryRateRepository
+    SalaryScaleService --> ISalaryScaleRepository
+    SalaryScaleService --> ISalaryGradeRepository : reads grades for the deactivate guard (BR-SAL-20) and grade-number uniqueness (BR-SAL-09)
+    SalaryGradeService --> ISalaryGradeRepository
+    SalaryGradeService --> ISalaryScaleService : IsScaleActive(scaleId) — BR-SAL-18
+    SalaryGradeService ..> ISalaryHistoryService : HasActiveEmployeeOnGrade(gradeId) — BR-SAL-15
+```
+
+## 5. Salary Grade Promotion
 
 ```mermaid
 classDiagram
     class ReviewPeriodsController {
-        +CreateReviewPeriod(request) ReviewPeriod
-        +GetReviewPeriods(filter) ReviewPeriodPage
-        +GetReviewPeriod(periodId) ReviewPeriodDetail
-        +SubmitReviewPeriod(periodId) ReviewPeriod
-        +CancelReviewPeriod(periodId) ReviewPeriod
-        +GetEmployees(periodId, filter) ReviewPeriodEmployeePage
-        +GetEmployee(periodId, employeeId) ReviewPeriodEmployeeDetail
-        +ApproveEmployee(periodId, employeeId) ReviewPeriodEmployee
-        +RejectEmployee(periodId, employeeId, reason) ReviewPeriodEmployee
-        +BulkApprove(periodId, employeeIds) BulkActionResult
-        +BulkReject(periodId, employeeIds, reason) BulkActionResult
+        +CreateReviewPeriod(request : CreateReviewPeriodRequest) : ReviewPeriod
+        +SearchReviewPeriods(filter : ReviewPeriodFilter) : ReviewPeriodPage
+        +GetReviewPeriod(periodId : int) : ReviewPeriodDetail
+        +SubmitReviewPeriod(periodId : int) : ReviewPeriod
+        +CancelReviewPeriod(periodId : int) : ReviewPeriod
+    }
+    class ReviewPeriodEmployeesController {
+        +ListReviewEmployees(periodId : int, filter : ReviewPeriodEmployeeFilter) : ReviewPeriodEmployeePage
+        +GetReviewEmployee(periodId : int, employeeId : int) : ReviewPeriodEmployee
+        +ApproveEmployee(periodId : int, employeeId : int) : ReviewPeriodEmployee
+        +RejectEmployee(periodId : int, employeeId : int, request : RejectRequest) : ReviewPeriodEmployee
+        +BulkApprove(periodId : int, request : BulkEmployeeActionRequest) : BulkActionResult
+        +BulkReject(periodId : int, request : BulkRejectRequest) : BulkActionResult
     }
     class SalaryDecisionsController {
-        +CreateDecision(reviewPeriodId, employeeIds, ...) SalaryDecision
-        +GetDecisions(filter) SalaryDecisionPage
-        +GetDecision(decisionId) SalaryDecisionDetail
-        +RemoveEmployee(decisionId, employeeId)
-        +ApplyDecision(decisionId) SalaryDecisionDetail
-        +CancelDecision(decisionId) SalaryDecisionDetail
+        +CreateDecision(request : CreateSalaryDecisionRequest) : SalaryDecision
+        +SearchDecisions(filter : SalaryDecisionFilter) : SalaryDecisionPage
+        +GetEligibleReviewPeriods() : ReviewPeriod [0..*]
+        +GetDecision(decisionId : int) : SalaryDecisionDetail
+        +SaveDraft(decisionId : int, request : UpdateSalaryDecisionRequest) : SalaryDecisionDetail
+        +RemoveEmployee(decisionId : int, employeeId : int)
+        +ApplyDecision(decisionId : int) : SalaryDecisionDetail
+        +CancelDecision(decisionId : int) : SalaryDecisionDetail
     }
     class SalaryHistoryController {
-        +GetSalaryHistory(employeeId, filter) SalaryHistoryPage
+        +GetSalaryHistory(employeeId : int, filter : SalaryHistoryFilter) : SalaryHistoryPage
     }
 
-    class SalaryReviewService {
-        -SalaryRepository salaryRepository
-        -EmployeeRepository employeeRepository
-        +CreateReviewPeriod(request) : calculates proposed grades synchronously, enters IN_PROGRESS directly, US-01
-        +SubmitReviewPeriod(periodId)
-        +CancelReviewPeriod(periodId) : blocked if CLOSED/CANCELLED or a non-cancelled decision exists, US-11
-        +ApproveEmployee(periodId, employeeId) : blocked unless period is IN_PROGRESS, US-04/US-05
-        +RejectEmployee(periodId, employeeId, reason) : blocked unless period is IN_PROGRESS, US-04/US-05
-        +BulkApprove(periodId, employeeIds)
-        +BulkReject(periodId, employeeIds, reason)
-        -CalculateProposedGrade(employee) : applies the eligibility rule, US-03
+    class IReviewPeriodService {
+        <<interface>>
+        +CreateReviewPeriod(request : CreateReviewPeriodRequest) : ReviewPeriod
+        +SearchReviewPeriods(filter : ReviewPeriodFilter) : ReviewPeriodPage
+        +GetReviewPeriod(periodId : int) : ReviewPeriodDetail
+        +SubmitReviewPeriod(periodId : int) : ReviewPeriod
+        +CancelReviewPeriod(periodId : int) : ReviewPeriod
+    }
+    class ReviewPeriodService {
+        +CreateReviewPeriod(request : CreateReviewPeriodRequest) : ReviewPeriod
+        +SearchReviewPeriods(filter : ReviewPeriodFilter) : ReviewPeriodPage
+        +GetReviewPeriod(periodId : int) : ReviewPeriodDetail
+        +SubmitReviewPeriod(periodId : int) : ReviewPeriod
+        +CancelReviewPeriod(periodId : int) : ReviewPeriod
+        note for ReviewPeriodService "CreateReviewPeriod — unique code and name (US-SGP-01 AC02, AC03), snapshots eligibility and proposed grade for every active employee in the same operation<br/>SearchReviewPeriods — by date range, type, status (US-SGP-02)<br/>SubmitReviewPeriod — blocked while an eligible employee has no outcome (US-SGP-05)<br/>CancelReviewPeriod — blocked if CLOSED or CANCELLED, or SUBMITTED with a non-cancelled decision (US-SGP-11)"
+    }
+    ReviewPeriodService ..|> IReviewPeriodService
+
+    class IReviewEmployeeService {
+        <<interface>>
+        +ListReviewEmployees(periodId : int, filter : ReviewPeriodEmployeeFilter) : ReviewPeriodEmployeePage
+        +GetReviewEmployee(periodId : int, employeeId : int) : ReviewPeriodEmployee
+        +ApproveEmployee(periodId : int, employeeId : int) : ReviewPeriodEmployee
+        +RejectEmployee(periodId : int, employeeId : int, reason : string) : ReviewPeriodEmployee
+        +BulkApprove(periodId : int, employeeIds : int [1..*]) : BulkActionResult
+        +BulkReject(periodId : int, employeeIds : int [1..*], reason : string) : BulkActionResult
+    }
+    class ReviewEmployeeService {
+        +ListReviewEmployees(periodId : int, filter : ReviewPeriodEmployeeFilter) : ReviewPeriodEmployeePage
+        +GetReviewEmployee(periodId : int, employeeId : int) : ReviewPeriodEmployee
+        +ApproveEmployee(periodId : int, employeeId : int) : ReviewPeriodEmployee
+        +RejectEmployee(periodId : int, employeeId : int, reason : string) : ReviewPeriodEmployee
+        +BulkApprove(periodId : int, employeeIds : int [1..*]) : BulkActionResult
+        +BulkReject(periodId : int, employeeIds : int [1..*], reason : string) : BulkActionResult
+        note for ReviewEmployeeService "ListReviewEmployees — filters by unit, eligibility, outcome (US-SGP-03 AC06)<br/>ApproveEmployee — period must be IN_PROGRESS, employee eligible and pending (US-SGP-04 AC01, AC10), clears any prior rejection reason (AC08)<br/>RejectEmployee — reason required (US-SGP-04 AC02, AC03)<br/>BulkApprove — each proposal validated individually, partial success (US-SGP-04 AC04, AC05)<br/>BulkReject — reason required for the whole batch, partial success retains it for successes (US-SGP-04 AC06, AC07, AC09)"
+    }
+    ReviewEmployeeService ..|> IReviewEmployeeService
+
+    class ISalaryDecisionService {
+        <<interface>>
+        +CreateDecision(request : CreateSalaryDecisionRequest) : SalaryDecision
+        +SearchDecisions(filter : SalaryDecisionFilter) : SalaryDecisionPage
+        +GetEligibleReviewPeriods() : ReviewPeriod [0..*]
+        +GetDecision(decisionId : int) : SalaryDecisionDetail
+        +SaveDraft(decisionId : int, request : UpdateSalaryDecisionRequest) : SalaryDecisionDetail
+        +RemoveEmployee(decisionId : int, employeeId : int)
+        +ApplyDecision(decisionId : int) : SalaryDecisionDetail
+        +CancelDecision(decisionId : int) : SalaryDecisionDetail
     }
     class SalaryDecisionService {
-        -SalaryRepository salaryRepository
-        +CreateDecision(reviewPeriodId, employeeIds, ...) : employees fixed at creation, US-06
-        +RemoveEmployee(decisionId, employeeId)
-        +ApplyDecision(decisionId) : all-or-nothing transaction, also closes the review period, US-07
-        +CancelDecision(decisionId) : Draft only — an Applied decision can never be cancelled, US-10
+        +CreateDecision(request : CreateSalaryDecisionRequest) : SalaryDecision
+        +SearchDecisions(filter : SalaryDecisionFilter) : SalaryDecisionPage
+        +GetEligibleReviewPeriods() : ReviewPeriod [0..*]
+        +GetDecision(decisionId : int) : SalaryDecisionDetail
+        +SaveDraft(decisionId : int, request : UpdateSalaryDecisionRequest) : SalaryDecisionDetail
+        +RemoveEmployee(decisionId : int, employeeId : int)
+        +ApplyDecision(decisionId : int) : SalaryDecisionDetail
+        +CancelDecision(decisionId : int) : SalaryDecisionDetail
+        note for SalaryDecisionService "CreateDecision — period must be SUBMITTED with no non-cancelled decision (US-SGP-06 AC01, AC03), only Approved employees (AC02), effective date on or after the review date (AC06, AC07)<br/>GetEligibleReviewPeriods — SUBMITTED periods with no non-cancelled decision (US-SGP-09 AC04)<br/>SaveDraft — effective date only, Draft only<br/>RemoveEmployee — Draft only, employees cannot be added back (US-SGP-06 AC04, AC05)<br/>ApplyDecision — all-or-nothing, revalidates each BaselineSalaryGradeId against the employee's current grade (US-SGP-07 AC02, AC04)<br/>CancelDecision — Draft only (US-SGP-10)"
+    }
+    SalaryDecisionService ..|> ISalaryDecisionService
+
+    class ISalaryHistoryService {
+        <<interface>>
+        +GetHistory(employeeId : int, filter : SalaryHistoryFilter) : SalaryHistoryPage
+        +HasActiveEmployeeOnGrade(gradeId : int) : bool
     }
     class SalaryHistoryService {
-        -SalaryRepository salaryRepository
-        +GetHistory(employeeId, fromDate, toDate)
+        +GetHistory(employeeId : int, filter : SalaryHistoryFilter) : SalaryHistoryPage
+        +HasActiveEmployeeOnGrade(gradeId : int) : bool
+        note for SalaryHistoryService "GetHistory — newest first, links back to the causing decision (US-SGP-08)<br/>HasActiveEmployeeOnGrade — exposed for Salary Master Data's deactivate-grade guard (BR-SAL-15)"
+    }
+    SalaryHistoryService ..|> ISalaryHistoryService
+
+    class SalaryPromotionEligibilityRule {
+        +DetermineEligibility(employee : Employee, currentGrade : SalaryGrade, reviewDate : DateTime) : EligibilityResult
+        note for SalaryPromotionEligibilityRule "24 months on current grade as of the review date (US-SGP-03 AC02), requires a higher active grade in the same scale (AC03), proposed grade is the first active grade above, ascending, inactive grades skipped (AC04)"
     }
 
-    class SalaryRepository {
-        -HrmDbContext context
+    class IReviewPeriodRepository {
+        <<interface>>
+        +FindById(periodId : int) : HrSalaryReviewPeriod [0..1]
+        +FindByCode(code : string) : HrSalaryReviewPeriod [0..1]
+        +FindByName(name : string) : HrSalaryReviewPeriod [0..1]
+        +Search(filter : ReviewPeriodFilter) : HrSalaryReviewPeriod [0..*]
+        +Add(period : HrSalaryReviewPeriod)
+        +Update(period : HrSalaryReviewPeriod)
     }
-    class EmployeeRepository {
-        -HrmDbContext context
+    class ReviewPeriodRepository {
+        -context : HrmDbContext
+    }
+    ReviewPeriodRepository ..|> IReviewPeriodRepository
+
+    class IReviewEmployeeRepository {
+        <<interface>>
+        +ListByPeriod(periodId : int, filter : ReviewPeriodEmployeeFilter) : HrSalaryReviewEmployee [0..*]
+        +FindByPeriodAndEmployee(periodId : int, employeeId : int) : HrSalaryReviewEmployee [0..1]
+        +AddRange(reviewEmployees : HrSalaryReviewEmployee [1..*])
+        +Update(reviewEmployee : HrSalaryReviewEmployee)
+        +CountUnprocessedEligible(periodId : int) : int
+    }
+    class ReviewEmployeeRepository {
+        -context : HrmDbContext
+    }
+    ReviewEmployeeRepository ..|> IReviewEmployeeRepository
+
+    class ISalaryDecisionRepository {
+        <<interface>>
+        +FindById(decisionId : int) : HrSalaryDecision [0..1]
+        +FindNonCancelledByPeriod(periodId : int) : HrSalaryDecision [0..1]
+        +Search(filter : SalaryDecisionFilter) : HrSalaryDecision [0..*]
+        +Add(decision : HrSalaryDecision)
+        +Update(decision : HrSalaryDecision)
+        +AddDetail(detail : HrSalaryDecisionDetail)
+        +RemoveDetail(decisionId : int, employeeId : int)
+        +ListDetails(decisionId : int) : HrSalaryDecisionDetail [0..*]
+        +NextDecisionNumber() : string
+    }
+    class SalaryDecisionRepository {
+        -context : HrmDbContext
+    }
+    SalaryDecisionRepository ..|> ISalaryDecisionRepository
+
+    class IEmployeeSalaryRepository {
+        <<interface>>
+        +GetCurrent(employeeId : int) : HrEmployeeSalary [0..1]
+        +GetHistory(employeeId : int, filter : SalaryHistoryFilter) : HrEmployeeSalary [0..*]
+        +CloseCurrent(employeeId : int, effectiveDate : DateTime)
+        +Add(employeeSalary : HrEmployeeSalary)
+        +HasActiveEmployeeOnGrade(gradeId : int) : bool
+    }
+    class EmployeeSalaryRepository {
+        -context : HrmDbContext
+    }
+    EmployeeSalaryRepository ..|> IEmployeeSalaryRepository
+
+    class IEmployeeService {
+        <<interface>>
+        note for IEmployeeService "Defined in Employee Management (Section 2) — shown here only as a dependency target."
+    }
+    class ISalaryGradeService {
+        <<interface>>
+        note for ISalaryGradeService "Defined in Salary Master Data (Section 4) — shown here only as a dependency target."
     }
 
-    ReviewPeriodsController --> SalaryReviewService
-    SalaryDecisionsController --> SalaryDecisionService
-    SalaryHistoryController --> SalaryHistoryService
-    SalaryReviewService --> SalaryRepository
-    SalaryReviewService --> EmployeeRepository
-    SalaryDecisionService --> SalaryRepository
-    SalaryHistoryService --> SalaryRepository
+    ReviewPeriodsController --> IReviewPeriodService
+    ReviewPeriodEmployeesController --> IReviewEmployeeService
+    SalaryDecisionsController --> ISalaryDecisionService
+    SalaryHistoryController --> ISalaryHistoryService
+
+    ReviewPeriodService --> IReviewPeriodRepository
+    ReviewPeriodService --> IReviewEmployeeRepository : writes the snapshot rows created on CreateReviewPeriod, reads them for the submit guard
+    ReviewPeriodService --> ISalaryDecisionRepository : checks no non-cancelled decision exists before cancelling (US-SGP-11)
+    ReviewPeriodService --> SalaryPromotionEligibilityRule
+    ReviewPeriodService ..> IEmployeeService : GetActiveEmployees() — US-SGP-01
+    ReviewPeriodService ..> ISalaryGradeService : GetNextActiveGrade(), GetCurrentCoefficient() — US-SGP-03, BR-SAL-17
+
+    ReviewEmployeeService --> IReviewEmployeeRepository
+    ReviewEmployeeService --> IReviewPeriodRepository : reads period status guard (US-SGP-04 AC10)
+
+    SalaryDecisionService --> ISalaryDecisionRepository
+    SalaryDecisionService --> IReviewPeriodRepository : validates SUBMITTED status and review date (US-SGP-06 AC01, AC06)
+    SalaryDecisionService --> IReviewEmployeeRepository : validates employees are Approved in the period (US-SGP-06 AC02)
+    SalaryDecisionService --> IEmployeeSalaryRepository : closes and creates HrEmployeeSalary rows on ApplyDecision (US-SGP-07)
+
+    SalaryHistoryService --> IEmployeeSalaryRepository
 ```
+
+## Traceability
+
+- Every Controller matches an [`openapi.yaml`](../API/openapi.yaml) tag, and every operation on it matches one endpoint under that tag — see the [API README's coverage table](../API/README.md#coverage).
+- The 4 sections (2–5) match the 4 `HRM.Application`/`Controllers`/`Repositories` folders in [`BackendStructure.md`](../CodeStructure/BackendStructure.md), which in turn match the 4 [C4 components](../c4/README.md#3-component-diagram).
+- Cross-domain dependencies are drawn as dependency arrows (`..>`) to an interface defined in another section, never as a direct dependency on another domain's Repository — consistent with [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain)'s consequence that "any cross-domain read ... requires a call to another component instead of a single local query." Within one domain, a Service may depend on another Repository/Service in the same section directly (e.g. `SalaryDecisionService --> IReviewPeriodRepository`).
+- The [C4 diagrams](../c4/README.md#cross-component-data-dependencies) list 3 cross-component data dependencies (Employee Management ← Organization Management; Salary Grade Promotion ← Employee Management; Salary Grade Promotion ← Salary Master Data) but explicitly deferred naming the actual classes/interfaces to the detailed design stage. This diagram names them (`EmployeeService ..> IOrganizationalUnitService`/`IJobTitleService`, `ReviewPeriodService ..> IEmployeeService`/`ISalaryGradeService`) and additionally surfaces **2 dependencies the C4 diagrams did not list**, found while working through the Use Cases' guard conditions:
+  - `OrganizationalUnitService ..> IEmployeeService` — `BR-ORG-11` blocks deactivating a unit with active employees assigned, which Organization Management cannot determine from its own data.
+  - `SalaryGradeService ..> ISalaryHistoryService` — `BR-SAL-15` blocks deactivating a salary grade with an active employee currently assigned to it, which Salary Master Data cannot determine from its own data (the current assignment lives in Salary Grade Promotion's `HrEmployeeSalary`).
+- `SalaryPromotionEligibilityRule` matches the `Rules/` folder in `HRM.Application/SalaryGradePromotion/` from [`BackendStructure.md`](../CodeStructure/BackendStructure.md).

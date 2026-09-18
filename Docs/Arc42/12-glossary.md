@@ -14,7 +14,7 @@
 | SPA (Single-Page Application) | A web app (here, the React frontend — see [ADR-08](09-architecture-decisions.md#adr-08-switch-frontend-framework-to-react)) that runs in the browser and talks to a backend API instead of reloading full pages from a server. |
 | REST API | An API style where the Backend API exposes resources (e.g. review periods, decisions) over HTTP, used here for Web Application ↔ Backend API communication. |
 | JWT (JSON Web Token) | A signed token proving who a user is, issued at login and sent with every API request (see [ADR-07](09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism)). |
-| RBAC (Role-Based Access Control) | Restricting actions by role (HR Staff vs. Approver) rather than by individual user. |
-| Component (C4) | A grouping of related code inside a container (e.g. Employee Management, Salary Management) — see [Building Block View](05-building-block-view.md). |
+| RBAC (Role-Based Access Control) | Restricting actions by role (HR Staff vs. Approver / Manager) rather than by individual user. |
+| Component (C4) | A grouping of related code inside a container (e.g. Employee Management, Salary Grade Promotion) — see [Building Block View](05-building-block-view.md). |
 | Container (C4) | A separately deployable/runnable part of the system (e.g. the Web Application, the Backend API, the Database) — see [Building Block View](05-building-block-view.md). |
 | ADR (Architecture Decision Record) | A short document recording one significant architecture decision, its context, and its consequences — see [Section 9](09-architecture-decisions.md). |

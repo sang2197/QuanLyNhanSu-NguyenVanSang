@@ -1,37 +1,901 @@
 openapi: 3.0.3
 info:
-  title: HRM - Salary Grade Promotion API
+  title: HRM System API
   description: >
-    API for the Salary Grade Promotion feature of the HRM System.
-    Covers the end-to-end flow: HR Staff creates a review period, screens the
-    system-calculated proposed grades, and submits the period; the Approver
-    reviews the submitted period, drafts a salary decision, and applies it.
-  version: "0.1.0"
+    REST API for the full HRM system as currently analyzed: Employee Profile,
+    Organization Management, Salary Master Data, and Salary Grade Promotion.
+    Designed from the current User Stories / Use Cases, Information
+    Architecture / Screens Hierarchy / UI-UX, the C4 model (`Docs/c4/`), and
+    the database design (`Docs/Database/HRM_System.dbml`)
+  version: "0.2.0"
 servers:
   - url: https://api.example.com/v1
 
 tags:
+  - name: Employees
+    description: Create, search, view, and update employee profiles; change employment status (US-EMP-01–05).
+  - name: Organizational Units
+    description: Create, view, update, move, deactivate, and reactivate organizational units (US-ORG-01–05).
+  - name: Job Titles
+    description: Create, update, deactivate, and reactivate the organization-wide job title catalog (US-ORG-06–08).
+  - name: Base Salary Rate
+    description: Maintain the organization-wide base salary rate and its effective-dated history (US-SAL-01).
+  - name: Salary Scales
+    description: Create and update salary scales; deactivate/reactivate (US-SAL-02, 03, 07).
+  - name: Salary Grades
+    description: Create salary grades and maintain effective-dated coefficients; deactivate/reactivate (US-SAL-04–06).
   - name: Review Periods
-    description: Create and manage salary review periods (US-01, US-02, US-05, US-11)
+    description: Create and manage salary review periods (US-SGP-01, 02, 05, 11).
   - name: Review Period Employees
-    description: Screen employees and their system-calculated proposed grade within a review period (US-03, US-04)
+    description: Screen employees and their system-calculated proposed grade within a review period (US-SGP-03, 04).
   - name: Salary Decisions
-    description: Draft, apply, cancel, and list official salary decisions (US-06, US-07, US-09, US-10)
+    description: Draft, save, apply, cancel, and list official salary decisions (US-SGP-06, 07, 09, 10).
   - name: Salary History
-    description: Read-only lookup of an employee's salary history (US-08)
+    description: Read-only lookup of an employee's salary history (US-SGP-08).
 
 security:
   - bearerAuth: []
 
 paths:
+  # ============================================================
+  # EMPLOYEE PROFILE (US-EMP-01–05)
+  # ============================================================
+  /employees:
+    post:
+      tags: [Employees]
+      operationId: createEmployee
+      summary: Create an employee profile
+      description: >
+        US-EMP-01 — employeeCode must be unique; organizationalUnitId and
+        jobTitleId must reference Active rows at the time of creation
+        (BR-EMP-04/05).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeRequest"
+      responses:
+        "201":
+          description: Employee profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: employeeCode already in use, or organizationalUnitId/jobTitleId is Inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Employees]
+      operationId: listEmployees
+      summary: Search and filter employees
+      description: US-EMP-02 — search by code or name; filters may be combined (BR-EMP-06/07).
+      parameters:
+        - name: search
+          in: query
+          description: Matches employee code or full name.
+          schema:
+            type: string
+        - name: organizationalUnitId
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: jobTitleId
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: employmentStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/EmploymentStatus"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: A page of employees
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeePage"
+
+  /employees/{employeeId}:
+    get:
+      tags: [Employees]
+      operationId: getEmployee
+      summary: Get employee profile detail
+      description: US-EMP-03 — includes current Organizational Unit, Job Title, and employment status.
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "200":
+          description: Employee profile detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Employees]
+      operationId: updateEmployee
+      summary: Update an employee profile
+      description: >
+        US-EMP-04 — does not create a new profile. If employeeCode is
+        changed it must remain unique; if organizationalUnitId/jobTitleId is
+        changed it must reference an Active row, otherwise the update is
+        rejected and the existing value is kept (BR-EMP-03–05, 08, 09).
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeRequest"
+      responses:
+        "200":
+          description: Employee profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: employeeCode already in use, or the newly selected unit/title is Inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /employees/{employeeId}/employment-status:
+    post:
+      tags: [Employees]
+      operationId: changeEmploymentStatus
+      summary: Change an employee's employment status
+      description: >
+        US-EMP-05 — does not delete the profile or its existing information.
+        Whether Terminated can return to Active on the same profile is
+        unresolved (OQ-EMP-01); this endpoint does not restrict that
+        transition pending a business decision.
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employmentStatus]
+              properties:
+                employmentStatus:
+                  $ref: "#/components/schemas/EmploymentStatus"
+      responses:
+        "200":
+          description: Employment status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ============================================================
+  # ORGANIZATION MANAGEMENT (US-ORG-01–08)
+  # ============================================================
+  /organizational-units:
+    post:
+      tags: [Organizational Units]
+      operationId: createOrganizationalUnit
+      summary: Create an organizational unit
+      description: >
+        US-ORG-01 — name must be unique among units sharing the same parent
+        (including among top-level units, parentId null); parentId, if
+        given, must reference an Active unit. contactEmail and
+        contactPhone are optional; contactEmail must be a valid email
+        format if provided (BR-ORG-01–04, 21, 22).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganizationalUnitRequest"
+      responses:
+        "201":
+          description: Organizational unit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationalUnit"
+        "400":
+          description: Invalid contactEmail format, or other validation failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Name already used under the same parent, or parentId is Inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Organizational Units]
+      operationId: listOrganizationalUnits
+      summary: View the organization structure
+      description: >
+        US-ORG-02 — returns the full hierarchy as a flat list (each unit
+        carries parentId; the client renders the tree). Both Active and
+        Inactive units are included; not paginated, since the UI needs the
+        whole tree to render collapsible nodes (BR-ORG-15).
+      responses:
+        "200":
+          description: All organizational units
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationalUnit"
+
+  /organizational-units/{unitId}:
+    put:
+      tags: [Organizational Units]
+      operationId: updateOrganizationalUnit
+      summary: Update an organizational unit
+      description: >
+        US-ORG-03 — editable fields are name, unitType, contactEmail,
+        contactPhone. parentId is not editable here — see the move
+        endpoint. Name must remain unique among units under the same
+        parent (BR-ORG-03, 06, 21, 22).
+      parameters:
+        - $ref: "#/components/parameters/UnitId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganizationalUnitRequest"
+      responses:
+        "200":
+          description: Organizational unit updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationalUnit"
+        "400":
+          description: Invalid contactEmail format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Name already used under this unit's parent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /organizational-units/{unitId}/move:
+    post:
+      tags: [Organizational Units]
+      operationId: moveOrganizationalUnit
+      summary: Move an organizational unit under a different parent
+      description: >
+        US-ORG-04 — cannot move a unit under itself or under one of its own
+        descendants; the target parent must be Active; a non-top-level unit
+        cannot be moved to the top level (newParentId cannot be null here).
+        The unit's existing subtree moves with it (BR-ORG-07–09).
+      parameters:
+        - $ref: "#/components/parameters/UnitId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newParentId]
+              properties:
+                newParentId:
+                  type: integer
+                  format: int32
+      responses:
+        "200":
+          description: Organizational unit moved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationalUnit"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >
+            Target is the unit itself or one of its descendants, target is
+            Inactive, or the move would duplicate a sibling name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /organizational-units/{unitId}/deactivate:
+    post:
+      tags: [Organizational Units]
+      operationId: deactivateOrganizationalUnit
+      summary: Deactivate an organizational unit
+      description: >
+        US-ORG-05 — blocked while the unit has active child units or active
+        employees assigned to it (BR-ORG-10, 11).
+      parameters:
+        - $ref: "#/components/parameters/UnitId"
+      responses:
+        "200":
+          description: Organizational unit deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationalUnit"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Unit has active child units or active employees assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /organizational-units/{unitId}/reactivate:
+    post:
+      tags: [Organizational Units]
+      operationId: reactivateOrganizationalUnit
+      summary: Reactivate an organizational unit
+      description: US-ORG-05 — blocked if the unit's parent (if any) is Inactive (BR-ORG-14).
+      parameters:
+        - $ref: "#/components/parameters/UnitId"
+      responses:
+        "200":
+          description: Organizational unit reactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationalUnit"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Parent unit is Inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /job-titles:
+    post:
+      tags: [Job Titles]
+      operationId: createJobTitle
+      summary: Create a job title
+      description: US-ORG-06 — name must be unique across the whole catalog (BR-ORG-17).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        "201":
+          description: Job title created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobTitle"
+        "409":
+          description: Job title name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Job Titles]
+      operationId: listJobTitles
+      summary: List job titles
+      description: Organization-wide catalog (BR-ORG-16), used e.g. to populate the Employee create/update job title picker.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ActiveStatus"
+      responses:
+        "200":
+          description: All job titles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobTitle"
+
+  /job-titles/{jobTitleId}:
+    put:
+      tags: [Job Titles]
+      operationId: updateJobTitle
+      summary: Update a job title
+      description: US-ORG-07 — name must remain unique across the catalog (BR-ORG-17, 18).
+      parameters:
+        - $ref: "#/components/parameters/JobTitleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Job title updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobTitle"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Job title name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /job-titles/{jobTitleId}/deactivate:
+    post:
+      tags: [Job Titles]
+      operationId: deactivateJobTitle
+      summary: Deactivate a job title
+      description: US-ORG-08 — employees who already hold it are unaffected (BR-ORG-19).
+      parameters:
+        - $ref: "#/components/parameters/JobTitleId"
+      responses:
+        "200":
+          description: Job title deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobTitle"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /job-titles/{jobTitleId}/reactivate:
+    post:
+      tags: [Job Titles]
+      operationId: reactivateJobTitle
+      summary: Reactivate a job title
+      description: US-ORG-08 — becomes available for new employee assignments again (BR-ORG-20).
+      parameters:
+        - $ref: "#/components/parameters/JobTitleId"
+      responses:
+        "200":
+          description: Job title reactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobTitle"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ============================================================
+  # SALARY MASTER DATA (US-SAL-01–07)
+  # ============================================================
+  /base-salary-rates:
+    post:
+      tags: [Base Salary Rate]
+      operationId: addBaseSalaryRate
+      summary: Add a new base salary rate
+      description: >
+        US-SAL-01 — rate must be greater than zero; effectiveDate must be
+        later than the latest recorded effective date, and cannot be
+        inserted between existing dates (BR-SAL-01–04).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rate, effectiveDate]
+              properties:
+                rate:
+                  type: number
+                  format: double
+                  minimum: 0
+                  exclusiveMinimum: true
+                effectiveDate:
+                  type: string
+                  format: date
+      responses:
+        "201":
+          description: Base salary rate recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseSalaryRate"
+        "400":
+          description: Rate is zero or negative
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: effectiveDate is not later than the latest recorded effective date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Base Salary Rate]
+      operationId: listBaseSalaryRates
+      summary: List base salary rate history
+      description: >
+        US-SAL-01 AC04 — pass asOfDate to retrieve the rate applicable on a
+        past date; omit it to list the full history, newest first.
+      parameters:
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Base salary rate history (or a single applicable rate if asOfDate is given)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BaseSalaryRate"
+
+  /salary-scales:
+    post:
+      tags: [Salary Scales]
+      operationId: createSalaryScale
+      summary: Create a salary scale
+      description: US-SAL-02 — code and name must both be unique; Active by default (BR-SAL-05, 05A, 06).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code:
+                  type: string
+                  example: NV
+                name:
+                  type: string
+                  example: Nhan Vien
+      responses:
+        "201":
+          description: Salary scale created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryScale"
+        "409":
+          description: Code or name already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Salary Scales]
+      operationId: listSalaryScales
+      summary: List salary scales
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ActiveStatus"
+      responses:
+        "200":
+          description: All salary scales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SalaryScale"
+
+  /salary-scales/{scaleId}:
+    get:
+      tags: [Salary Scales]
+      operationId: getSalaryScale
+      summary: Get salary scale detail, including its salary grades
+      parameters:
+        - $ref: "#/components/parameters/ScaleId"
+      responses:
+        "200":
+          description: Salary scale detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryScaleDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Salary Scales]
+      operationId: updateSalaryScale
+      summary: Update a salary scale's name
+      description: US-SAL-03 — code is fixed at creation and cannot be changed here (BR-SAL-06, 07, 08).
+      parameters:
+        - $ref: "#/components/parameters/ScaleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Salary scale updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryScale"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Name already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /salary-scales/{scaleId}/deactivate:
+    post:
+      tags: [Salary Scales]
+      operationId: deactivateSalaryScale
+      summary: Deactivate a salary scale
+      description: US-SAL-07 — blocked while it contains any Active salary grade (BR-SAL-20).
+      parameters:
+        - $ref: "#/components/parameters/ScaleId"
+      responses:
+        "200":
+          description: Salary scale deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryScale"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Scale contains one or more Active salary grades
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /salary-scales/{scaleId}/reactivate:
+    post:
+      tags: [Salary Scales]
+      operationId: reactivateSalaryScale
+      summary: Reactivate a salary scale
+      description: US-SAL-07 (BR-SAL-22).
+      parameters:
+        - $ref: "#/components/parameters/ScaleId"
+      responses:
+        "200":
+          description: Salary scale reactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryScale"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /salary-scales/{scaleId}/grades:
+    post:
+      tags: [Salary Grades]
+      operationId: createSalaryGrade
+      summary: Create a salary grade within a salary scale
+      description: >
+        US-SAL-04 — gradeNumber must be unique within this scale; the scale
+        must be Active; initialCoefficient must be greater than zero and
+        becomes the grade's current coefficient immediately, without an
+        effective date (BR-SAL-09–12).
+      parameters:
+        - $ref: "#/components/parameters/ScaleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gradeNumber, initialCoefficient]
+              properties:
+                gradeNumber:
+                  type: integer
+                initialCoefficient:
+                  type: number
+                  format: double
+                  minimum: 0
+                  exclusiveMinimum: true
+      responses:
+        "201":
+          description: Salary grade created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryGrade"
+        "400":
+          description: Coefficient is zero or negative
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Scale is Inactive, or gradeNumber already used within this scale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /salary-grades/{gradeId}/coefficients:
+    post:
+      tags: [Salary Grades]
+      operationId: addSalaryGradeCoefficient
+      summary: Record a new effective-dated coefficient for a salary grade
+      description: >
+        US-SAL-05 — the grade must be Active; coefficient must be greater
+        than zero; effectiveDate must be later than the latest recorded
+        coefficient effective date for this grade, and cannot be inserted
+        between existing dates. Historical values are preserved, never
+        overwritten (BR-SAL-10, 12, 13, 13A).
+      parameters:
+        - $ref: "#/components/parameters/GradeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [coefficient, effectiveDate]
+              properties:
+                coefficient:
+                  type: number
+                  format: double
+                  minimum: 0
+                  exclusiveMinimum: true
+                effectiveDate:
+                  type: string
+                  format: date
+      responses:
+        "201":
+          description: Coefficient recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryGradeCoefficient"
+        "400":
+          description: Coefficient is zero or negative
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Grade is Inactive, or effectiveDate is not later than the latest recorded one
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      tags: [Salary Grades]
+      operationId: listSalaryGradeCoefficients
+      summary: List a salary grade's coefficient history
+      description: US-SAL-05 AC04 — pass asOfDate to retrieve the coefficient applicable on a past date; omit it for the full history, newest first.
+      parameters:
+        - $ref: "#/components/parameters/GradeId"
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Coefficient history (or a single applicable entry if asOfDate is given)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SalaryGradeCoefficient"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /salary-grades/{gradeId}/deactivate:
+    post:
+      tags: [Salary Grades]
+      operationId: deactivateSalaryGrade
+      summary: Deactivate a salary grade
+      description: US-SAL-06 — blocked while an active employee is currently assigned to it (BR-SAL-15).
+      parameters:
+        - $ref: "#/components/parameters/GradeId"
+      responses:
+        "200":
+          description: Salary grade deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryGrade"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: An active employee is currently assigned to this grade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /salary-grades/{gradeId}/reactivate:
+    post:
+      tags: [Salary Grades]
+      operationId: reactivateSalaryGrade
+      summary: Reactivate a salary grade
+      description: US-SAL-06 — blocked if the grade's salary scale is Inactive (BR-SAL-18).
+      parameters:
+        - $ref: "#/components/parameters/GradeId"
+      responses:
+        "200":
+          description: Salary grade reactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryGrade"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Salary scale is Inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ============================================================
+  # SALARY GRADE PROMOTION (US-SGP-01–11)
+  # ============================================================
   /review-periods:
     post:
       tags: [Review Periods]
+      operationId: createReviewPeriod
       summary: Create a review period
       description: >
-        US-01 — HR Staff creates a new salary review period. The proposed
-        grade for every eligible employee (US-03) is calculated synchronously
-        as part of this request — there is no separate "start review" step.
+        US-SGP-01 — code and name must both be unique. Eligibility and the
+        proposed grade for every current employee are calculated
+        synchronously as part of this request and frozen as a snapshot —
+        there is no separate "start review" step, and results are not
+        recalculated later even if the employee's real data changes.
+        effectiveDate and description are optional.
       requestBody:
         required: true
         content:
@@ -55,8 +919,9 @@ paths:
                 $ref: "#/components/schemas/Error"
     get:
       tags: [Review Periods]
+      operationId: listReviewPeriods
       summary: Search and filter review periods
-      description: US-02 — HR Staff finds a specific review period by date range, type, or status.
+      description: US-SGP-02 — by review date range, review type, or status; criteria may be combined.
       parameters:
         - $ref: "#/components/parameters/FromDate"
         - $ref: "#/components/parameters/ToDate"
@@ -81,8 +946,8 @@ paths:
   /review-periods/{periodId}:
     get:
       tags: [Review Periods]
+      operationId: getReviewPeriod
       summary: Get review period detail
-      description: US-03 — HR Staff (and later the Approver) open a review period to see its overview.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
       responses:
@@ -98,11 +963,12 @@ paths:
   /review-periods/{periodId}/submit:
     post:
       tags: [Review Periods]
-      summary: Submit a review period to the Approver
+      operationId: submitReviewPeriod
+      summary: Submit a review period to the Approver / Manager
       description: >
-        US-05 — HR Staff submits the period once every employee in it has been
-        marked approved or not approved. Blocked if any employee is still
-        unprocessed.
+        US-SGP-05 — every eligible employee with a proposed grade must have
+        an Approved or Rejected outcome; ineligible employees do not need
+        one. Blocked otherwise.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
       responses:
@@ -115,7 +981,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Some employees in the period are still unprocessed
+          description: One or more eligible employees with a proposed grade are still unprocessed
           content:
             application/json:
               schema:
@@ -124,11 +990,12 @@ paths:
   /review-periods/{periodId}/cancel:
     post:
       tags: [Review Periods]
+      operationId: cancelReviewPeriod
       summary: Cancel a review period
       description: >
-        US-11 — HR Staff cancels a period that no longer makes sense to carry
-        forward. Blocked once a decision has already been drafted from it
-        (draft or applied) — the decision must be dealt with first.
+        US-SGP-11 — an IN_PROGRESS period can always be cancelled; a
+        SUBMITTED period only if it has no non-cancelled salary decision.
+        CLOSED and already-CANCELLED periods cannot be cancelled again.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
       responses:
@@ -141,9 +1008,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: >
-            Period is already Closed or Cancelled, or already has a
-            non-cancelled decision drafted from it
+          description: Period is CLOSED/CANCELLED, or SUBMITTED with a non-cancelled decision
           content:
             application/json:
               schema:
@@ -152,18 +1017,20 @@ paths:
   /review-periods/{periodId}/employees:
     get:
       tags: [Review Period Employees]
+      operationId: listReviewPeriodEmployees
       summary: List employees in a review period with their proposed grade
-      description: US-03 — the proposed grade shown here is calculated automatically by the system.
+      description: US-SGP-03 AC06 — filter by Organizational Unit, eligibility, or review outcome.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
-        - name: department
+        - name: organizationalUnitId
           in: query
           schema:
-            type: string
-        - name: eligibility
+            type: integer
+            format: int32
+        - name: eligible
           in: query
           schema:
-            $ref: "#/components/schemas/EligibilityStatus"
+            type: boolean
         - name: outcome
           in: query
           schema:
@@ -183,10 +1050,12 @@ paths:
   /review-periods/{periodId}/employees/{employeeId}:
     get:
       tags: [Review Period Employees]
+      operationId: getReviewPeriodEmployee
       summary: Get one employee's review detail
       description: >
-        US-03 — salary snapshot at review time, the system-calculated proposed
-        grade, eligibility reason (if not eligible), and recent salary history.
+        US-SGP-03/04 — the frozen salary snapshot, the system-calculated
+        proposed grade, the ineligibility reason if not eligible, and
+        current review outcome.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
         - $ref: "#/components/parameters/EmployeeId"
@@ -196,21 +1065,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReviewPeriodEmployeeDetail"
+                $ref: "#/components/schemas/ReviewPeriodEmployee"
         "404":
           $ref: "#/components/responses/NotFound"
 
   /review-periods/{periodId}/employees/{employeeId}/approve:
     post:
       tags: [Review Period Employees]
+      operationId: approveReviewPeriodEmployee
       summary: Approve one employee's proposed grade
-      description: US-04 — only valid for an eligible employee whose outcome is still pending.
+      description: >
+        US-SGP-04 — only valid for an eligible employee while the period is
+        IN_PROGRESS. If the previous outcome was Rejected, its reason is
+        cleared (AC08).
       parameters:
         - $ref: "#/components/parameters/PeriodId"
         - $ref: "#/components/parameters/EmployeeId"
       responses:
         "200":
-          description: Employee marked as approved
+          description: Employee marked as Approved
           content:
             application/json:
               schema:
@@ -218,10 +1091,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: >
-            Employee is not eligible or already has an outcome, or the review
-            period is no longer IN_PROGRESS (US-05 — outcomes cannot change
-            after submission)
+          description: Employee is not eligible, or the review period is no longer IN_PROGRESS
           content:
             application/json:
               schema:
@@ -230,8 +1100,9 @@ paths:
   /review-periods/{periodId}/employees/{employeeId}/reject:
     post:
       tags: [Review Period Employees]
+      operationId: rejectReviewPeriodEmployee
       summary: Reject one employee's proposed grade
-      description: US-04 — a reason is required so it can be explained later.
+      description: US-SGP-04 — a reason specific to this employee is required.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
         - $ref: "#/components/parameters/EmployeeId"
@@ -243,7 +1114,7 @@ paths:
               $ref: "#/components/schemas/RejectRequest"
       responses:
         "200":
-          description: Employee marked as not approved
+          description: Employee marked as Rejected
           content:
             application/json:
               schema:
@@ -257,10 +1128,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: >
-            Employee is not eligible or already has an outcome, or the review
-            period is no longer IN_PROGRESS (US-05 — outcomes cannot change
-            after submission)
+          description: Employee is not eligible, or the review period is no longer IN_PROGRESS
           content:
             application/json:
               schema:
@@ -269,10 +1137,12 @@ paths:
   /review-periods/{periodId}/employees/bulk-approve:
     post:
       tags: [Review Period Employees]
+      operationId: bulkApproveReviewPeriodEmployees
       summary: Approve multiple employees at once
       description: >
-        US-04 — each selected employee is still checked individually against
-        the same rules as a single approval; only the valid ones go through.
+        US-SGP-04 — each selected employee is validated individually; valid
+        ones are updated, invalid ones are left unchanged and reported. No
+        reason required.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
       requestBody:
@@ -291,10 +1161,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: >
-            The review period is no longer IN_PROGRESS (US-05 — outcomes
-            cannot change after submission); rejected as a whole, not
-            per-employee
+          description: The review period is no longer IN_PROGRESS
           content:
             application/json:
               schema:
@@ -303,8 +1170,11 @@ paths:
   /review-periods/{periodId}/employees/bulk-reject:
     post:
       tags: [Review Period Employees]
+      operationId: bulkRejectReviewPeriodEmployees
       summary: Reject multiple employees at once
-      description: US-04 — a shared reason is required, same validation as a single rejection.
+      description: >
+        US-SGP-04 — a shared reason is required and is recorded for every
+        employee that is successfully rejected, even on partial success.
       parameters:
         - $ref: "#/components/parameters/PeriodId"
       requestBody:
@@ -335,10 +1205,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: >
-            The review period is no longer IN_PROGRESS (US-05 — outcomes
-            cannot change after submission); rejected as a whole, not
-            per-employee
+          description: The review period is no longer IN_PROGRESS
           content:
             application/json:
               schema:
@@ -347,14 +1214,16 @@ paths:
   /salary-decisions:
     post:
       tags: [Salary Decisions]
+      operationId: createSalaryDecision
       summary: Draft a salary decision from a submitted review period
       description: >
-        US-06 — the Approver drafts a decision, selecting which approved
-        employees from the given review period to include up front. Only
-        employees approved in that review period can be included; drafting
-        does not change any employee's real salary yet. There is no endpoint
-        to add more employees after creation — remove and re-create the draft
-        instead (see `DELETE .../employees/{employeeId}` to remove one).
+        US-SGP-06 — reviewPeriodId must be SUBMITTED with no existing
+        non-cancelled decision; only employees Approved in that period can
+        be included; effectiveDate must be on or after the review period's
+        reviewDate. decisionNumber is system-generated. Drafting does not
+        change any employee's real salary. There is no endpoint to add
+        employees after creation — remove one (see DELETE below) or cancel
+        and redraft.
       requestBody:
         required: true
         content:
@@ -367,7 +1236,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SalaryDecision"
+                $ref: "#/components/schemas/SalaryDecisionDetail"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -378,20 +1247,24 @@ paths:
                 $ref: "#/components/schemas/Error"
         "409":
           description: >
-            Review period has not been submitted yet, or already has a
-            non-cancelled decision drafted from it
+            Review period is not SUBMITTED, already has a non-cancelled
+            decision, an included employee is not Approved in that period,
+            or effectiveDate is earlier than the review date
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
     get:
       tags: [Salary Decisions]
+      operationId: listSalaryDecisions
       summary: Search and list salary decisions
-      description: >
-        US-09 — landing page for the "Salary Decisions" menu item. Lists
-        decisions regardless of status so the Approver can resume a draft or
-        open an applied/cancelled one read-only.
+      description: US-SGP-09 — lists decisions regardless of status.
       parameters:
+        - name: search
+          in: query
+          description: Matches decision number or review period code/name.
+          schema:
+            type: string
         - name: status
           in: query
           schema:
@@ -399,8 +1272,8 @@ paths:
         - name: reviewPeriodId
           in: query
           schema:
-            type: string
-            format: uuid
+            type: integer
+            format: int32
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
       responses:
@@ -411,13 +1284,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/SalaryDecisionPage"
 
+  /salary-decisions/eligible-review-periods:
+    get:
+      tags: [Salary Decisions]
+      operationId: listEligibleReviewPeriodsForDecision
+      summary: List review periods eligible to start a new salary decision
+      description: >
+        US-SGP-09 AC04 — SUBMITTED review periods with no non-cancelled
+        salary decision. Backs the "Pick a Review Period" step when
+        creating a decision from the Salary Decision list.
+      responses:
+        "200":
+          description: Eligible review periods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReviewPeriod"
+
   /salary-decisions/{decisionId}:
     get:
       tags: [Salary Decisions]
+      operationId: getSalaryDecision
       summary: Get salary decision detail
-      description: >
-        US-06 / US-08 — also used to open a decision in read-only mode from a
-        Salary History entry.
+      description: US-SGP-06/09 — also used to open a decision read-only from a Salary History entry.
       parameters:
         - $ref: "#/components/parameters/DecisionId"
       responses:
@@ -429,12 +1320,49 @@ paths:
                 $ref: "#/components/schemas/SalaryDecisionDetail"
         "404":
           $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Salary Decisions]
+      operationId: saveSalaryDecisionDraft
+      summary: Save changes to a draft salary decision
+      description: >
+        Wireframe "Save Draft" — currently the only editable field is
+        effectiveDate, which must remain on or after the review period's
+        reviewDate. Only allowed while the decision is DRAFT.
+      parameters:
+        - $ref: "#/components/parameters/DecisionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [effectiveDate]
+              properties:
+                effectiveDate:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryDecisionDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Decision is not a Draft, or effectiveDate is earlier than the review date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /salary-decisions/{decisionId}/employees/{employeeId}:
     delete:
       tags: [Salary Decisions]
+      operationId: removeSalaryDecisionEmployee
       summary: Remove one employee from a draft decision
-      description: US-06 — only allowed while the decision is still a draft.
+      description: US-SGP-06 AC04 — only allowed while the decision is still a Draft.
       parameters:
         - $ref: "#/components/parameters/DecisionId"
         - $ref: "#/components/parameters/EmployeeId"
@@ -444,7 +1372,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Decision is no longer a draft
+          description: Decision is not a Draft
           content:
             application/json:
               schema:
@@ -453,13 +1381,12 @@ paths:
   /salary-decisions/{decisionId}/cancel:
     post:
       tags: [Salary Decisions]
+      operationId: cancelSalaryDecision
       summary: Cancel a draft salary decision
       description: >
-        US-10 — formally discontinues a Draft decision instead of deleting
-        it. Only a Draft decision can be cancelled — once a decision has
-        been Applied it is permanent and can never be cancelled or edited;
-        undoing a real salary change, if ever needed, requires drafting and
-        applying a separate new decision.
+        US-SGP-10 — only a Draft decision can be cancelled; does not change
+        any employee's salary; the review period stays SUBMITTED and may be
+        used to create a replacement decision.
       parameters:
         - $ref: "#/components/parameters/DecisionId"
       responses:
@@ -481,14 +1408,17 @@ paths:
   /salary-decisions/{decisionId}/apply:
     post:
       tags: [Salary Decisions]
+      operationId: applySalaryDecision
       summary: Apply a drafted salary decision
       description: >
-        US-07 — makes the decision official. Applied to all included
-        employees together in a single transaction: if any employee's change
-        cannot be applied (e.g. a conflicting record), none of them are
-        updated. A decision can only be applied once; its review period's
-        status becomes CLOSED as part of the same operation, and neither can
-        be reverted afterward.
+        US-SGP-07 — all-or-nothing: for each included employee, the current
+        salary grade must still match the grade captured when the draft was
+        created (AC04); if any does not match, none are updated. On
+        success, every included employee's salary history is updated
+        effective from the decision's effectiveDate, the decision becomes
+        APPLIED, and the review period becomes CLOSED — both terminal and
+        irreversible. Applying is immediate; there is no separate scheduled
+        update at a later date.
       parameters:
         - $ref: "#/components/parameters/DecisionId"
       responses:
@@ -502,8 +1432,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           description: >
-            Decision has already been applied, or one or more employees have a
-            conflicting salary record
+            Decision is not a Draft, or one or more employees' current grade
+            no longer matches the baseline captured at draft creation
           content:
             application/json:
               schema:
@@ -512,10 +1442,12 @@ paths:
   /employees/{employeeId}/salary-history:
     get:
       tags: [Salary History]
+      operationId: getEmployeeSalaryHistory
       summary: Get an employee's full salary history
       description: >
-        US-08 — read-only, newest first. Salary cannot be changed through this
-        endpoint.
+        US-SGP-08 — read-only, newest first; a historical entry originating
+        from a Salary Decision links back to it. Salary cannot be changed
+        through this endpoint.
       parameters:
         - $ref: "#/components/parameters/EmployeeId"
         - $ref: "#/components/parameters/FromDate"
@@ -541,27 +1473,55 @@ components:
         endpoint itself is not yet designed in this spec.
 
   parameters:
-    PeriodId:
-      name: periodId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
     EmployeeId:
       name: employeeId
       in: path
       required: true
       schema:
-        type: string
-        format: uuid
+        type: integer
+        format: int32
+    UnitId:
+      name: unitId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    JobTitleId:
+      name: jobTitleId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    ScaleId:
+      name: scaleId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    GradeId:
+      name: gradeId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    PeriodId:
+      name: periodId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
     DecisionId:
       name: decisionId
       in: path
       required: true
       schema:
-        type: string
-        format: uuid
+        type: integer
+        format: int32
     FromDate:
       name: fromDate
       in: query
@@ -616,32 +1576,298 @@ components:
           type: string
           example: reason is required when rejecting an employee
 
+    ActiveStatus:
+      type: string
+      enum: [ACTIVE, INACTIVE]
+
+    # ---------------- Employee Profile ----------------
+    EmploymentStatus:
+      type: string
+      enum: [ACTIVE, ON_LEAVE, TERMINATED]
+
+    CreateEmployeeRequest:
+      type: object
+      required: [employeeCode, fullName, organizationalUnitId, jobTitleId, joinDate, employmentStatus]
+      properties:
+        employeeCode:
+          type: string
+          example: EMP-0001
+        fullName:
+          type: string
+        organizationalUnitId:
+          type: integer
+          format: int32
+        jobTitleId:
+          type: integer
+          format: int32
+        joinDate:
+          type: string
+          format: date
+        employmentStatus:
+          $ref: "#/components/schemas/EmploymentStatus"
+
+    UpdateEmployeeRequest:
+      type: object
+      properties:
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        organizationalUnitId:
+          type: integer
+          format: int32
+        jobTitleId:
+          type: integer
+          format: int32
+        joinDate:
+          type: string
+          format: date
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        employeeCode:
+          type: string
+        fullName:
+          type: string
+        organizationalUnitId:
+          type: integer
+          format: int32
+        organizationalUnitName:
+          type: string
+          readOnly: true
+        jobTitleId:
+          type: integer
+          format: int32
+        jobTitleName:
+          type: string
+          readOnly: true
+        joinDate:
+          type: string
+          format: date
+        employmentStatus:
+          $ref: "#/components/schemas/EmploymentStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EmployeePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalItems:
+          type: integer
+
+    # ---------------- Organization Management ----------------
+    CreateOrganizationalUnitRequest:
+      type: object
+      required: [name, unitType]
+      properties:
+        name:
+          type: string
+        parentId:
+          type: integer
+          format: int32
+          nullable: true
+        unitType:
+          type: string
+          example: Department
+        contactEmail:
+          type: string
+          format: email
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+
+    UpdateOrganizationalUnitRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        unitType:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+
+    OrganizationalUnit:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        parentId:
+          type: integer
+          format: int32
+          nullable: true
+        unitType:
+          type: string
+        contactEmail:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ActiveStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    JobTitle:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ActiveStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ---------------- Salary Master Data ----------------
+    BaseSalaryRate:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        rate:
+          type: number
+          format: double
+        effectiveDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+
+    SalaryScale:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        code:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ActiveStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SalaryGrade:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        salaryScaleId:
+          type: integer
+          format: int32
+        gradeNumber:
+          type: integer
+        currentCoefficient:
+          type: number
+          format: double
+          readOnly: true
+          description: The coefficient with the latest effectiveDate on or before today.
+        status:
+          $ref: "#/components/schemas/ActiveStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SalaryScaleDetail:
+      allOf:
+        - $ref: "#/components/schemas/SalaryScale"
+        - type: object
+          properties:
+            grades:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalaryGrade"
+
+    SalaryGradeCoefficient:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        salaryGradeId:
+          type: integer
+          format: int32
+        coefficient:
+          type: number
+          format: double
+        effectiveDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+
+    # ---------------- Salary Grade Promotion ----------------
     ReviewType:
       type: string
-      enum: [PERIODIC, EARLY]
+      description: Current fixed set driven by the UI; extend if the business defines more.
+      enum: [ANNUAL, MID_YEAR, SPECIAL]
+
     ReviewPeriodStatus:
       type: string
       description: >
         There is no Draft status — a successfully created period enters
-        IN_PROGRESS directly, in the same request (US-01). IN_PROGRESS:
-        proposed grades have been calculated and HR Staff is screening
-        employees. SUBMITTED: sent to the Approver (US-05). CLOSED: its
-        salary decision has been applied (US-07) — terminal, never reverts.
-        CANCELLED: cancelled by HR Staff (US-11) — terminal.
+        IN_PROGRESS directly, in the same request (US-SGP-01). SUBMITTED:
+        sent to the Approver / Manager (US-SGP-05). CLOSED: its salary
+        decision has been applied (US-SGP-07) — terminal. CANCELLED:
+        cancelled by HR Staff (US-SGP-11) — terminal.
       enum: [IN_PROGRESS, SUBMITTED, CLOSED, CANCELLED]
-    EligibilityStatus:
-      type: string
-      enum: [ELIGIBLE, INELIGIBLE]
+
     ReviewOutcome:
       type: string
-      description: HR Staff's screening outcome for one employee (US-04).
+      description: HR Staff's screening outcome for one employee (US-SGP-04). Absent/null while eligible and not yet processed.
       enum: [PENDING, APPROVED, REJECTED]
+
     SalaryDecisionStatus:
       type: string
       enum: [DRAFT, APPLIED, CANCELLED]
-    DecisionType:
-      type: string
-      enum: [PERIODIC, EARLY]
 
     CreateReviewPeriodRequest:
       type: object
@@ -649,10 +1875,10 @@ components:
       properties:
         code:
           type: string
-          example: RP-2026-001
+          example: RP-2026-01
         name:
           type: string
-          example: Annual Review H1 2026
+          example: Annual Review 2026
         reviewType:
           $ref: "#/components/schemas/ReviewType"
         reviewDate:
@@ -661,15 +1887,17 @@ components:
         effectiveDate:
           type: string
           format: date
+          nullable: true
         description:
           type: string
+          nullable: true
 
     ReviewPeriod:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int32
         code:
           type: string
         name:
@@ -682,10 +1910,12 @@ components:
         effectiveDate:
           type: string
           format: date
-        status:
-          $ref: "#/components/schemas/ReviewPeriodStatus"
+          nullable: true
         description:
           type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ReviewPeriodStatus"
         createdAt:
           type: string
           format: date-time
@@ -709,12 +1939,12 @@ components:
             pendingCount:
               type: integer
             decisionId:
-              type: string
-              format: uuid
+              type: integer
+              format: int32
               nullable: true
               description: >
                 The non-cancelled decision already drafted from this period,
-                if any (US-06/US-09). The UI shows "Create Decision" when
+                if any (US-SGP-06/09). The UI shows "Create Decision" when
                 null, or "View Decision" pointing at this id when set.
 
     ReviewPeriodPage:
@@ -734,43 +1964,55 @@ components:
     ReviewPeriodEmployee:
       type: object
       properties:
+        reviewPeriodId:
+          type: integer
+          format: int32
         employeeId:
-          type: string
-          format: uuid
+          type: integer
+          format: int32
         employeeCode:
           type: string
+          readOnly: true
         fullName:
           type: string
-        department:
+          readOnly: true
+        organizationalUnitName:
           type: string
-        currentGrade:
-          type: string
-          example: "3.1"
+          readOnly: true
+          description: The employee's current unit (read live, not frozen — see Database Design notes).
+        currentSalaryGradeId:
+          type: integer
+          format: int32
+        currentGradeNumber:
+          type: integer
+          readOnly: true
         currentCoefficient:
           type: number
           format: double
-          example: 3.33
-        proposedGrade:
-          type: string
+        eligible:
+          type: boolean
+        proposedSalaryGradeId:
+          type: integer
+          format: int32
           nullable: true
-          example: "3.2"
+        proposedGradeNumber:
+          type: integer
+          nullable: true
+          readOnly: true
         proposedCoefficient:
           type: number
           format: double
           nullable: true
-          example: 3.66
-        eligibilityStatus:
-          $ref: "#/components/schemas/EligibilityStatus"
-        eligibilityReason:
+        ineligibleReason:
           type: string
           nullable: true
-          description: Populated when eligibilityStatus is INELIGIBLE.
-        reviewOutcome:
+          description: Populated when eligible is false.
+        outcome:
           $ref: "#/components/schemas/ReviewOutcome"
-        reason:
+        rejectionReason:
           type: string
           nullable: true
-          description: Populated when reviewOutcome is REJECTED.
+          description: Populated when outcome is REJECTED.
 
     ReviewPeriodEmployeePage:
       type: object
@@ -786,36 +2028,6 @@ components:
         totalItems:
           type: integer
 
-    SalaryHistoryEntrySummary:
-      type: object
-      properties:
-        grade:
-          type: string
-        coefficient:
-          type: number
-          format: double
-        effectiveFrom:
-          type: string
-          format: date
-        effectiveTo:
-          type: string
-          format: date
-          nullable: true
-
-    ReviewPeriodEmployeeDetail:
-      allOf:
-        - $ref: "#/components/schemas/ReviewPeriodEmployee"
-        - type: object
-          properties:
-            salarySnapshotAt:
-              type: string
-              format: date-time
-              description: When the current/proposed grade shown here was captured.
-            recentSalaryHistory:
-              type: array
-              items:
-                $ref: "#/components/schemas/SalaryHistoryEntrySummary"
-
     RejectRequest:
       type: object
       required: [reason]
@@ -830,8 +2042,8 @@ components:
         employeeIds:
           type: array
           items:
-            type: string
-            format: uuid
+            type: integer
+            format: int32
           minItems: 1
 
     BulkActionResult:
@@ -840,77 +2052,58 @@ components:
         succeededEmployeeIds:
           type: array
           items:
-            type: string
-            format: uuid
+            type: integer
+            format: int32
         failed:
           type: array
           items:
             type: object
             properties:
               employeeId:
-                type: string
-                format: uuid
+                type: integer
+                format: int32
               reason:
                 type: string
 
     CreateSalaryDecisionRequest:
       type: object
-      required: [reviewPeriodId, employeeIds, decisionNumber, decisionType, effectiveDate]
+      required: [reviewPeriodId, employeeIds, effectiveDate]
       properties:
         reviewPeriodId:
-          type: string
-          format: uuid
+          type: integer
+          format: int32
         employeeIds:
           type: array
           description: >
-            Employees to include, from those approved in reviewPeriodId.
-            There is no endpoint to add more later (see DELETE to remove one).
+            Employees to include, from those Approved in reviewPeriodId.
+            There is no endpoint to add more later.
           items:
-            type: string
-            format: uuid
+            type: integer
+            format: int32
           minItems: 1
-        decisionNumber:
-          type: string
-          example: SD-2026-015
-        decisionType:
-          $ref: "#/components/schemas/DecisionType"
         effectiveDate:
           type: string
           format: date
-        signerEmployeeId:
-          type: string
-          format: uuid
-          nullable: true
-        description:
-          type: string
+          description: Defaults to the review period's target effective date, if set, in the UI; must be on or after the review period's reviewDate.
 
     SalaryDecision:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int32
         decisionNumber:
           type: string
+          readOnly: true
+          example: SD-2026-001
         reviewPeriodId:
-          type: string
-          format: uuid
-        decisionDate:
-          type: string
-          format: date
+          type: integer
+          format: int32
         effectiveDate:
           type: string
           format: date
-        decisionType:
-          $ref: "#/components/schemas/DecisionType"
         status:
           $ref: "#/components/schemas/SalaryDecisionStatus"
-        signerEmployeeId:
-          type: string
-          format: uuid
-          nullable: true
-        description:
-          type: string
         createdAt:
           type: string
           format: date-time
@@ -918,34 +2111,39 @@ components:
           type: string
           format: date-time
 
-    SalaryDecisionEmployeeDetail:
+    SalaryDecisionEmployeeLine:
       type: object
       properties:
         employeeId:
-          type: string
-          format: uuid
+          type: integer
+          format: int32
         employeeCode:
           type: string
+          readOnly: true
         fullName:
           type: string
-        oldGrade:
+          readOnly: true
+        organizationalUnitName:
           type: string
-          nullable: true
-        oldCoefficient:
+          readOnly: true
+        baselineSalaryGradeId:
+          type: integer
+          format: int32
+        baselineGradeNumber:
+          type: integer
+          readOnly: true
+        baselineCoefficient:
           type: number
           format: double
-          nullable: true
-        newGrade:
-          type: string
+        newSalaryGradeId:
+          type: integer
+          format: int32
+        newGradeNumber:
+          type: integer
+          readOnly: true
         newCoefficient:
           type: number
           format: double
-        effectiveFrom:
-          type: string
-          format: date
-        reason:
-          type: string
-          nullable: true
 
     SalaryDecisionDetail:
       allOf:
@@ -955,7 +2153,7 @@ components:
             employees:
               type: array
               items:
-                $ref: "#/components/schemas/SalaryDecisionEmployeeDetail"
+                $ref: "#/components/schemas/SalaryDecisionEmployeeLine"
 
     SalaryDecisionPage:
       type: object
@@ -974,37 +2172,39 @@ components:
     SalaryHistoryEntry:
       type: object
       properties:
-        grade:
-          type: string
+        salaryGradeId:
+          type: integer
+          format: int32
+        gradeNumber:
+          type: integer
+          readOnly: true
         coefficient:
           type: number
           format: double
-        effectiveFrom:
+        effectiveDate:
           type: string
           format: date
-        effectiveTo:
-          type: string
-          format: date
-          nullable: true
         reason:
           type: string
-          nullable: true
-        decisionId:
-          type: string
-          format: uuid
+        salaryDecisionId:
+          type: integer
+          format: int32
           nullable: true
         decisionNumber:
           type: string
           nullable: true
+          readOnly: true
         isCurrent:
           type: boolean
+          readOnly: true
+          description: True for the entry with the latest effectiveDate on or before today.
 
     SalaryHistoryPage:
       type: object
       properties:
         employeeId:
-          type: string
-          format: uuid
+          type: integer
+          format: int32
         items:
           type: array
           items:

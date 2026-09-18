@@ -27,9 +27,10 @@ dotnet test
 
 **This backend was built against an earlier, Salary-Grade-Promotion-only database design (8 tables).** `Docs/Database/` has since been redesigned from scratch to cover the full analyzed system (Employee Profile, Organization Management, Salary Master Data, and Salary Grade Promotion — 12 tables), based on the current `UserStories_*.md`/`UseCase_*.md` for all four modules rather than on this implementation. The backend has not been migrated to the new schema yet. Notably: `HrOrganizationalUnit`/`HrJobTitle` are now real tables (this backend still uses bare `DepartmentId`/`PositionId` ints with no FK), salary-grade coefficients now have their own effective-dated history table instead of a single mutable column, and `HrSalaryDecision.DecisionType`/`FileUrl`/`SignerEmployeeId` were dropped (none are described by any current User Story/Use Case). Migrating this backend to the new schema is a separate, not-yet-started task.
 
-Two smaller, previously-noted deviations against the old schema (both still true today, and superseded by the redesign above rather than fixed):
+**`Docs/API/openapi.yaml` has also been redesigned from scratch**, the same way as the database, to cover all four modules (49 endpoints) with `integer` path IDs matching the new schema's `int IDENTITY` keys. This backend was built against the earlier, narrower spec, which is no longer in the docs — see `Docs/API/README.md`.
 
-- `openapi.yaml` declares path IDs (`periodId`, `employeeId`, `decisionId`) as `format: uuid`, but the database schema consistently used `int IDENTITY` primary keys. This implementation follows the database (int IDs); `openapi.yaml`'s `uuid` format appears to be a stale/default choice that was never reconciled with the DB design.
+One smaller, previously-noted deviation against the old schema/spec (still true today, and superseded by the redesign above rather than fixed):
+
 - `HrSalaryReviewPeriodConfiguration.cs` only enforces a unique index on `Code`, not `Name`, even though US-SGP-01 AC03 requires rejecting a duplicate name.
 
 ## Out of scope (see `Docs/API/README.md`)

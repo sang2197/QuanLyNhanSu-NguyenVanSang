@@ -1,7 +1,9 @@
 # Detailed Design
 
-Class-level and behavior-level design for the Salary Grade Promotion API, derived from [Code Structure](../CodeStructure/README.md), [API Documentation](../API/README.md), [Database Design](../Database/README.md), and [C4 Architecture Diagrams](../c4/README.md). The last design artifact before implementation begins.
+UML class, sequence, and state diagrams for the full HRM system — Employee Management, Organization Management, Salary Master Data, and Salary Grade Promotion — derived from [Code Structure](../CodeStructure/README.md), [API Documentation](../API/README.md), [Database Design](../Database/README.md), and [C4 Architecture Diagrams](../c4/README.md). The last design artifact before implementation begins.
 
-- [`ClassDiagram.md`](ClassDiagram.md) — Domain model (8 entities) and the API/Service/Repository class layer for Salary Management.
-- [`SequenceDiagrams.md`](SequenceDiagrams.md) — 5 key flows: approve an employee, submit a review period, apply a decision (all-or-nothing), look up salary history, list/start/resume a salary decision.
-- [`StateDiagrams.md`](StateDiagrams.md) — Status lifecycles for Review Period, Review Outcome, and Salary Decision.
+The existing `backend/` implementation predates this analysis (Salary Grade Promotion only, against an earlier schema) and is not used as a source here — see `backend/README.md`'s "Known deviations from the docs".
+
+- [`ClassDiagram.md`](ClassDiagram.md) — Domain model (12 entities) and, for each of the 4 C4 components, its Controller → Service → Repository classes with explicit `<<interface>>` boxes and cross-component dependencies.
+- [`SequenceDiagrams.md`](SequenceDiagrams.md) — 20 key business-rule flows across all 4 modules (validation, guard conditions, or a transaction), one independent scenario per diagram, using `break` for early-exit guards and an explicit `HrmDbContext` for any transaction spanning more than one repository; simple unguarded CRUD is not diagrammed.
+- [`StateDiagrams.md`](StateDiagrams.md) — Status lifecycles for Review Period, Review Outcome, Salary Decision, Employment Status, and the shared Active/Inactive toggle (Organizational Unit, Job Title, Salary Scale, Salary Grade).
