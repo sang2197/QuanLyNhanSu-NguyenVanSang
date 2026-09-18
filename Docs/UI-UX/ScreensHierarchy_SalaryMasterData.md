@@ -1,10 +1,10 @@
 # Screens Hierarchy - Salary Master Data
 
-This document expands the Salary Management (Master Data) portion of the [Information Architecture](InformationArchitecture_HRM.md) sitemap into every individual screen state a user will actually encounter — including modals and confirmation dialogs that a page-level sitemap does not show. Each transition is labeled with the user action that triggers it, so this becomes the direct blueprint for the visual design that follows. It is derived from `UseCase_SalaryMasterData.md` (UC-SAL-01 through UC-SAL-07).
+This document expands the Salary Management (Master Data) portion of the [Information Architecture](InformationArchitecture_HRM.md) into the pages, modals, dialogs, and key transitions required by the module. It is derived from `UseCase_SalaryMasterData.md` (UC-SAL-01 through UC-SAL-07).
 
 Two kinds of nodes:
 - **Page** — a full navigable screen with its own URL/location.
-- **Modal / Dialog** — a transient overlay on top of a page; closing it returns to that same page.
+- **Modal / Dialog** — a transient overlay on top of a page.
 
 ## Hierarchy Diagram
 
@@ -20,14 +20,14 @@ flowchart TD
         M_AddRate{{"Modal: Add Base Salary Rate"}}
     end
     BSR -- "Add New Rate" --> M_AddRate
-    M_AddRate -- "Save" --> BSR
+    M_AddRate -- "Save successfully" --> BSR
 
     subgraph G2["Salary Scales"]
         SS
         M_CreateScale{{"Modal: Create Salary Scale"}}
     end
     SS -- "Create Salary Scale" --> M_CreateScale
-    M_CreateScale -- "Save" --> SS
+    M_CreateScale -- "Save successfully" --> SS
     SS -- "Open row" --> SSD[Page: Salary Scale Detail]
 
     subgraph G3["Salary Scale Detail"]
@@ -39,15 +39,15 @@ flowchart TD
         M_GradeStatus{{"Dialog: Deactivate/Reactivate Salary Grade"}}
     end
     SSD -- "Edit Scale" --> M_UpdateScale
-    M_UpdateScale -- "Save" --> SSD
+    M_UpdateScale -- "Save successfully" --> SSD
     SSD -- "Deactivate/Reactivate Scale" --> M_ScaleStatus
-    M_ScaleStatus -- "Confirm" --> SSD
+    M_ScaleStatus -- "Confirm successfully" --> SSD
     SSD -- "Add Grade" --> M_CreateGrade
-    M_CreateGrade -- "Save" --> SSD
+    M_CreateGrade -- "Save successfully" --> SSD
     SSD -- "Update Coefficient (row action)" --> M_UpdateCoeff
-    M_UpdateCoeff -- "Save" --> SSD
+    M_UpdateCoeff -- "Save successfully" --> SSD
     SSD -- "Deactivate/Reactivate Grade (row action)" --> M_GradeStatus
-    M_GradeStatus -- "Confirm" --> SSD
+    M_GradeStatus -- "Confirm successfully" --> SSD
     SSD -- "Back" --> SS
 ```
 
@@ -69,13 +69,16 @@ flowchart TD
 ## Notes
 
 - Every dialog/modal returns the user to the exact page it was opened from — none of them navigate elsewhere.
-- Salary Grades have no page or menu item of their own — per the Information Architecture, a grade always belongs to exactly one salary scale (BR-SAL-09), so the grade list is a nested section within Salary Scale Detail, not a separate navigable location.
-- "Add Base Salary Rate" and "Update Salary Grade Coefficient" only ever add a new effective-dated record; neither one edits or removes a past value (BR-SAL-02/BR-SAL-03 for the base rate, BR-SAL-12/BR-SAL-13 for grade coefficients).
-- "Create Salary Grade" is only available while the scale shown in Salary Scale Detail is active (BR-SAL-11); "Update Salary Grade Coefficient" and "Deactivate/Reactivate Salary Grade" are per-grade row actions, and reactivating a grade additionally requires its scale to already be active (BR-SAL-18).
-- "Update Salary Scale" never exposes the scale's code as an editable field — the code is fixed at creation (BR-SAL-07).
+- Validation or business-rule failures keep the user in the current modal or dialog and display the applicable feedback. They do not create separate screen nodes in this hierarchy.
+- Salary Grades are managed as a nested section within Salary Scale Detail. The current Information Architecture does not define Salary Grade as a separate page-level information location. Each Salary Grade belongs to one Salary Scale as defined by BR-SAL-09.
+- "Add Base Salary Rate" and "Update Salary Grade Coefficient" add new effective-dated records rather than editing or removing past values (BR-SAL-02/BR-SAL-03 for the base salary rate and BR-SAL-12/BR-SAL-13 for grade coefficients).
+- Creating a Salary Grade requires the containing Salary Scale to be active (BR-SAL-11). Updating a Salary Grade coefficient is unavailable while the grade is Inactive (BR-SAL-13A), and reactivating a Salary Grade requires its containing Salary Scale to be active (BR-SAL-18). The detailed UI treatment of unavailable or invalid actions is defined during detailed screen design.
+- "Update Salary Scale" does not expose the Salary Scale code as an editable field because the code is fixed at creation (BR-SAL-07).
 
 ## Scope Decision — Salary Scales Search/Filter
 
-`UserStories_SalaryMasterData.md` / `UseCase_SalaryMasterData.md` do not define a "view/search Salary Scales" (or grades-within-a-scale) use case — US-SAL-02 through US-SAL-07 only cover create, update, and deactivate/reactivate. Salary Scales and Salary Scale Detail are kept in the IA and this hierarchy as **catalog-access pages** serving those maintenance use cases: always-visible lists, with no search or filter, since none is a confirmed requirement.
+`UserStories_SalaryMasterData.md` and `UseCase_SalaryMasterData.md` do not define a separate view/search use case for Salary Scales or Salary Grades. US-SAL-02 through US-SAL-07 cover their create, update, and deactivate/reactivate operations.
 
-This is a deliberate scope decision, not a gap: if this reference data later grows large enough that search/filter becomes necessary, that should be introduced as a new requirement (a new user story/AC) first, rather than added directly at the UI layer.
+Salary Scales and Salary Scale Detail are kept as **catalog-access locations** supporting these maintenance operations. Search and filtering are not included because they are not currently defined by the requirements.
+
+If search or filtering is required later, it should first be introduced at the requirements level rather than added directly during UI design.

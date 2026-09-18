@@ -90,7 +90,7 @@ These are **business-state dependencies**, not mandatory behavioral inclusion or
 
 ### UC-SGP-01 — Create Salary Review Period
 
-HR Staff creates a new salary review period by providing the required review information, including its name, type, and review date.
+HR Staff creates a new salary review period by providing the required review information, including its name, type, and review date. A target effective date and a free-text description may optionally be provided; neither is required to create the Review Period.
 
 When the period is successfully created, the system determines eligible employees and calculates their proposed salary grades.
 
@@ -138,13 +138,32 @@ While a Review Period is `IN_PROGRESS`, HR Staff reviews each eligible employee'
 * `Approved`, or
 * `Rejected`.
 
-HR Staff may process employees individually or in bulk.
+HR Staff may process employees individually or in bulk. Bulk Approve and Bulk Reject serve the same goal as individual Approve/Reject — reviewing Proposed Grades — so they are not modeled as separate use cases.
 
 The Proposed Grade is system-generated and **cannot be manually changed by HR Staff**.
 
 While the Review Period remains `IN_PROGRESS`, HR Staff may change a previously recorded outcome between `Approved` and `Rejected`.
 
 Once the Review Period is `SUBMITTED`, the review outcomes can no longer be changed.
+
+#### Main Flow — Individual Review
+
+1. HR Staff selects one eligible employee with a Proposed Grade.
+2. HR Staff records the outcome as `Approved` or `Rejected` for that employee.
+3. System records the outcome for that employee.
+
+#### Main Flow — Bulk Review
+
+1. HR Staff selects multiple eligible employees with Proposed Grades.
+2. HR Staff applies the same outcome (`Approved` or `Rejected`) to all selected employees in a single Bulk Approve or Bulk Reject action.
+3. System validates each selected proposal individually.
+4. System records the outcome for every valid proposal; invalid proposals remain unchanged.
+
+#### Alternative Flows
+
+* **2a. Reject an individual employee** — HR Staff selects `Rejected` for one employee and must provide a reason specific to that employee. If no reason is provided, the system rejects the request and the outcome remains unchanged.
+* **2b. Bulk Reject** — HR Staff selects `Rejected` for multiple employees and must provide one reason, which is recorded for every employee included in the bulk action. If no reason is provided, the system rejects the request and none of the selected outcomes change.
+* **2c. Change a Rejected outcome to Approved** — If HR Staff changes an employee's outcome from `Rejected` to `Approved`, the system clears that employee's previously recorded rejection reason.
 
 ---
 
@@ -170,7 +189,7 @@ Approver / Manager creates a draft Salary Decision from a `SUBMITTED` Review Per
 
 Only employees whose Proposed Grades were `Approved` by HR Staff can be included in the Salary Decision.
 
-The Approver specifies the Decision Effective Date, which must be **on or after the Review Date**.
+The Approver specifies the Decision Effective Date, which must be **on or after the Review Date**. If the Review Period has a target effective date, it is offered as the default value; the Approver may still change it before creating the Decision.
 
 Creating the Salary Decision does not immediately change any employee's actual Salary Grade.
 
@@ -199,6 +218,8 @@ When the operation succeeds:
 * The new Salary Grade becomes effective according to the Decision Effective Date.
 * The Salary Decision changes from `DRAFT` to `APPLIED`.
 * The associated Review Period changes from `SUBMITTED` to `CLOSED`.
+
+Applying the Decision is immediate: the update above happens as part of the same successful operation, and the Decision Effective Date is recorded as an attribute of the resulting salary change rather than triggering a separate scheduled update on that date.
 
 An `APPLIED` Salary Decision is terminal and cannot be applied again or cancelled.
 

@@ -62,6 +62,11 @@ maintained in the HRM system.
     same parent.
 -   Only an active organizational unit can be selected as the parent of
     a new unit.
+-   An organizational unit may optionally have a Contact Email and a
+    Contact Phone. Both apply to the organizational unit itself,
+    regardless of its unit type, and neither is required to create the
+    unit.
+-   If a Contact Email is provided, it must be a valid email format.
 
 ### Acceptance Criteria
 
@@ -106,6 +111,30 @@ rules are satisfied.
 unit\
 **Then** the inactive unit is not available for selection.
 
+#### AC06 -- Create a unit with contact information
+
+**Given** I have entered the required organizational unit information\
+**And** I provide a Contact Email in a valid email format, a Contact
+Phone, or both\
+**When** I save the organizational unit\
+**Then** the unit is created successfully\
+**And** the provided contact information is saved with it.
+
+#### AC07 -- Create a unit without contact information
+
+**Given** I have entered the required organizational unit information\
+**And** I leave Contact Email and Contact Phone empty\
+**When** I save the organizational unit\
+**Then** the unit is created successfully\
+**And** no contact information is required.
+
+#### AC08 -- Invalid contact email format
+
+**Given** I enter a Contact Email that is not a valid email format\
+**When** I attempt to save the organizational unit\
+**Then** the system rejects the request\
+**And** no organizational unit is created.
+
 ------------------------------------------------------------------------
 
 ## US-ORG-02 -- View Organization Structure
@@ -126,6 +155,8 @@ structure.
     understood.
 -   Each organizational unit is shown according to its parent-child
     relationship.
+-   An organizational unit's recorded Contact Email and Contact Phone,
+    when present, are shown as part of the organization structure view.
 
 ### Acceptance Criteria
 
@@ -150,6 +181,20 @@ relationships\
 **Then** the organizational unit remains visible\
 **And** its inactive status can be identified.
 
+#### AC04 -- View a unit's contact information
+
+**Given** an organizational unit has a Contact Email, a Contact Phone,
+or both recorded\
+**When** I view the organization structure\
+**Then** the recorded contact information is shown for that unit.
+
+#### AC05 -- View a unit without contact information
+
+**Given** an organizational unit has no Contact Email and no Contact
+Phone recorded\
+**When** I view the organization structure\
+**Then** no contact information is shown for that unit.
+
 ------------------------------------------------------------------------
 
 ## US-ORG-03 -- Update Organizational Unit
@@ -163,12 +208,18 @@ accurately.
 
 ### Business Rules
 
+-   Editable fields are the unit's Name, Unit Type, Contact Email, and
+    Contact Phone.
 -   An organizational unit name must remain unique among units that have
     the same parent.
 -   Updating an organizational unit must not create a new organizational
     unit.
--   Moving an organizational unit to a different parent is handled
-    separately in **US-ORG-04**.
+-   Parent Unit is not editable through this story. Moving an
+    organizational unit to a different parent is handled separately in
+    **US-ORG-04**.
+-   Contact Email and Contact Phone remain optional when updating an
+    organizational unit.
+-   If a Contact Email is provided, it must be a valid email format.
 
 ### Acceptance Criteria
 
@@ -194,6 +245,20 @@ different parent\
 **When** I rename the current unit to that name\
 **Then** the change can be saved if all other business rules are
 satisfied.
+
+#### AC04 -- Update contact information
+
+**Given** an organizational unit exists\
+**When** I update its Contact Email, Contact Phone, or both with valid
+values\
+**Then** the changes are saved successfully.
+
+#### AC05 -- Invalid contact email format on update
+
+**Given** I enter a Contact Email that is not a valid email format\
+**When** I attempt to save the update\
+**Then** the system rejects the update\
+**And** the existing organizational unit information remains unchanged.
 
 ------------------------------------------------------------------------
 

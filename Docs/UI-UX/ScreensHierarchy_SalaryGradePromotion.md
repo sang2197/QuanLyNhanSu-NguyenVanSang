@@ -1,10 +1,10 @@
 # Screens Hierarchy - Salary Grade Promotion
 
-This document expands the Salary Grade Promotion portion of the [Information Architecture](InformationArchitecture_HRM.md) sitemap into every individual screen state a user will actually encounter — including modals, confirmation dialogs, and read-only variants that a page-level sitemap does not show. Each transition is labeled with the user action that triggers it, so this becomes the direct blueprint for the visual design that follows.
+This document expands the Salary Grade Promotion portion of the [Information Architecture](InformationArchitecture_HRM.md) into the pages, modals, dialogs, and key transitions required by the module. Each transition is labeled with the user action that triggers it.
 
 Two kinds of nodes:
 - **Page** — a full navigable screen with its own URL/location.
-- **Modal / Dialog** — a transient overlay on top of a page; closing it returns to that same page.
+- **Modal / Dialog** — a transient overlay associated with a page.
 
 ## Hierarchy Diagram
 
@@ -22,33 +22,33 @@ flowchart TD
         M_CancelPeriod{{"Dialog: Cancel Review Period"}}
     end
     RPL -- "Create Review Period" --> M_CreatePeriod
-    M_CreatePeriod -- "Save" --> RPL
+    M_CreatePeriod -- "Save successfully" --> RPL
     RPL -- "Cancel (row action)" --> M_CancelPeriod
-    M_CancelPeriod -- "Confirm" --> RPL
+    M_CancelPeriod -- "Confirm successfully" --> RPL
     RPL -- "View" --> RPD[Page: Review Period Detail]
 
     subgraph G2["Review Period Detail"]
         RPD
-        M_Submit{{"Dialog: Submit for Approval"}}
+        M_Submit{{"Dialog: Submit Review Period"}}
         M_BulkApprove{{"Dialog: Bulk Approve"}}
         M_BulkReject{{"Dialog: Bulk Reject (reason required)"}}
     end
     RPD -- "Open employee row" --> ERD[Page: Employee Review Detail]
-    RPD -- "Submit for Approval" --> M_Submit
-    M_Submit -- "Confirm" --> RPD
+    RPD -- "Submit Review Period" --> M_Submit
+    M_Submit -- "Confirm successfully" --> RPD
     RPD -- "Bulk Approve selected" --> M_BulkApprove
-    M_BulkApprove -- "Confirm" --> RPD
+    M_BulkApprove -- "Confirm successfully" --> RPD
     RPD -- "Bulk Reject selected" --> M_BulkReject
-    M_BulkReject -- "Submit reason" --> RPD
+    M_BulkReject -- "Submit reason successfully" --> RPD
     RPD -- "Create Decision / View Decision" --> CED[Page: Salary Decision Detail]
 
     subgraph G3["Employee Review Detail"]
         ERD
         M_Reject{{"Dialog: Reject (reason required)"}}
     end
-    ERD -- "Approve" --> ERD
+    ERD -- "Approve successfully" --> ERD
     ERD -- "Reject" --> M_Reject
-    M_Reject -- "Submit reason" --> ERD
+    M_Reject -- "Submit reason successfully" --> ERD
     ERD -- "Back" --> RPD
 
     subgraph G4["Salary Decision List"]
@@ -68,9 +68,9 @@ flowchart TD
     CED -- "Save Draft" --> CED
     CED -- "Remove an employee" --> CED
     CED -- "Issue / Apply" --> M_Apply
-    M_Apply -- "Confirm" --> CED
+    M_Apply -- "Confirm successfully" --> CED
     CED -- "Cancel Decision (Draft only)" --> M_CancelDecision
-    M_CancelDecision -- "Confirm" --> CED
+    M_CancelDecision -- "Confirm successfully" --> CED
 
     ESH -- "Open a decision number" --> CED
 ```
@@ -83,7 +83,7 @@ flowchart TD
 | Create Review Period | Modal | Review Period List | "Create Review Period" |
 | Cancel Review Period | Dialog | Review Period List | Row action "Cancel" |
 | Review Period Detail | Page | Review Period List | "View" |
-| Submit for Approval | Dialog | Review Period Detail | "Submit for Approval" |
+| Submit Review Period | Dialog | Review Period Detail | "Submit Review Period" |
 | Bulk Approve | Dialog | Review Period Detail | "Bulk Approve selected" |
 | Bulk Reject | Dialog | Review Period Detail | "Bulk Reject selected" |
 | Employee Review Detail | Page | Review Period Detail | "Open employee row" |
@@ -92,11 +92,14 @@ flowchart TD
 | Pick a Review Period | Dialog | Salary Decision List | "Create New" |
 | Salary Decision Detail | Page | Salary Decision List *(also reachable from Review Period Detail and Employee Salary History)* | "Create New" (after picking a period), "Open a draft/applied/cancelled row", "Create/View Decision", "Open a decision number" |
 | Issue/Apply Decision | Dialog | Salary Decision Detail | "Issue / Apply" |
-| Cancel Decision | Dialog | Salary Decision Detail | "Cancel Decision" (available only while Draft; an Applied decision is permanent — see US-SGP-10) |
+| Cancel Decision | Dialog | Salary Decision Detail | "Cancel Decision" (Draft only) |
 | Employee Salary History | Page | Menu | Menu: "Salary History" |
 
 ## Notes
 
-- Every dialog returns the user to the exact page it was opened from — none of them navigate elsewhere.
-- "Salary Decision Detail" is the only page reachable from more than one parent; it behaves differently depending on how it was reached (a fresh draft, a resumed draft, or a read-only view of something already decided), but it is still one screen, not three.
-- "Employee Review Detail" and "Review Period Detail" link back and forth to each other rather than only going one direction.
+- After a successful action, a modal or dialog normally returns to its originating page unless the hierarchy explicitly defines navigation to another page, such as selecting a Review Period when creating a Salary Decision.
+- Validation or business-rule failures keep the user in the current modal or dialog and display the applicable feedback. They do not create separate screen nodes in this hierarchy.
+- Salary Decision Detail is reachable from multiple locations, but its available actions and editability are determined by the Salary Decision state rather than by the navigation path. A `DRAFT` decision is editable, while `APPLIED` and `CANCELLED` decisions are read-only.
+- Employee Review Detail is reached from Review Period Detail and returns to that Review Period Detail when the user navigates back.
+- Rejecting an individual employee from Employee Review Detail requires a reason specific to that employee. Bulk Reject on Review Period Detail requires one reason that is recorded for every selected employee in that action (US-SGP-04).
+- Approving an employee whose outcome was previously `Rejected` clears the rejection reason associated with that employee's current review outcome (US-SGP-04).

@@ -209,20 +209,20 @@ Creating, updating, deactivating, and reactivating Salary Grades are interaction
 | Page / Information Location | Type           | Domain                  | Parent                 | Current Design Status         |
 | ---------------------------- | -------------- | ----------------------- | ---------------------- | ------------------------------ |
 | Dashboard                   | Page           | HRM                     | HRM System             | TBD — no current requirements |
-| Employees                   | Page           | Employee Management     | Employee Management    | Not designed yet              |
-| Employee Detail             | Page           | Employee Management     | Employees              | Not designed yet              |
-| Organization Structure      | Page           | Organization Management | Organization           | Not designed yet              |
-| Job Titles                  | Page           | Organization Management | Organization           | Not designed yet              |
-| Review Periods              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Designed                      |
-| Review Period Detail        | Page           | Salary Grade Promotion  | Review Periods         | Designed                      |
-| Employee Review Detail      | Page           | Salary Grade Promotion  | Review Period Detail   | Designed                      |
-| Salary Decisions            | Page           | Salary Grade Promotion  | Salary Grade Promotion | Designed                      |
-| Salary Decision Detail      | Page           | Salary Grade Promotion  | Salary Decisions       | Designed                      |
-| Salary History              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Designed                      |
-| Base Salary Rate            | Page           | Salary Master Data      | Salary Master Data     | Not designed yet              |
-| Salary Scales               | Page           | Salary Master Data      | Salary Master Data     | Not designed yet              |
-| Salary Scale Detail         | Page           | Salary Master Data      | Salary Scales          | Not designed yet              |
-| Salary Grades               | Nested Section | Salary Master Data      | Salary Scale Detail    | Not designed yet              |
+| Employees                   | Page           | Employee Management     | Employee Management    | Prototyped (HTML)             |
+| Employee Detail             | Page           | Employee Management     | Employees              | Prototyped (HTML)             |
+| Organization Structure      | Page           | Organization Management | Organization           | Prototyped (HTML)             |
+| Job Titles                  | Page           | Organization Management | Organization           | Prototyped (HTML)             |
+| Review Periods              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Prototyped (HTML)             |
+| Review Period Detail        | Page           | Salary Grade Promotion  | Review Periods         | Prototyped (HTML)             |
+| Employee Review Detail      | Page           | Salary Grade Promotion  | Review Period Detail   | Prototyped (HTML)             |
+| Salary Decisions            | Page           | Salary Grade Promotion  | Salary Grade Promotion | Prototyped (HTML)             |
+| Salary Decision Detail      | Page           | Salary Grade Promotion  | Salary Decisions       | Prototyped (HTML)             |
+| Salary History              | Page           | Salary Grade Promotion  | Salary Grade Promotion | Prototyped (HTML)             |
+| Base Salary Rate            | Page           | Salary Master Data      | Salary Master Data     | Prototyped (HTML)             |
+| Salary Scales               | Page           | Salary Master Data      | Salary Master Data     | Prototyped (HTML)             |
+| Salary Scale Detail         | Page           | Salary Master Data      | Salary Scales          | Prototyped (HTML)             |
+| Salary Grades               | Nested Section | Salary Master Data      | Salary Scale Detail    | Prototyped (HTML)             |
 
 ---
 

@@ -97,6 +97,9 @@ promotion within a defined review cycle.
 -   A review period must have a unique code and name.
 -   A review period has a review date and review type, such as annual,
     mid-year, or special.
+-   A review period may optionally have a target effective date and a
+    free-text description. Neither is required to create the review
+    period.
 -   Creating a review period automatically determines employee
     eligibility and proposed salary grades as part of the same business
     action.
@@ -277,8 +280,18 @@ submitted to the Approver.
 
 -   Only an eligible employee with a proposed salary grade can receive
     an Approved or Rejected outcome.
--   A rejection requires a reason.
--   HR Staff may process proposals individually or in bulk.
+-   HR Staff may process proposals individually, or select multiple
+    eligible employee proposals and apply the same outcome to all of
+    them in a single bulk action (Bulk Approve or Bulk Reject).
+-   Rejecting an individual proposal requires a reason specific to that
+    employee.
+-   A Bulk Reject requires a reason; the same reason is recorded for
+    every proposal included in that bulk action.
+-   If a Bulk Reject only partially succeeds, the provided reason is
+    still recorded for every proposal that is successfully rejected.
+-   A Bulk Approve does not require a reason.
+-   When a proposal's outcome is changed from Rejected to Approved, any
+    previously recorded rejection reason is cleared.
 -   In a bulk action, each selected proposal is validated individually.
 -   An outcome can be changed only while the review period is
     **IN_PROGRESS**.
@@ -294,15 +307,15 @@ submitted to the Approver.
 **When** I approve the proposal\
 **Then** the employee's review outcome is recorded as Approved.
 
-#### AC02 -- Reject a proposal with a reason
+#### AC02 -- Reject an individual proposal with a reason
 
 **Given** an eligible employee has a proposed salary grade\
 **And** the review period is IN_PROGRESS\
 **When** I reject the proposal and provide a reason\
 **Then** the employee's review outcome is recorded as Rejected\
-**And** the rejection reason is retained.
+**And** the rejection reason is retained for that employee.
 
-#### AC03 -- Reject without a reason
+#### AC03 -- Reject an individual proposal without a reason
 
 **Given** an eligible employee has a proposed salary grade\
 **When** I attempt to reject the proposal without a reason\
@@ -320,7 +333,50 @@ submitted to the Approver.
 **And** the result identifies which proposals succeeded or failed and
 why.
 
-#### AC05 -- Attempt to change an outcome after submission
+#### AC05 -- Bulk approve does not require a reason
+
+**Given** multiple eligible employee proposals are selected\
+**And** the review period is IN_PROGRESS\
+**When** I bulk approve them\
+**Then** each selected proposal's outcome is recorded as Approved\
+**And** no rejection reason is required.
+
+#### AC06 -- Bulk reject with a reason
+
+**Given** multiple eligible employee proposals are selected\
+**And** the review period is IN_PROGRESS\
+**When** I bulk reject them and provide a reason\
+**Then** each selected proposal's outcome is recorded as Rejected\
+**And** the same rejection reason is recorded for each selected proposal.
+
+#### AC07 -- Bulk reject without a reason
+
+**Given** multiple eligible employee proposals are selected\
+**And** the review period is IN_PROGRESS\
+**When** I attempt to bulk reject them without providing a reason\
+**Then** the request is rejected\
+**And** the selected proposal outcomes remain unchanged.
+
+#### AC08 -- Rejection reason cleared when a rejected proposal is later approved
+
+**Given** an employee's proposal has outcome Rejected with a recorded rejection reason\
+**And** the review period is IN_PROGRESS\
+**When** I change the outcome to Approved\
+**Then** the employee's review outcome is recorded as Approved\
+**And** the rejection reason is no longer associated with the current review outcome.
+
+#### AC09 -- Bulk Reject partial success retains the reason for successful proposals
+
+**Given** multiple eligible employee proposals are selected for Bulk Reject\
+**And** the review period is IN_PROGRESS\
+**And** I provide a reason\
+**And** one or more of the selected proposals cannot be rejected\
+**When** I perform the Bulk Reject\
+**Then** the provided reason is recorded for every proposal that is successfully rejected\
+**And** the proposals that cannot be rejected remain unchanged\
+**And** the result identifies which proposals succeeded or failed and why.
+
+#### AC10 -- Attempt to change an outcome after submission
 
 **Given** the review period is no longer IN_PROGRESS\
 **When** I attempt to approve, reject, or change an employee's outcome\
@@ -409,6 +465,10 @@ take effect.
     a new decision created.
 -   The decision's effective date must be on or after the review
     period's review date.
+-   If the review period has a target effective date, it is offered as
+    the default effective date when creating the salary decision; the
+    Approver may still change it before creating the decision, subject
+    to the rule above.
 
 ### Acceptance Criteria
 
@@ -458,6 +518,15 @@ earlier than the review date\
 **Then** the request is rejected\
 **And** no salary decision is created.
 
+#### AC07 -- Effective date defaults from the review period's target effective date
+
+**Given** a review period is SUBMITTED with a target effective date set\
+**When** I begin creating a salary decision from that review period\
+**Then** the decision's effective date is pre-filled with the review
+period's target effective date\
+**And** I may change it before creating the decision, subject to the
+existing effective-date rule.
+
 ------------------------------------------------------------------------
 
 ## US-SGP-07 -- Apply Salary Decision
@@ -475,6 +544,10 @@ retained as part of each employee's salary history.
 -   A salary decision can be applied only once.
 -   Each included employee's salary grade change has a defined effective
     date.
+-   Applying a salary decision takes effect immediately, as part of the
+    same successful operation. The effective date is recorded as an
+    attribute of the resulting salary change; it does not trigger a
+    separate, deferred, or scheduled update at a later time.
 -   Applying a salary decision follows an **all-or-nothing** rule: all
     included employee changes must succeed together.
 -   Before applying, each included employee's current salary grade must

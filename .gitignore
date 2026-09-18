@@ -1,7 +1,7 @@
 ~$*
 __pycache__/
 *.pyc
-Docs/UI-UX/*.html
+Docs/UI-UX/**/*.html
 .claude/
 
 # .NET build artifacts (backend/)

@@ -47,21 +47,29 @@ Screen design is developed progressively from information structure to detailed 
 1. **Information Architecture** — page-level information organization and sitemap across the currently specified HRM modules.
 2. **Screens Hierarchy** — pages, modals, dialogs, and key transitions required by each module.
 3. **Wireframes & Screen Behavior** — screen structure, behavior, validation, and actor interactions.
-4. **UI/UX Design** — high-fidelity visual design in Figma.
+4. **UI/UX Design** — interactive HTML prototypes for all four modules, sharing one common design system.
 
-### Review Period List
+### Salary Grade Promotion
 
 ![Review Period List](Docs/UI-UX/Review%20Period%20List.png)
+![Review Period Detail](Docs/UI-UX/Review%20Period%20Detail.png)
+![Employee Review Detail](Docs/UI-UX/Employee%20Review%20Detail.png)
+![Salary Decision List](Docs/UI-UX/Salary%20Decision%20List.png)
+![Salary Decision Detail](Docs/UI-UX/Salary%20Decision%20Detail.png)
+![Employee Salary History](Docs/UI-UX/Employee%20Salary%20History.png)
 
-### Employee Review Details
+### Employee Profile & Organization Management
 
-![Employee Review Details](Docs/UI-UX/Employee%20Review%20Details.png)
+![Employee List](Docs/UI-UX/Employee%20List.png)
+![Organization Structure](Docs/UI-UX/Organization%20Structure.png)
 
 Key documents:
 
 * [`InformationArchitecture_HRM.md`](Docs/UI-UX/InformationArchitecture_HRM.md) — HRM information architecture and sitemap
 * [`ScreensHierarchy_SalaryGradePromotion.md`](Docs/UI-UX/ScreensHierarchy_SalaryGradePromotion.md) — pages, dialogs, and screen transitions for Salary Grade Promotion
-* Live Figma file: [Human Resource Management](https://www.figma.com/design/D3hSGsuVDHosEGUxPO2Ory/Human-Resource-Management?node-id=0-1&t=BWTSO16JxwwAMuSz-1)
+* [`Wireframe_SalaryGradePromotion.md`](Docs/UI-UX/Wireframe_SalaryGradePromotion.md) — form fields, list columns, and data sources per screen for Salary Grade Promotion
+* [`SalaryGradePromotion_Screens.html`](Docs/UI-UX/NewDesign/SalaryGradePromotion_Screens.html) — interactive HTML prototype for Salary Grade Promotion
+* [`EmployeeProfile_Screens.html`](Docs/UI-UX/NewDesign/EmployeeProfile_Screens.html), [`OrganizationManagement_Screens.html`](Docs/UI-UX/NewDesign/OrganizationManagement_Screens.html), [`SalaryMasterData_Screens.html`](Docs/UI-UX/NewDesign/SalaryMasterData_Screens.html) — interactive HTML prototypes for the other three modules, cross-linked with the one above
 
 → Full folder: [`Docs/UI-UX/`](Docs/UI-UX/README.md)
 

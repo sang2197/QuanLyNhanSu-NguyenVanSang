@@ -8,7 +8,7 @@ Design documents for the **Salary Grade Promotion** feature (part of Salary Mana
 
 ## Screen Design (UI/UX)
 
-- [`UI-UX/`](UI-UX/README.md) — Wireframe & screen behavior, information architecture (sitemap), and the Figma visual design.
+- [`UI-UX/`](UI-UX/README.md) — Wireframe & screen behavior, information architecture (sitemap), and the interactive HTML prototype.
 
 ## C4 Architecture Diagrams
 

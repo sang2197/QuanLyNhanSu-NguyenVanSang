@@ -100,6 +100,19 @@ erDiagram
     }
 ```
 
+## Mapping Tables to the UI
+
+| Table | UI Role |
+|---|---|
+| `HrEmployee` | Employee information on detail, history, and review-list screens. |
+| `HrSalaryScale` | Salary scale master data source; usually not edited directly in the review workflow. |
+| `HrSalaryGrade` | Source of current and proposed grades/coefficients. |
+| `HrEmployeeSalary` | Current salary and salary-history timeline. |
+| `HrSalaryReviewPeriod` | Review Period List / Review Period Detail. |
+| `HrSalaryReviewEmployee` | Employee list and review results for each period. |
+| `HrSalaryDecision` | Decision header/general information. |
+| `HrSalaryDecisionDetail` | Employee list and old/new changes included in the decision. |
+
 ## Files
 
 - [`HRM_Salary_Grade_Promotion.dbml`](HRM_Salary_Grade_Promotion.dbml) — DBML source code (from dbdiagram.io). This, together with the Mermaid diagram above, is the source of truth for the schema — edit here first, then re-export SQL/PNG if the schema changes.

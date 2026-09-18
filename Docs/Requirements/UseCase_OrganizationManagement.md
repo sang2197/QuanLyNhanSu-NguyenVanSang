@@ -64,6 +64,9 @@ Management**.
 | BR-ORG-18 | Updating a job title modifies the existing job title and does not create a new one. | US-ORG-07 |
 | BR-ORG-19 | Deactivating a job title does not delete it and does not change employees who already hold it; a deactivated job title is unavailable for new employee assignments. | US-ORG-08 |
 | BR-ORG-20 | A deactivated job title can be reactivated. | US-ORG-08 |
+| BR-ORG-21 | An organizational unit may optionally have a Contact Email and a Contact Phone. Both apply to the organizational unit itself regardless of unit type, and neither is required. | US-ORG-01, US-ORG-03 |
+| BR-ORG-22 | A Contact Email, when provided, must be a valid email format. | US-ORG-01, US-ORG-03 |
+| BR-ORG-23 | An organizational unit's recorded Contact Email and Contact Phone, when present, are shown as part of the organization structure view. | US-ORG-02 |
 
 ------------------------------------------------------------------------
 
@@ -111,9 +114,9 @@ between the use cases. Therefore it is not modeled as `<<include>>` or
 
 | Use Case | User Story | Acceptance Criteria | Business Rules |
 |---|---|---|---|
-| UC-ORG-01 Create Organizational Unit | US-ORG-01 | AC01–AC05 | BR-ORG-01–BR-ORG-04 |
-| UC-ORG-02 View Organization Structure | US-ORG-02 | AC01–AC03 | BR-ORG-15 |
-| UC-ORG-03 Update Organizational Unit | US-ORG-03 | AC01–AC03 | BR-ORG-03, BR-ORG-05, BR-ORG-06 |
+| UC-ORG-01 Create Organizational Unit | US-ORG-01 | AC01–AC08 | BR-ORG-01–BR-ORG-04, BR-ORG-21, BR-ORG-22 |
+| UC-ORG-02 View Organization Structure | US-ORG-02 | AC01–AC05 | BR-ORG-15, BR-ORG-23 |
+| UC-ORG-03 Update Organizational Unit | US-ORG-03 | AC01–AC05 | BR-ORG-03, BR-ORG-05, BR-ORG-06, BR-ORG-21, BR-ORG-22 |
 | UC-ORG-04 Move Organizational Unit | US-ORG-04 | AC01–AC06 | BR-ORG-03, BR-ORG-04, BR-ORG-07–BR-ORG-09 |
 | UC-ORG-05 Deactivate or Reactivate Organizational Unit | US-ORG-05 | AC01–AC05 | BR-ORG-10–BR-ORG-14 |
 | UC-ORG-06 Create Job Title | US-ORG-06 | AC01–AC02 | BR-ORG-16, BR-ORG-17 |
@@ -139,8 +142,8 @@ structure.
 ### Main Success Scenario
 
 1.  HR Staff initiates creation of an organizational unit.
-2.  HR Staff provides the unit's name, unit type, and optionally a
-    parent unit.
+2.  HR Staff provides the unit's name, unit type, optionally a parent
+    unit, and optionally a Contact Email and/or a Contact Phone.
 3.  System validates the provided information.
 4.  If a parent unit is specified, System verifies that the parent unit
     is active.
@@ -156,6 +159,13 @@ structure.
 1.  System identifies the missing required information.
 2.  The unit is not created.
 3.  HR Staff may correct the information and resubmit.
+
+**3b. Provided Contact Email is not a valid email format**
+
+1.  System rejects the request and identifies that the Contact Email
+    format is invalid.
+2.  No organizational unit is created.
+3.  HR Staff may correct the Contact Email and resubmit.
 
 **4a. Specified parent unit is inactive**
 
@@ -177,8 +187,10 @@ structure.
 -   The unit is placed under its specified parent, or at the top level
     if no parent was specified.
 -   No other unit under the same parent uses the same name.
+-   Any submitted Contact Email or Contact Phone is stored with the
+    unit; if neither was submitted, the unit has no contact information.
 
-**Business Rules:** BR-ORG-01--BR-ORG-04
+**Business Rules:** BR-ORG-01--BR-ORG-04, BR-ORG-21, BR-ORG-22
 
 **Related User Story:** US-ORG-01
 
@@ -203,7 +215,9 @@ business function.
 2.  System retrieves all organizational units, active and inactive.
 3.  System presents the units arranged by parent-child relationship,
     with top-level units at the root.
-4.  HR Staff reviews the hierarchy.
+4.  System includes each unit's recorded Contact Email and Contact
+    Phone, when present.
+5.  HR Staff reviews the hierarchy.
 
 ### Extensions
 
@@ -213,9 +227,11 @@ None identified from the current business requirements.
 
 -   HR Staff can view the complete organization hierarchy, including
     inactive units and units with no employees assigned.
+-   Contact information recorded for a unit, when present, is visible
+    as part of that view.
 -   No data is changed.
 
-**Business Rules:** BR-ORG-15
+**Business Rules:** BR-ORG-15, BR-ORG-23
 
 **Related User Story:** US-ORG-02
 
@@ -225,17 +241,19 @@ None identified from the current business requirements.
 
 **Primary Actor:** HR Staff
 
-**Goal:** Correct or update an organizational unit's name or unit type.
+**Goal:** Correct or update an organizational unit's name, unit type, or
+contact information.
 
 **Preconditions:** The organizational unit exists.
 
-**Trigger:** The unit's recorded name or unit type has changed or needs
-correction.
+**Trigger:** The unit's recorded name, unit type, or contact information
+has changed or needs correction.
 
 ### Main Success Scenario
 
 1.  HR Staff identifies the organizational unit to update.
-2.  HR Staff changes the unit's name, unit type, or both.
+2.  HR Staff changes the unit's name, unit type, Contact Email, Contact
+    Phone, or any combination of these.
 3.  System validates the submitted changes.
 4.  If the name is changed, System verifies that the new name remains
     unique among units under the same parent.
@@ -244,22 +262,27 @@ correction.
 
 ### Extensions
 
+**3a. Changed Contact Email is not a valid email format**
+
+1.  System rejects the update.
+2.  The organizational unit retains its existing information.
+
 **4a. Changed name duplicates an existing sibling name**
 
 1.  System rejects the update.
 2.  The organizational unit retains its existing information.
 
-Moving a unit to a different parent is handled separately by UC-ORG-04
-and is outside this use case.
+Parent Unit is not editable through this use case. Moving a unit to a
+different parent is handled separately by UC-ORG-04.
 
 ### Postconditions -- Success
 
--   The existing organizational unit reflects the valid submitted name
-    and/or unit type changes.
+-   The existing organizational unit reflects the valid submitted name,
+    unit type, and/or contact information changes.
 -   The update does not create a new organizational unit.
 -   The unit's parent-child relationship is unchanged.
 
-**Business Rules:** BR-ORG-03, BR-ORG-05, BR-ORG-06
+**Business Rules:** BR-ORG-03, BR-ORG-05, BR-ORG-06, BR-ORG-21, BR-ORG-22
 
 **Related User Story:** US-ORG-03
 

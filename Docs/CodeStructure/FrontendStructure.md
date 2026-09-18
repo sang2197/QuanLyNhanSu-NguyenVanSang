@@ -44,7 +44,7 @@ frontend/
 │   │       ├── hooks/
 │   │       └── pages/
 │   ├── layouts/
-│   │   └── MainLayout.jsx        # nav shell matching the sidebar in the Figma mockups
+│   │   └── MainLayout.jsx        # nav shell matching the sidebar in the HTML prototype
 │   ├── constants/                 # enums mirrored from openapi.yaml (ReviewPeriodStatus, etc.)
 │   ├── utils/
 │   └── index.jsx
