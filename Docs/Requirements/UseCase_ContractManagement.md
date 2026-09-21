@@ -82,6 +82,7 @@ Management**.
 | BR-CON-29 | The employee of a Draft contract cannot be changed. | US-CON-06 |
 | BR-CON-30 | Updating a Draft contract does not create a new contract and does not change its status. The validation rules of US-CON-01 apply to the updated information, except the rules about the employee. Keeping the contract's own number is allowed. | US-CON-06 |
 | BR-CON-31 | Deleting a Draft contract removes it from the contract list and search results, and its contract number can be used again. | US-CON-06 |
+| BR-CON-32 | The expiring-soon view can be combined with the search and filter criteria of US-CON-02; all criteria are applied together. | US-CON-05 |
 
 ### Deferred Business Questions
 
@@ -171,7 +172,7 @@ change the status.
 | UC-CON-02 Search and Filter Contracts | US-CON-02 | AC01–AC06 | BR-CON-11–BR-CON-14 |
 | UC-CON-03 View Contract Details | US-CON-03 | AC01–AC02 | BR-CON-15 |
 | UC-CON-04 Update Contract Status | US-CON-04 | AC01–AC10 | BR-CON-10, BR-CON-16–BR-CON-19, BR-CON-21–BR-CON-24 |
-| UC-CON-05 Track Contracts Expiring Soon | US-CON-05 | AC01–AC06 | BR-CON-19, BR-CON-20, BR-CON-25–BR-CON-27 |
+| UC-CON-05 Track Contracts Expiring Soon | US-CON-05 | AC01–AC07 | BR-CON-19, BR-CON-20, BR-CON-25–BR-CON-27, BR-CON-32 |
 | UC-CON-06 Update or Delete Draft Contract | US-CON-06 | AC01–AC06 | BR-CON-01–BR-CON-06, BR-CON-28–BR-CON-31 |
 
 ------------------------------------------------------------------------
@@ -451,18 +452,20 @@ are overdue.
 
 1.  HR Staff opens the expiring-soon view.
 2.  HR Staff selects a window of 30 or 60 days from today; the default
-    is 30 days.
+    is 30 days. HR Staff may also specify a search term and filters, as
+    in UC-CON-02.
 3.  System identifies the Active contracts whose end date falls from
     today up to and including the last day of the window.
 4.  System identifies the overdue contracts: Active contracts whose end
     date is earlier than today.
-5.  System returns these contracts ordered by end date, earliest first,
-    identifying overdue contracts as overdue.
+5.  System returns these contracts, limited to those matching any
+    specified search and filter criteria, ordered by end date, earliest
+    first, identifying overdue contracts as overdue.
 6.  HR Staff reviews the results.
 
 ### Extensions
 
-**3a. No contract is expiring within the window and none is overdue**
+**3a. No contract matching the criteria is expiring within the window or overdue**
 1. System indicates that no contracts are expiring soon.
 2. No data is changed.
 
@@ -476,7 +479,8 @@ are overdue.
     longer appears.
 -   No contract data is changed.
 
-**Business Rules:** BR-CON-19, BR-CON-20, BR-CON-25--BR-CON-27
+**Business Rules:** BR-CON-19, BR-CON-20, BR-CON-25--BR-CON-27,
+BR-CON-32
 
 **Related User Story:** US-CON-05
 

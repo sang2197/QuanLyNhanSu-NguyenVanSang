@@ -496,6 +496,8 @@ time.
 -   Overdue contracts (see Contract Lifecycle) are included in the view
     and identified as overdue until HR Staff marks them as Expired.
 -   Contracts are ordered by end date, earliest first.
+-   The expiring-soon view can be combined with the search and filter
+    criteria of US-CON-02. All criteria are applied together.
 -   This story does not include notifications or reminders.
 -   The capability may be presented as a quick filter on the contract
     list or as a dashboard view. The presentation is not prescribed.
@@ -541,11 +543,20 @@ exist\
 
 #### AC06 -- No expiring contracts
 
-**Given** no Active contract has an end date within the selected
-window\
-**And** no Active contract is overdue\
+**Given** no Active contract matching the current search and filter
+criteria has an end date within the selected window\
+**And** no matching Active contract is overdue\
 **When** I open the expiring-soon view\
 **Then** the system indicates that no contracts are expiring soon.
+
+#### AC07 -- Combine with search and filters
+
+**Given** Active contracts exist that expire within the selected window
+or are overdue\
+**And** I have entered a search term or selected one or more filters\
+**When** I open the expiring-soon view\
+**Then** only the expiring and overdue Active contracts matching all the
+search and filter criteria are displayed.
 
 ------------------------------------------------------------------------
 

@@ -227,7 +227,7 @@ The list of contracts expiring soon (US-CON-05) is an information view over the 
 
 Displays an individual contract together with the currently recorded information of its employee, and provides access to operations applicable to that contract.
 
-Contextual navigation from Contract Detail to the related Employee Detail is not defined in the sitemap; it is left to the Screens Hierarchy and UI/UX design.
+Contextual navigation from Contract Detail to the related Employee Detail is not drawn in the sitemap; it is defined in [`ScreensHierarchy_ContractManagement.md`](ScreensHierarchy_ContractManagement.md).
 
 The applicable operations depend on the contract's status:
 
@@ -259,8 +259,8 @@ Creating, updating, deleting, and changing the status of a contract are actions 
 | Salary Scales               | Page           | Salary Master Data      | Salary Master Data     | Wireframe specified             |
 | Salary Scale Detail         | Page           | Salary Master Data      | Salary Scales          | Wireframe specified             |
 | Salary Grades               | Nested Section | Salary Master Data      | Salary Scale Detail    | Wireframe specified             |
-| Contracts                   | Page           | Contract Management     | Contract Management    | IA defined — no wireframe yet   |
-| Contract Detail             | Page           | Contract Management     | Contracts              | IA defined — no wireframe yet   |
+| Contracts                   | Page           | Contract Management     | Contract Management    | Designed (image)              |
+| Contract Detail             | Page           | Contract Management     | Contracts              | Designed (image)              |
 
 ---
 
@@ -321,7 +321,7 @@ Examples include:
 * Salary Grade Promotion references employee information.
 * Salary Grade Promotion references Salary Scales and Salary Grades.
 * Salary History is associated with individual employees.
-* Contract Management references an employee: a contract belongs to one employee, and Contract Detail shows that employee's currently recorded information. Employee data remains owned by Employee Management and is not modified by Contract Management. Whether Contract Detail offers contextual navigation to the related Employee Detail is decided later in the Contract Management Screens Hierarchy and UI/UX design, when it supports a confirmed user task; the sitemap neither defines nor rules out that navigation.
+* Contract Management references an employee: a contract belongs to one employee, and Contract Detail shows that employee's currently recorded information. Employee data remains owned by Employee Management and is not modified by Contract Management. Contextual navigation from Contract Detail to the related Employee Detail is not drawn in the sitemap, because a data reference alone does not create a page-to-page relationship; it is defined in [`ScreensHierarchy_ContractManagement.md`](ScreensHierarchy_ContractManagement.md).
 
 These data relationships do not automatically imply navigation relationships.
 

@@ -2,7 +2,7 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
-Screen design for the HRM system, in design order: information architecture, screens hierarchy, wireframe behavior, then visual design. All four modules — **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — have an Information Architecture entry, a Screens Hierarchy, and a wireframe write-up. The final visual design is provided as PNG images (see [Visual Design](#visual-design)). **Contract Management** currently has an Information Architecture entry only; its Screens Hierarchy, wireframe, and visual design are not yet started.
+Screen design for the HRM system, in design order: information architecture, screens hierarchy, wireframe behavior, then visual design. All four modules — **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — have an Information Architecture entry, a Screens Hierarchy, and a wireframe write-up. The final visual design is provided as PNG images (see [Visual Design](#visual-design)). **Contract Management** also has an Information Architecture entry, a Screens Hierarchy, a wireframe write-up, and visual design images.
 
 ## Information Architecture
 
@@ -14,6 +14,7 @@ Screen design for the HRM system, in design order: information architecture, scr
 - [`ScreensHierarchy_EmployeeProfile.md`](ScreensHierarchy_EmployeeProfile.md) — Screen states for the Employee Profile module (Employee List, Employee Detail, and their modals/dialogs).
 - [`ScreensHierarchy_OrganizationManagement.md`](ScreensHierarchy_OrganizationManagement.md) — Screen states for the Organization Management module (Organization Structure, Job Titles, and their modals/dialogs).
 - [`ScreensHierarchy_SalaryMasterData.md`](ScreensHierarchy_SalaryMasterData.md) — Screen states for the Salary Master Data module (Base Salary Rate, Salary Scales, Salary Scale Detail, and their modals/dialogs).
+- [`ScreensHierarchy_ContractManagement.md`](ScreensHierarchy_ContractManagement.md) — Screen states for the Contract Management module (Contract List, Contract Detail, and their modals/dialogs), including the expiring-soon quick filter and the contextual link to Employee Detail.
 
 ## Wireframe & Screen Behavior
 
@@ -21,11 +22,12 @@ Screen design for the HRM system, in design order: information architecture, scr
 - [`Wireframe_EmployeeProfile.md`](Wireframe_EmployeeProfile.md) — Main behavior, validation, and business data references per screen for the Employee Profile module.
 - [`Wireframe_OrganizationManagement.md`](Wireframe_OrganizationManagement.md) — Main behavior, validation, and business data references per screen for the Organization Management module.
 - [`Wireframe_SalaryMasterData.md`](Wireframe_SalaryMasterData.md) — Main behavior, validation, and business data references per screen for the Salary Master Data module.
+- [`Wireframe_ContractManagement.md`](Wireframe_ContractManagement.md) — Main behavior, form fields, list columns, validation, and business data references per screen for the Contract Management module, plus the recommended navigation flow.
 - [`UXGuidelines_HRM.md`](UXGuidelines_HRM.md) — UI/UX conventions shared across every HRM module (status badges, confirmation, pagination, etc.), not specific to any single feature's wireframe.
 
 ## Visual Design
 
-The PNG images below are the authoritative final screen designs. They cover the key screens of Employee Profile, Organization Management, and Salary Grade Promotion. Salary Master Data consists of basic CRUD screens, so it is specified by its [wireframe](Wireframe_SalaryMasterData.md) and [screens hierarchy](ScreensHierarchy_SalaryMasterData.md) only, by design — no separate design image is needed.
+The PNG images below are the authoritative final screen designs. They cover the key screens of Employee Profile, Organization Management, Salary Grade Promotion, and Contract Management. Salary Master Data consists of basic CRUD screens, so it is specified by its [wireframe](Wireframe_SalaryMasterData.md) and [screens hierarchy](ScreensHierarchy_SalaryMasterData.md) only, by design — no separate design image is needed.
 
 ### Employee Profile
 
@@ -56,3 +58,14 @@ The PNG images below are the authoritative final screen designs. They cover the 
 
 #### Employee Salary History
 ![Employee Salary History](Employee%20Salary%20History.png)
+
+### Contract Management
+
+#### Contract List
+![Contract List](Contract%20List.png)
+
+#### Contract Detail
+![Contract Detail](Contract%20Detail.png)
+
+#### Create Contract
+![Create Contract](Create%20Contract.png)

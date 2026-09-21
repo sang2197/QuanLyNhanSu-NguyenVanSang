@@ -21,12 +21,12 @@ The repository is organized by development phase, from requirements and design t
 
 ## Project Status
 
-Scope tracked in this repository: **Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion** (4 of the 6 functional areas above — Contract Management has requirements and an information architecture entry only — user stories in [`UserStories_ContractManagement.md`](Docs/Requirements/UserStories_ContractManagement.md) and use cases in [`UseCase_ContractManagement.md`](Docs/Requirements/UseCase_ContractManagement.md); Reward/Discipline and Attendance are not yet started).
+Scope tracked in this repository: **Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion** (4 of the 6 functional areas above — Contract Management has requirements and UI/UX design only (information architecture, screens hierarchy, wireframe, and screen designs) — user stories in [`UserStories_ContractManagement.md`](Docs/Requirements/UserStories_ContractManagement.md) and use cases in [`UseCase_ContractManagement.md`](Docs/Requirements/UseCase_ContractManagement.md); Reward/Discipline and Attendance are not yet started).
 
 | # | Phase | Scope covered | Status |
 |---|-------|----------------|--------|
 | 1 | Requirements — User Stories (INVEST) & Use Cases | 4/4 modules | 100% |
-| 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for 4/4 modules; final design images for the 8 key screens of Employee Profile, Organization, and Salary Grade Promotion | 100% |
+| 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for all 5 specified modules (the 4 implemented ones plus Contract Management); final design images for the 11 key screens of Employee Profile, Organization, Salary Grade Promotion, and Contract Management | 100% |
 | 3 | Architecture — C4 (Context, Container, Component) | 4/4 components | 100% |
 | 4 | Database Design & API Documentation (OpenAPI 3.0) | 12 tables, 49 endpoints | 100% |
 | 5 | Code Structure Design — Frontend & Backend | Both designed; backend structure matches the implementation below | 100% |
@@ -56,7 +56,7 @@ Key documents:
 
 → Full folder: [`Docs/Requirements/`](Docs/Requirements/README.md)
 
-The folder also contains requirements for Employee Profile, Organization Management, and Salary Master Data.
+The folder also contains requirements for Employee Profile, Organization Management, Salary Master Data, and Contract Management.
 
 ---
 
@@ -96,6 +96,17 @@ Screen design is developed progressively from information structure to detailed 
 
 #### Organization Structure
 ![Organization Structure](Docs/UI-UX/Organization%20Structure.png)
+
+### Contract Management
+
+#### Contract List
+![Contract List](Docs/UI-UX/Contract%20List.png)
+
+#### Contract Detail
+![Contract Detail](Docs/UI-UX/Contract%20Detail.png)
+
+#### Create Contract
+![Create Contract](Docs/UI-UX/Create%20Contract.png)
 
 Key documents:
 
