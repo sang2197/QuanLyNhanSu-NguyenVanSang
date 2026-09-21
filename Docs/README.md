@@ -6,7 +6,7 @@ Analysis and design documents for the HRM system's four analyzed modules: **Empl
 
 ## Requirements Analysis
 
-- [`Requirements/`](Requirements/README.md) — Mind map, user stories, and use cases for all four modules.
+- [`Requirements/`](Requirements/README.md) — Mind map, user stories, and use cases for all five specified modules (including Contract Management).
 
 ## Screen Design (UI/UX)
 

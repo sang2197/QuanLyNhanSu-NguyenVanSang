@@ -8,7 +8,7 @@ This view is the C4 model, documented in detail in [`Docs/c4/`](../c4/README.md)
 
 1. **System Context** — HRM System + its 2 actors.
 2. **Container** — HRM Web Application, HRM Backend API, HRM Database.
-3. **Component** (inside HRM Backend API) — Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion. All four are implemented in `backend/`, each split across the same four projects (`HRM.Domain`, `HRM.Application`, `HRM.Infrastructure`, `HRM.Api`).
+3. **Component** (inside HRM Backend API) — Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management. The first four are implemented in `backend/`, each split across the same four projects (`HRM.Domain`, `HRM.Application`, `HRM.Infrastructure`, `HRM.Api`). Contract Management is designed (requirements and UI/UX) but not yet implemented.
 
 **Database building blocks** — see [Database Design](../Database/README.md) ([DBML source](../Database/HRM_System.dbml), [Mermaid ER diagram](../Database/README.md#er-diagram-mermaid)): 12 tables across all four analyzed modules — `HrOrganizationalUnit`, `HrJobTitle`, `HrEmployee`, `HrBaseSalaryRate`, `HrSalaryScale`, `HrSalaryGrade`, `HrSalaryGradeCoefficient`, `HrEmployeeSalary`, `HrSalaryReviewPeriod`, `HrSalaryReviewEmployee`, `HrSalaryDecision`, `HrSalaryDecisionDetail`. The backend implementation (`backend/`) maps these 12 tables one-to-one through EF Core (`HrmDbContext`, 12 entity configurations, a single `Initial` migration) — see `backend/README.md`.
 

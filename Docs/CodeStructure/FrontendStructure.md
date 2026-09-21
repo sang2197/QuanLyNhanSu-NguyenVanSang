@@ -94,7 +94,7 @@ frontend/
 
 ## Traceability
 
-- `features/` and `api/` share the same top-level folders — `employeeManagement`, `organizationManagement`, `salaryMasterData`, `salaryGradePromotion` — matching the 4 components in the [C4 Component Diagram](../c4/README.md#3-component-diagram), and matching the same 4 folders in [Backend `Controllers/`](BackendStructure.md).
+- `features/` and `api/` share the same top-level folders — `employeeManagement`, `organizationManagement`, `salaryMasterData`, `salaryGradePromotion` — matching the first 4 components in the [C4 Component Diagram] (Contract Management is not yet included)(../c4/README.md#3-component-diagram), and matching the same 4 folders in [Backend `Controllers/`](BackendStructure.md).
 - Each `features/*/*/` subfolder matches one page group in the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap and is expanded page-by-page in that module's Screens Hierarchy: [Employee Profile](../UI-UX/ScreensHierarchy_EmployeeProfile.md), [Organization Management](../UI-UX/ScreensHierarchy_OrganizationManagement.md), [Salary Master Data](../UI-UX/ScreensHierarchy_SalaryMasterData.md), [Salary Grade Promotion](../UI-UX/ScreensHierarchy_SalaryGradePromotion.md).
 - `features/*/*/components/` — 1 component per Modal/Dialog node in that module's Screens Hierarchy (e.g. "Update Salary Grade Coefficient" → `UpdateCoefficientModal`).
 - `salaryGradePromotion/salaryHistory/` has no `components/` folder — its Screens Hierarchy defines no modal/dialog for it (read-only page).

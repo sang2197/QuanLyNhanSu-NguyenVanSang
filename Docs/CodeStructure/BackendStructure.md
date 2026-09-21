@@ -2,11 +2,11 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
-`backend/` project layout for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — mapping the [C4 `HRM Backend API` container and its 4 components](../c4/README.md#3-component-diagram) to actual source projects. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
+`backend/` project layout for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — mapping the [C4 `HRM Backend API` container and its 4 implemented components](../c4/README.md#3-component-diagram) to actual source projects. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
 
 Follows [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain) (split the backend by business domain) and [ADR-04](../Arc42/09-architecture-decisions.md#adr-04-layered-design-inside-each-backend-component) (Controller → Service → Repository within each domain).
 
-All four components are implemented in `backend/` with this layout, against the current [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml) — see [`backend/README.md`](../../backend/README.md).
+All four components are implemented in `backend/` with this layout (the C4 model also contains a fifth component, Contract Management, which is designed but not yet part of this layout), against the current [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml) — see [`backend/README.md`](../../backend/README.md).
 
 ```
 backend/
@@ -78,7 +78,7 @@ backend/
 
 ## Traceability
 
-- `Controllers/`, `DTOs/Requests/`, `DTOs/Responses/`, `Mappings/`, `HRM.Application/*`, and `Repositories/` all share the same 4 top-level folders — `EmployeeManagement`, `OrganizationManagement`, `SalaryMasterData`, `SalaryGradePromotion` — matching the 4 components in the [C4 Component Diagram](../c4/README.md#3-component-diagram) and [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain).
+- `Controllers/`, `DTOs/Requests/`, `DTOs/Responses/`, `Mappings/`, `HRM.Application/*`, and `Repositories/` all share the same 4 top-level folders — `EmployeeManagement`, `OrganizationManagement`, `SalaryMasterData`, `SalaryGradePromotion` — matching the 4 implemented components in the [C4 Component Diagram](../c4/README.md#3-component-diagram) and [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain).
 - `HRM.Api/Controllers/` — 1 controller per tag, 10 controllers total, matching the 10 tags in [`openapi.yaml`](../API/openapi.yaml) (see [API README](../API/README.md#coverage)). `SalaryHistoryController` is grouped under `SalaryGradePromotion/` (not `EmployeeManagement/`) because the Salary History tag/data belongs to that domain even though its route (`/employees/{id}/salary-history`) is nested under `/employees` — see the Information Architecture's [Scope Notes](../UI-UX/InformationArchitecture_HRM.md#7-scope-notes) ("Salary Grade Promotion owns ... Salary History").
 - `HRM.Domain/Entities/` and `Infrastructure/Persistence/Configurations/` — 1 class/config per table in [Database Design](../Database/README.md), 12 entities. Kept flat (not split into the 4 component folders) because several entities are read across component boundaries — e.g. `HrEmployee` is owned by Employee Management but read by Salary Grade Promotion, `HrSalaryGrade` is owned by Salary Master Data but read by Salary Grade Promotion — matching the [Cross-component Data Dependencies](../c4/README.md#cross-component-data-dependencies) the C4 diagrams call out explicitly.
 - `HRM.Application/SalaryGradePromotion/Rules/` — the eligibility rule engine that runs when a review period is created (US-SGP-01 in [`UserStories_SalaryGradePromotion.md`](../Requirements/UserStories_SalaryGradePromotion.md)).

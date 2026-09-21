@@ -6,9 +6,9 @@
 
 **Business context** — see the [System Context Diagram](../c4/README.md#1-system-context-diagram):
 
-- **HR Staff** (person) — performs day-to-day HR operations, creates review periods, and screens the system's proposed grades for each employee (approves or rejects them) before submitting the batch.
+- **HR Staff** (person) — performs day-to-day HR operations, records labor contracts, creates review periods, and screens the system's proposed grades for each employee (approves or rejects them) before submitting the batch.
 - **Approver / Manager** (person) — reviews a submitted review period, drafts a salary decision from the approved employees, and applies it to make the decision official.
-- **HRM System** (software system) — manages employee, organization, salary, and salary promotion processes.
+- **HRM System** (software system) — manages employee, organization, salary, salary promotion, and labor contract processes.
 
 **Technical context** — see the [Container Diagram](../c4/README.md#2-container-diagram): the Web Application calls the Backend API over HTTPS/REST/JSON; the Backend API reads/writes the Database over SQL.
 

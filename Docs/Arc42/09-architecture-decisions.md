@@ -62,6 +62,8 @@ Salary Grade Promotion's scope is expected to grow (e.g. a future Allowance Mana
 
 Inside the Backend API, `Employee Management`, `Organization Management`, `Salary Master Data`, and `Salary Grade Promotion` are implemented as four separate components, split by business domain rather than by technical layer.
 
+**Update:** `Contract Management` is added to the C4 component design as a fifth component under the same rule. It is designed (requirements and UI/UX) but not yet implemented, so the implementation notes below describe the four implemented components.
+
 **Implementation:** All four components are implemented in `backend/`. The domain split is mirrored as `EmployeeManagement/`, `OrganizationManagement/`, `SalaryMasterData/`, and `SalaryGradePromotion/` subfolders inside `HRM.Application`, `HRM.Infrastructure`, and `HRM.Api` (entities stay flat in `HRM.Domain`, since several are read across domains). The four components are co-deployed in one process ([Section 7](07-deployment-view.md)). Cross-domain access is an in-process call to the other domain's **Service interface**, never to its repository. Two dependencies are resolved with `Lazy<T>` injection: the genuine cycle `OrganizationalUnitService` ↔ `EmployeeService`, and `SalaryGradeService` → `ISalaryHistoryService` (one-way, kept lazy for consistency) — see [DEBT-04](11-risks-and-technical-debt.md#technical-debt).
 
 **Consequences**

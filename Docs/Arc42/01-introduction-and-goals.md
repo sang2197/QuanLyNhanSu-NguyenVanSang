@@ -11,7 +11,7 @@
 The HRM System supports core human resource management processes within
 an organization.
 
-**Scope of this document:** Four modules — *Employee Profile* (Employee Management), *Department/Unit* (Organization Management), and, within the *Salary Management* function group, *Salary Master Data* and *Salary Grade Promotion*. The remaining function groups of the HRM mind map (Reward/Discipline, Attendance, Contract) are out of scope here and not yet started — see the [mind map](../Requirements/Quản%20lý%20nhân%20sự.xmind).
+**Scope of this document:** Four modules — *Employee Profile* (Employee Management), *Department/Unit* (Organization Management), and, within the *Salary Management* function group, *Salary Master Data* and *Salary Grade Promotion*. *Contract Management* is part of the C4 component design but only has requirements and UI/UX so far (no database design, API, or implementation). The remaining function groups of the HRM mind map (Reward/Discipline, Attendance) are out of scope here and not yet started — see the [mind map](../Requirements/Quản%20lý%20nhân%20sự.xmind).
 
 The system is primarily used by HR Staff and authorized Approvers.
 

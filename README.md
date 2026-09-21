@@ -25,9 +25,9 @@ Scope tracked in this repository: **Employee Profile, Organization Management, S
 
 | # | Phase | Scope covered | Status |
 |---|-------|----------------|--------|
-| 1 | Requirements — User Stories (INVEST) & Use Cases | 4/4 modules | 100% |
+| 1 | Requirements — User Stories (INVEST) & Use Cases | 5/5 specified modules (the 4 implemented ones plus Contract Management) | 100% |
 | 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for all 5 specified modules (the 4 implemented ones plus Contract Management); final design images for the 11 key screens of Employee Profile, Organization, Salary Grade Promotion, and Contract Management | 100% |
-| 3 | Architecture — C4 (Context, Container, Component) | 4/4 components | 100% |
+| 3 | Architecture — C4 (Context, Container, Component) | 5 components (4 implemented; Contract Management designed only) | 100% |
 | 4 | Database Design & API Documentation (OpenAPI 3.0) | 12 tables, 49 endpoints | 100% |
 | 5 | Code Structure Design — Frontend & Backend | Both designed; backend structure matches the implementation below | 100% |
 | 6 | Detailed Design — Class, Sequence & State Diagrams | 4/4 modules, 20 sequence diagrams | 100% |
@@ -130,9 +130,9 @@ The diagrams are written in **Mermaid** so they can be viewed and versioned dire
 flowchart LR
     HR([HR Staff<br/>Person])
     APR([Approver / Manager<br/>Person])
-    SYS[["HRM System<br/>Software System<br/>Manages employee, organization, salary, and salary promotion processes"]]
+    SYS[["HRM System<br/>Software System<br/>Manages employee, organization, salary, salary promotion, and labor contract processes"]]
 
-    HR -->|Manages HR information and review processes| SYS
+    HR -->|Manages HR information, contracts, and review processes| SYS
     APR -->|Manages salary decisions| SYS
 ```
 
@@ -168,6 +168,7 @@ flowchart TB
         ORG[["Organization Management<br/>Component<br/>Manages organizational units and job titles"]]
         SAL[["Salary Master Data<br/>Component<br/>Manages base salary rates, salary scales, grades, and coefficients"]]
         SGP[["Salary Grade Promotion<br/>Component<br/>Handles salary review periods, salary decisions, and salary history"]]
+        CON[["Contract Management<br/>Component<br/>Manages labor contracts and their lifecycle<br/>(designed, not yet implemented)"]]
     end
 
     DB[("HRM Database")]
@@ -176,14 +177,18 @@ flowchart TB
     WEB -->|HTTPS / REST / JSON| ORG
     WEB -->|HTTPS / REST / JSON| SAL
     WEB -->|HTTPS / REST / JSON| SGP
+    WEB -->|HTTPS / REST / JSON| CON
 
     EMP -->|Reads/writes data| DB
     ORG -->|Reads/writes data| DB
     SAL -->|Reads/writes data| DB
     SGP -->|Reads/writes data| DB
+    CON -->|Reads/writes data| DB
+
+    style CON stroke-dasharray: 5 5
 ```
 
-All four components are implemented in `backend/`, each split by capability across all layers (`HRM.Domain` → `HRM.Application` → `HRM.Infrastructure` → `HRM.Api`) per [`Docs/CodeStructure/BackendStructure.md`](Docs/CodeStructure/BackendStructure.md) — see [`Docs/c4/README.md`](Docs/c4/README.md#3-component-diagram). Cross-component data dependencies (e.g. Salary Grade Promotion reading employee/organizational unit/salary grade data) are documented in prose there rather than as call arrows — see [Cross-component Data Dependencies](Docs/c4/README.md#cross-component-data-dependencies); in code, this is a Service-to-Service-interface call, never a direct cross-domain repository access.
+Four components are implemented in `backend/` (a dashed border above marks **Contract Management**, which is designed but not yet implemented), each split by capability across all layers (`HRM.Domain` → `HRM.Application` → `HRM.Infrastructure` → `HRM.Api`) per [`Docs/CodeStructure/BackendStructure.md`](Docs/CodeStructure/BackendStructure.md) — see [`Docs/c4/README.md`](Docs/c4/README.md#3-component-diagram). Cross-component data dependencies (e.g. Salary Grade Promotion reading employee/organizational unit/salary grade data) are documented in prose there rather than as call arrows — see [Cross-component Data Dependencies](Docs/c4/README.md#cross-component-data-dependencies); in code, this is a Service-to-Service-interface call, never a direct cross-domain repository access.
 
 → Full folder: [`Docs/c4/`](Docs/c4/README.md)
 
