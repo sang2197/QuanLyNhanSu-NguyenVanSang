@@ -2,11 +2,11 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
 
-Screen design for the HRM system, in design order: information architecture, screens hierarchy, wireframe behavior, then visual design. All four modules — **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — have an Information Architecture entry, a Screens Hierarchy, and a wireframe write-up. The final visual design is provided as PNG images (see [Visual Design](#visual-design)).
+Screen design for the HRM system, in design order: information architecture, screens hierarchy, wireframe behavior, then visual design. All four modules — **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — have an Information Architecture entry, a Screens Hierarchy, and a wireframe write-up. The final visual design is provided as PNG images (see [Visual Design](#visual-design)). **Contract Management** currently has an Information Architecture entry only; its Screens Hierarchy, wireframe, and visual design are not yet started.
 
 ## Information Architecture
 
-- [`InformationArchitecture_HRM.md`](InformationArchitecture_HRM.md) — Sitemap of the whole system's menu structure, covering all four modules (Employee Management, Organization, Salary Management, Master Data).
+- [`InformationArchitecture_HRM.md`](InformationArchitecture_HRM.md) — Sitemap of the whole system's menu structure, covering Employee Management, Organization, Salary Management (Salary Grade Promotion and Salary Master Data), and Contract Management.
 
 ## Screens Hierarchy
 

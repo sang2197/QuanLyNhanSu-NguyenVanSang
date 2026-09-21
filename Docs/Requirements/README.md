@@ -18,7 +18,7 @@ Top-down mind map breaking down the whole HRM system into its 6 function groups,
 - [`UserStories_OrganizationManagement.md`](UserStories_OrganizationManagement.md) — Organizational units (as a tree, typed as Company/Division/Department/Team) and job titles.
 - [`UserStories_EmployeeProfile.md`](UserStories_EmployeeProfile.md) — Employee list/search/detail, employment status. Login account/role is out of scope, deferred to a future Identity & Access Management (IAM) module.
 - [`UserStories_SalaryMasterData.md`](UserStories_SalaryMasterData.md) — Base salary rate, salary scales, and salary grades.
-- [`UserStories_ContractManagement.md`](UserStories_ContractManagement.md) — Labor contracts: create, search/filter, view, status lifecycle (Draft → Active → Expired / Terminated), correcting or deleting Draft contracts, and contracts expiring soon. *Requirements only — no use cases, design, or implementation yet.*
+- [`UserStories_ContractManagement.md`](UserStories_ContractManagement.md) — Labor contracts: create, search/filter, view, status lifecycle (Draft → Active → Expired / Terminated), correcting or deleting Draft contracts, and contracts expiring soon. *Requirements only — no design or implementation yet.*
 
 ## Use Cases
 
@@ -26,3 +26,4 @@ Top-down mind map breaking down the whole HRM system into its 6 function groups,
 - [`UseCase_EmployeeProfile.md`](UseCase_EmployeeProfile.md) — UML 2.5.1 use case diagram, Cockburn-style specifications (adjusted), and full Use Case ↔ User Story ↔ Business Rule traceability.
 - [`UseCase_OrganizationManagement.md`](UseCase_OrganizationManagement.md) — UML 2.5.1 use case diagram, Cockburn-style specifications (adjusted), and full Use Case ↔ User Story ↔ Business Rule traceability.
 - [`UseCase_SalaryMasterData.md`](UseCase_SalaryMasterData.md) — UML 2.5.1 use case diagram, Cockburn-style specifications (adjusted), and full Use Case ↔ User Story ↔ Business Rule traceability.
+- [`UseCase_ContractManagement.md`](UseCase_ContractManagement.md) — UML 2.5.1 use case diagram, contract lifecycle state diagram, Cockburn-style specifications (adjusted), and full Use Case ↔ User Story ↔ Business Rule traceability for Contract Management (6 use cases, 31 business rules).

@@ -21,7 +21,7 @@ The repository is organized by development phase, from requirements and design t
 
 ## Project Status
 
-Scope tracked in this repository: **Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion** (4 of the 6 functional areas above — Contract Management has user stories only, in [`UserStories_ContractManagement.md`](Docs/Requirements/UserStories_ContractManagement.md); Reward/Discipline and Attendance are not yet started).
+Scope tracked in this repository: **Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion** (4 of the 6 functional areas above — Contract Management has requirements and an information architecture entry only — user stories in [`UserStories_ContractManagement.md`](Docs/Requirements/UserStories_ContractManagement.md) and use cases in [`UseCase_ContractManagement.md`](Docs/Requirements/UseCase_ContractManagement.md); Reward/Discipline and Attendance are not yet started).
 
 | # | Phase | Scope covered | Status |
 |---|-------|----------------|--------|

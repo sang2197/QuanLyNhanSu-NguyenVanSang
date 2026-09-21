@@ -13,6 +13,8 @@ The current scope covers:
   * Salary Grade Promotion
   * Salary Master Data
 
+* **Contract Management**
+
 **Identity & Access Management (IAM)** is recognized as a separate HRM module but is not included in the current sitemap because its user stories, use cases, and UI requirements have not yet been specified.
 
 This document focuses on **page-level information organization and hierarchy**. It does not define detailed screen behavior, dialogs, confirmation flows, UI states, or task navigation. Those concerns are handled separately in each module's Screens Hierarchy and subsequent UI/UX specifications.
@@ -44,6 +46,7 @@ flowchart TD
     Root --> EM[[Employee Management]]
     Root --> ORG[[Organization]]
     Root --> COMP[[Salary Management]]
+    Root --> CON[[Contract Management]]
 
     %% Employee Management
     EM --> EMP[Employees]
@@ -73,6 +76,10 @@ flowchart TD
 
     SS --> SSD[Salary Scale Detail]
     SSD --> SG[Salary Grades]
+
+    %% Contract Management
+    CON --> CL[Contracts]
+    CL --> CD[Contract Detail]
 ```
 
 ---
@@ -206,6 +213,33 @@ Creating, updating, deactivating, and reactivating Salary Grades are interaction
 
 ---
 
+### Contract Management
+
+#### Contracts
+
+Landing page for labor contracts.
+
+Supports access to the contract collection, including searching and filtering contracts across all statuses. It is the primary starting point for HR Staff's contract work. Contract creation may be initiated from this location, but whether creation uses a modal, dialog, drawer, or separate screen is defined later in the Contract Management Screens Hierarchy.
+
+The list of contracts expiring soon (US-CON-05) is an information view over the same contract collection, so it does not require a separate IA node. Whether it is presented as a quick filter on this page or as a dashboard view is defined later; the Dashboard itself remains a TBD placeholder.
+
+##### Contract Detail
+
+Displays an individual contract together with the currently recorded information of its employee, and provides access to operations applicable to that contract.
+
+Contextual navigation from Contract Detail to the related Employee Detail is not defined in the sitemap; it is left to the Screens Hierarchy and UI/UX design.
+
+The applicable operations depend on the contract's status:
+
+* `DRAFT` — may be corrected, deleted, or activated.
+* `ACTIVE` — read-only; may be marked as Expired or terminated.
+* `EXPIRED` — read-only terminal state.
+* `TERMINATED` — read-only terminal state, including its termination date and reason.
+
+Creating, updating, deleting, and changing the status of a contract are actions or states of a contract rather than separate IA pages.
+
+---
+
 ## 4. Page List
 
 | Page / Information Location | Type           | Domain                  | Parent                 | Current Design Status         |
@@ -225,6 +259,8 @@ Creating, updating, deactivating, and reactivating Salary Grades are interaction
 | Salary Scales               | Page           | Salary Master Data      | Salary Master Data     | Wireframe specified             |
 | Salary Scale Detail         | Page           | Salary Master Data      | Salary Scales          | Wireframe specified             |
 | Salary Grades               | Nested Section | Salary Master Data      | Salary Scale Detail    | Wireframe specified             |
+| Contracts                   | Page           | Contract Management     | Contract Management    | IA defined — no wireframe yet   |
+| Contract Detail             | Page           | Contract Management     | Contracts              | IA defined — no wireframe yet   |
 
 ---
 
@@ -247,6 +283,9 @@ Actions such as:
 * Add Base Salary Rate
 * Create or Update Salary Scale
 * Create or Update Salary Grade
+* Create Contract
+* Update or Delete Draft Contract
+* Update Contract Status (activate, mark as Expired, terminate)
 
 do not automatically require separate IA nodes.
 
@@ -282,6 +321,7 @@ Examples include:
 * Salary Grade Promotion references employee information.
 * Salary Grade Promotion references Salary Scales and Salary Grades.
 * Salary History is associated with individual employees.
+* Contract Management references an employee: a contract belongs to one employee, and Contract Detail shows that employee's currently recorded information. Employee data remains owned by Employee Management and is not modified by Contract Management. Whether Contract Detail offers contextual navigation to the related Employee Detail is decided later in the Contract Management Screens Hierarchy and UI/UX design, when it supports a confirmed user task; the sitemap neither defines nor rules out that navigation.
 
 These data relationships do not automatically imply navigation relationships.
 
@@ -296,6 +336,7 @@ Cross-module navigation should be introduced only when it supports a confirmed u
 * **Salary Management** contains both Salary Grade Promotion and Salary Master Data.
 * **Salary Master Data** owns Base Salary Rate, Salary Scales, and Salary Grades.
 * **Salary Grade Promotion** owns Review Periods, review outcomes, Salary Decisions, and promotion workflow information.
+* **Contract Management** owns labor contracts and their lifecycle (Draft, Active, Expired, Terminated). It reads employee information from Employee Management but does not change it.
 * **IAM** remains a separate HRM module but is outside the current IA scope until its requirements are specified.
 * Authentication, authorization, roles, and permissions should not be modeled as Employee Management functionality.
 
@@ -322,3 +363,8 @@ Cross-module navigation should be introduced only when it supports a confirmed u
 
 * `Docs/Requirements/UserStories_SalaryMasterData.md`
 * `Docs/Requirements/UseCase_SalaryMasterData.md`
+
+### Contract Management
+
+* `Docs/Requirements/UserStories_ContractManagement.md`
+* `Docs/Requirements/UseCase_ContractManagement.md`
