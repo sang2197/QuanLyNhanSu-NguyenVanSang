@@ -18,6 +18,7 @@ Top-down mind map breaking down the whole HRM system into its 6 function groups,
 - [`UserStories_OrganizationManagement.md`](UserStories_OrganizationManagement.md) — Organizational units (as a tree, typed as Company/Division/Department/Team) and job titles.
 - [`UserStories_EmployeeProfile.md`](UserStories_EmployeeProfile.md) — Employee list/search/detail, employment status. Login account/role is out of scope, deferred to a future Identity & Access Management (IAM) module.
 - [`UserStories_SalaryMasterData.md`](UserStories_SalaryMasterData.md) — Base salary rate, salary scales, and salary grades.
+- [`UserStories_ContractManagement.md`](UserStories_ContractManagement.md) — Labor contracts: create, search/filter, view, status lifecycle (Draft → Active → Expired / Terminated), correcting or deleting Draft contracts, and contracts expiring soon. *Requirements only — no use cases, design, or implementation yet.*
 
 ## Use Cases
 
