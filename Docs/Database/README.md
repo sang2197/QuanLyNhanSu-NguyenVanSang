@@ -1,8 +1,8 @@
 # Database Design - HRM System
 
-> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-Database design for the full HRM system as currently analyzed: **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — 12 tables, traced back to the Business Rules in each module's `UserStories_*.md` / `UseCase_*.md`. The backend maps these 12 tables one-to-one through EF Core (12 entity configurations and a single `Initial` migration in `backend/src/HRM.Infrastructure/Persistence/`).
+Database design for the full HRM system as currently analyzed: **Employee Profile**, **Organization Management**, **Salary Master Data**, **Salary Grade Promotion**, and **Contract Management** — 13 tables, traced back to the Business Rules in each module's `UserStories_*.md` / `UseCase_*.md`. The backend maps the first 12 tables one-to-one through EF Core (12 entity configurations and a single `Initial` migration in `backend/src/HRM.Infrastructure/Persistence/`). **`HrLaborContract` (Contract Management) is designed only** — it has no EF Core mapping, migration, or API yet; see `backend/README.md`.
 
 ## ER Diagram (Mermaid)
 
@@ -26,6 +26,8 @@ erDiagram
     HrSalaryReviewPeriod ||--o{ HrSalaryDecision : "drafted from"
     HrSalaryDecision ||--o{ HrSalaryDecisionDetail : contains
     HrSalaryDecision ||--o{ HrEmployeeSalary : causes
+
+    HrEmployee ||--o{ HrLaborContract : "has"
 
     HrOrganizationalUnit {
         int Id PK
@@ -114,9 +116,21 @@ erDiagram
         int BaselineSalaryGradeId FK
         int NewSalaryGradeId FK
     }
+    HrLaborContract {
+        int Id PK
+        int EmployeeId FK
+        string ContractNumber UK
+        string ContractType
+        date StartDate
+        date EndDate
+        decimal ContractSalaryAmount
+        string Status
+    }
 ```
 
 `HrBaseSalaryRate` has no relationships to other tables — it is a single organization-wide effective-dated value, not joined per employee or grade (see the Business Rules note in the `.dbml`).
+
+`HrLaborContract` has no relationships to the salary tables (`HrEmployeeSalary`, `HrSalaryGrade`, `HrSalaryGradeCoefficient`, `HrSalaryDecision`) — its `ContractSalaryAmount` is independent information recorded from the labor contract, deliberately not synchronized with the salary structure (deferred question `DQ-CON-02` in `UserStories_ContractManagement.md`).
 
 ## Mapping Tables to the UI
 
@@ -134,6 +148,7 @@ erDiagram
 | `HrSalaryReviewEmployee` | Employee list and review results within a Review Period; Employee Review Detail. |
 | `HrSalaryDecision` | Salary Decision List / Salary Decision Detail header. |
 | `HrSalaryDecisionDetail` | Included-employees table within Salary Decision Detail. |
+| `HrLaborContract` | Contract List / Contract Detail, including the Terminate Contract and Expiring Soon views. *Designed only — not yet implemented.* |
 
 ## Files
 

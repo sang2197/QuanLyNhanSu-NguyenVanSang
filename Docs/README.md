@@ -22,11 +22,11 @@ Analysis and design documents for the HRM system's four analyzed modules: **Empl
 
 ## Database Design
 
-- [`Database/`](Database/README.md) — Database design for the full analyzed system (12 tables across all four modules): Mermaid ER diagram and DBML source.
+- [`Database/`](Database/README.md) — Database design for the full analyzed system (13 tables across all five modules — 12 implemented, `HrLaborContract` for Contract Management designed only): Mermaid ER diagram and DBML source.
 
 ## API Documentation
 
-- [`API/`](API/README.md) — OpenAPI 3.0 spec for the full REST API (49 endpoints across 10 tags), mapped to the user stories and implemented by `backend/`.
+- [`API/`](API/README.md) — OpenAPI 3.0 spec for the full REST API (57 endpoints across 11 tags: 49 implemented by `backend/`, 8 for Contract Management designed only), mapped to the user stories.
 
 ## Code Structure
 

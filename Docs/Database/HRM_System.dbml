@@ -1,9 +1,14 @@
 // HRM System — full database design, redesigned from the current requirements
-// (UserStories/UseCase for all four analyzed modules: Employee Profile,
-// Organization Management, Salary Master Data, Salary Grade Promotion).
-// This replaces the earlier Salary-Grade-Promotion-only schema; the old schema
-// and the existing backend implementation predate this analysis and are not
-// used as a reference here.
+// (UserStories/UseCase for all five analyzed modules: Employee Profile,
+// Organization Management, Salary Master Data, Salary Grade Promotion, and
+// Contract Management). This replaces the earlier Salary-Grade-Promotion-only
+// schema; the old schema and the existing backend implementation predate this
+// analysis and are not used as a reference here.
+//
+// Implementation status: the backend (`backend/`) implements the first 12
+// tables (every table except HrLaborContract). HrLaborContract is designed
+// here from UserStories_ContractManagement.md / UseCase_ContractManagement.md
+// but has no EF Core mapping, migration, or API yet — see `backend/README.md`.
 //
 // Each table's Note distinguishes two kinds of statements:
 //   - Requirement: behavior explicitly mandated by a cited BR/US/AC/UC id.
@@ -190,6 +195,24 @@ Table HrSalaryDecisionDetail {
   Note: 'Requirement (US-SGP-07 AC04): at Apply time, only BaselineSalaryGradeId is revalidated against the actual current grade of the employee — if the grade no longer matches, that employee change cannot be applied. BaselineCoefficient is NOT itself a separate revalidation trigger; it is stored purely for display/traceability (the coefficient that was current for that grade when the Draft was created). This schema does not add an independent coefficient-mismatch rule beyond what AC04 states — a matching grade already implies a well-defined coefficient via HrSalaryGradeCoefficient. Design decision: no per-line EffectiveDate — the effective date is a single attribute of the parent HrSalaryDecision, applied atomically to every included employee (US-SGP-07), so it is not duplicated here.'
 }
 
+Table HrLaborContract {
+  Id int [pk, increment]
+  EmployeeId int [not null]
+  ContractNumber varchar(100) [not null, unique]
+  ContractType varchar(30) [not null]
+  StartDate date [not null]
+  EndDate date
+  ContractSalaryAmount decimal(14,2) [not null]
+  SalaryNote varchar(500)
+  Status varchar(30) [not null]
+  TerminationDate date
+  TerminationReason varchar(500)
+  CreatedAt datetime
+  UpdatedAt datetime
+
+  Note: 'BR-CON-01: ContractNumber unique across all contracts. BR-CON-03: ContractType is one of Probation / Fixed-Term / Indefinite-Term — stored as varchar and app-layer validated, the same convention as EmploymentStatus/ReviewType elsewhere in this schema, not a lookup table. BR-CON-04: EndDate is required for Probation/Fixed-Term and must be null for Indefinite-Term — DBML has no conditional NOT NULL, so this is an application-layer check. BR-CON-06: ContractSalaryAmount must be > 0 (application-layer check, like every other decimal amount in this schema). BR-CON-07: EmployeeId must reference an employee whose EmploymentStatus is not Terminated at creation time only — enforced at the application layer, not retroactively (same convention as HrEmployee.OrganizationalUnitId/JobTitleId). BR-CON-10: an employee can have at most one Active contract — this needs a filtered unique index on (EmployeeId) WHERE Status = "ACTIVE" in the actual database (DBML has no filtered-index syntax), the same pattern already used for HrSalaryDecision.ReviewPeriodId. Status is one of Draft / Active / Expired / Terminated (BR-CON-16); transitions are explicit HR Staff actions, never date-triggered (BR-CON-17), so no scheduled job or computed column is needed. TerminationDate/TerminationReason are populated only when Status becomes Terminated (BR-CON-21) and must fall within [StartDate, EndDate] (BR-CON-22) — both application-layer checks. Design decision: unlike every other Hr* table, deleting a Draft contract (BR-CON-06/BR-CON-31) is a real row DELETE, not a status change — a Draft contract is not yet in effect and has no dependent history, so there is nothing to preserve; its ContractNumber becomes reusable as a direct consequence. No FK to HrSalaryGrade/HrSalaryGradeCoefficient/HrEmployeeSalary: ContractSalaryAmount is independent information recorded from the labor contract, deliberately not synchronized with the salary structure (deferred — DQ-CON-02 in UserStories_ContractManagement.md). No actor/audit column: who created or terminated a contract belongs to Identity & Access Management, out of scope here, the same convention as HrSalaryDecision.'
+}
+
 // Relationships
 
 Ref: HrOrganizationalUnit.ParentId > HrOrganizationalUnit.Id
@@ -215,3 +238,5 @@ Ref: HrSalaryDecisionDetail.SalaryDecisionId > HrSalaryDecision.Id
 Ref: HrSalaryDecisionDetail.EmployeeId > HrEmployee.Id
 Ref: HrSalaryDecisionDetail.BaselineSalaryGradeId > HrSalaryGrade.Id
 Ref: HrSalaryDecisionDetail.NewSalaryGradeId > HrSalaryGrade.Id
+
+Ref: HrLaborContract.EmployeeId > HrEmployee.Id

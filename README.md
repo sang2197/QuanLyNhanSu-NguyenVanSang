@@ -28,7 +28,7 @@ Scope tracked in this repository: **Employee Profile, Organization Management, S
 | 1 | Requirements — User Stories (INVEST) & Use Cases | 5/5 specified modules (the 4 implemented ones plus Contract Management) | 100% |
 | 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for all 5 specified modules (the 4 implemented ones plus Contract Management); final design images for the 11 key screens of Employee Profile, Organization, Salary Grade Promotion, and Contract Management | 100% |
 | 3 | Architecture — C4 (Context, Container, Component) | 5 components (4 implemented; Contract Management designed only) | 100% |
-| 4 | Database Design & API Documentation (OpenAPI 3.0) | 12 tables, 49 endpoints | 100% |
+| 4 | Database Design & API Documentation (OpenAPI 3.0) | 13 tables (12 implemented; `HrLaborContract` designed only), 57 endpoints (49 implemented; 8 for Contract Management designed only) | 100% |
 | 5 | Code Structure Design — Frontend & Backend | Both designed; backend structure matches the implementation below | 100% |
 | 6 | Detailed Design — Class, Sequence & State Diagrams | 4/4 modules, 20 sequence diagrams | 100% |
 | 7 | API Implementation & Unit Testing | 4/4 modules, 231 tests passing (155 unit + 76 integration), 0 build warnings | 100% |
@@ -202,7 +202,7 @@ Architectural decisions, quality requirements, constraints, and risks are docume
 
 ## 4. Database Design & API Documentation
 
-The database design covers the full HRM system as analyzed — Employee Profile, Organization Management, Salary Master Data, and Salary Grade Promotion — 12 tables traced back to the Business Rules in each module's requirements.
+The database design covers the full HRM system as analyzed — Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management — 13 tables traced back to the Business Rules in each module's requirements. The first 12 are implemented in `backend/`; `HrLaborContract` (Contract Management) is designed only.
 
 ```mermaid
 erDiagram
@@ -224,6 +224,8 @@ erDiagram
     HrSalaryReviewPeriod ||--o{ HrSalaryDecision : "drafted from"
     HrSalaryDecision ||--o{ HrSalaryDecisionDetail : contains
     HrSalaryDecision ||--o{ HrEmployeeSalary : causes
+
+    HrEmployee ||--o{ HrLaborContract : "has"
 
     HrOrganizationalUnit {
         int Id PK
@@ -312,9 +314,19 @@ erDiagram
         int BaselineSalaryGradeId FK
         int NewSalaryGradeId FK
     }
+    HrLaborContract {
+        int Id PK
+        int EmployeeId FK
+        string ContractNumber UK
+        string ContractType
+        date StartDate
+        date EndDate
+        decimal ContractSalaryAmount
+        string Status
+    }
 ```
 
-`HrBaseSalaryRate` has no relationships to other tables — it is a single organization-wide effective-dated value, not joined per employee or grade.
+`HrBaseSalaryRate` has no relationships to other tables — it is a single organization-wide effective-dated value, not joined per employee or grade. `HrLaborContract` (Contract Management) is designed only — not yet implemented — and has no relationship to the salary tables; see [`Docs/Database/README.md`](Docs/Database/README.md).
 
 Key database documents:
 
@@ -324,7 +336,7 @@ Key database documents:
 
 The REST API is documented using an **OpenAPI 3.0 (Swagger) specification**, with endpoints traced back to the relevant requirements.
 
-* [`openapi.yaml`](Docs/API/openapi.yaml) — OpenAPI 3.0 (Swagger) spec
+* [`openapi.yaml`](Docs/API/openapi.yaml) — OpenAPI 3.0 (Swagger) spec (57 endpoints across 11 tags; the 8 Contract Management endpoints are designed only)
 
 → Full folder: [`Docs/API/`](Docs/API/README.md)
 

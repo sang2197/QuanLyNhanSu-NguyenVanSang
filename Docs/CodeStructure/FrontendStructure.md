@@ -99,7 +99,7 @@ frontend/
 - `features/*/*/components/` — 1 component per Modal/Dialog node in that module's Screens Hierarchy (e.g. "Update Salary Grade Coefficient" → `UpdateCoefficientModal`).
 - `salaryGradePromotion/salaryHistory/` has no `components/` folder — its Screens Hierarchy defines no modal/dialog for it (read-only page).
 - `components/` (shared) — implements the cross-module conventions in [UX Guidelines](../UI-UX/UXGuidelines_HRM.md): consistent status representation, confirmation dialogs for destructive actions, consistent list/pagination controls.
-- `api/*` — 1 file per tag, 10 files total, matching the 10 tags in [`openapi.yaml`](../API/openapi.yaml) (see [API README](../API/README.md#coverage)).
+- `api/*` — 1 file per tag; this layout covers the 10 tags of the 4 components above (Contract Management's `Contracts` tag — 8 of `openapi.yaml`'s 57 operations — has no `features/`/`api/` design yet, matching the caveat above).
 - `layouts/MainLayout.jsx` — top-level nav matches the 3 top-level groups in the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap (Employee Management, Organization, Salary Management); the `Dashboard` placeholder node is not implemented since it has no current requirements.
 
 ## Libraries this structure assumes

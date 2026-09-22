@@ -16,7 +16,7 @@ The system needs a web UI usable by both HR Staff and Approver / Manager, callin
 
 The React frontend communicates with the ASP.NET Core backend through REST APIs.
 
-**Implementation:** Backend REST API implemented (49 endpoints, matching `openapi.yaml`). The React frontend is design-only — no frontend code exists yet.
+**Implementation:** Backend REST API implemented for 49 of the 57 endpoints in `openapi.yaml` — the 8 Contract Management endpoints are designed only. The React frontend is design-only — no frontend code exists yet.
 
 **Consequences**
 
