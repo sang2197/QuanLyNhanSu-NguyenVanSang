@@ -2,9 +2,9 @@
 
 *Part of the [Arc42 Architecture Documentation](README.md) - HRM System. Follows the [arc42](https://arc42.org/) template.*
 
-> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-**Detail level:** ESSENTIAL. The project has requirements, UI/UX design, C4 diagrams, database and API design, detailed design, and a working ASP.NET Core backend for all four modules with automated tests (the React frontend is design-only, not yet implemented). Sections that describe things that do not exist yet — [07-deployment-view](07-deployment-view.md) (no real infrastructure) and [10-quality-requirements](10-quality-requirements.md) (targets not yet measured) — still contain **draft/example values pending confirmation**, clearly labeled where they appear.
+**Detail level:** ESSENTIAL. The project has requirements, UI/UX design, C4 diagrams, database and API design, detailed design, and a working ASP.NET Core backend for all five modules with automated tests (the React frontend is design-only, not yet implemented). Sections that describe things that do not exist yet — [07-deployment-view](07-deployment-view.md) (no real infrastructure) and [10-quality-requirements](10-quality-requirements.md) (targets not yet measured) — still contain **draft/example values pending confirmation**, clearly labeled where they appear.
 
 ## 1.1 Overview
 

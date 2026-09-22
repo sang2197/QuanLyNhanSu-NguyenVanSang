@@ -2,7 +2,7 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-Database design for the full HRM system as currently analyzed: **Employee Profile**, **Organization Management**, **Salary Master Data**, **Salary Grade Promotion**, and **Contract Management** — 13 tables, traced back to the Business Rules in each module's `UserStories_*.md` / `UseCase_*.md`. The backend maps the first 12 tables one-to-one through EF Core (12 entity configurations and a single `Initial` migration in `backend/src/HRM.Infrastructure/Persistence/`). **`HrLaborContract` (Contract Management) is designed only** — it has no EF Core mapping, migration, or API yet; see `backend/README.md`.
+Database design for the full HRM system as currently analyzed: **Employee Profile**, **Organization Management**, **Salary Master Data**, **Salary Grade Promotion**, and **Contract Management** — 13 tables, traced back to the Business Rules in each module's `UserStories_*.md` / `UseCase_*.md`. The backend maps all 13 tables one-to-one through EF Core (13 entity configurations across the `Initial` and `AddLaborContract` migrations in `backend/src/HRM.Infrastructure/Persistence/`); see `backend/README.md`.
 
 ## ER Diagram (Mermaid)
 
@@ -148,7 +148,7 @@ erDiagram
 | `HrSalaryReviewEmployee` | Employee list and review results within a Review Period; Employee Review Detail. |
 | `HrSalaryDecision` | Salary Decision List / Salary Decision Detail header. |
 | `HrSalaryDecisionDetail` | Included-employees table within Salary Decision Detail. |
-| `HrLaborContract` | Contract List / Contract Detail, including the Terminate Contract and Expiring Soon views. *Designed only — not yet implemented.* |
+| `HrLaborContract` | Contract List / Contract Detail, including the Terminate Contract and Expiring Soon views. |
 
 ## Files
 

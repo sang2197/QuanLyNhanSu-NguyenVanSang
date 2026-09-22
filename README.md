@@ -1,6 +1,6 @@
 # HRM (Human Resource Management) System
 
-> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
 This project covers the analysis, design, and implementation of a Human Resource Management (HRM) system.
 
@@ -13,7 +13,7 @@ The overall HRM scope is organized into six functional areas:
 5. Contract Management
 6. Salary Management
 
-The current repository provides detailed requirements and design artifacts for **Employee Profile**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion**.
+The current repository provides detailed requirements, design, and implementation artifacts for **Employee Profile**, **Organization Management**, **Salary Master Data**, **Salary Grade Promotion**, and **Contract Management**.
 
 The repository is organized by development phase, from requirements and design to implementation and testing.
 
@@ -21,17 +21,17 @@ The repository is organized by development phase, from requirements and design t
 
 ## Project Status
 
-Scope tracked in this repository: **Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion** (4 of the 6 functional areas above — Contract Management has requirements and UI/UX design only (information architecture, screens hierarchy, wireframe, and screen designs) — user stories in [`UserStories_ContractManagement.md`](Docs/Requirements/UserStories_ContractManagement.md) and use cases in [`UseCase_ContractManagement.md`](Docs/Requirements/UseCase_ContractManagement.md); Reward/Discipline and Attendance are not yet started).
+Scope tracked in this repository: **Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion, Contract Management** (5 of the 6 functional areas above; Reward/Discipline and Attendance are not yet started).
 
 | # | Phase | Scope covered | Status |
 |---|-------|----------------|--------|
-| 1 | Requirements — User Stories (INVEST) & Use Cases | 5/5 specified modules (the 4 implemented ones plus Contract Management) | 100% |
-| 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for all 5 specified modules (the 4 implemented ones plus Contract Management); final design images for the 11 key screens of Employee Profile, Organization, Salary Grade Promotion, and Contract Management | 100% |
-| 3 | Architecture — C4 (Context, Container, Component) | 5 components (4 implemented; Contract Management designed only) | 100% |
-| 4 | Database Design & API Documentation (OpenAPI 3.0) | 13 tables (12 implemented; `HrLaborContract` designed only), 57 endpoints (49 implemented; 8 for Contract Management designed only) | 100% |
-| 5 | Code Structure Design — Frontend & Backend | Both cover 5/5 modules; backend structure matches the implementation below for 4/5 (Contract Management target layout designed only) | 100% |
-| 6 | Detailed Design — Class, Sequence & State Diagrams | 4/4 modules, 20 sequence diagrams | 100% |
-| 7 | API Implementation & Unit Testing | 4/4 modules, 231 tests passing (155 unit + 76 integration), 0 build warnings | 100% |
+| 1 | Requirements — User Stories (INVEST) & Use Cases | 5/5 specified modules | 100% |
+| 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for all 5 specified modules; final design images for the 11 key screens of Employee Profile, Organization, Salary Grade Promotion, and Contract Management | 100% |
+| 3 | Architecture — C4 (Context, Container, Component) | 5/5 components implemented | 100% |
+| 4 | Database Design & API Documentation (OpenAPI 3.0) | 13 tables implemented, 57 endpoints across 11 tags implemented | 100% |
+| 5 | Code Structure Design — Frontend & Backend | Both cover 5/5 modules; backend structure matches the implementation below for 5/5 | 100% |
+| 6 | Detailed Design — Class, Sequence & State Diagrams | 5/5 modules, 25 sequence diagrams | 100% |
+| 7 | API Implementation & Unit Testing | 5/5 modules, 287 tests passing (191 unit + 96 integration), 0 build warnings | 100% |
 
 Frontend implementation (React) is design-only at this stage — no application code has been written yet, only the structure design (item 5) and the screen designs (item 2).
 
@@ -168,7 +168,7 @@ flowchart TB
         ORG[["Organization Management<br/>Component<br/>Manages organizational units and job titles"]]
         SAL[["Salary Master Data<br/>Component<br/>Manages base salary rates, salary scales, grades, and coefficients"]]
         SGP[["Salary Grade Promotion<br/>Component<br/>Handles salary review periods, salary decisions, and salary history"]]
-        CON[["Contract Management<br/>Component<br/>Manages labor contracts and their lifecycle<br/>(designed, not yet implemented)"]]
+        CON[["Contract Management<br/>Component<br/>Manages labor contracts and their lifecycle"]]
     end
 
     DB[("HRM Database")]
@@ -184,11 +184,9 @@ flowchart TB
     SAL -->|Reads/writes data| DB
     SGP -->|Reads/writes data| DB
     CON -->|Reads/writes data| DB
-
-    style CON stroke-dasharray: 5 5
 ```
 
-Four components are implemented in `backend/` (a dashed border above marks **Contract Management**, which is designed but not yet implemented), each split by capability across all layers (`HRM.Domain` → `HRM.Application` → `HRM.Infrastructure` → `HRM.Api`) per [`Docs/CodeStructure/BackendStructure.md`](Docs/CodeStructure/BackendStructure.md) — see [`Docs/c4/README.md`](Docs/c4/README.md#3-component-diagram). Cross-component data dependencies (e.g. Salary Grade Promotion reading employee/organizational unit/salary grade data) are documented in prose there rather than as call arrows — see [Cross-component Data Dependencies](Docs/c4/README.md#cross-component-data-dependencies); in code, this is a Service-to-Service-interface call, never a direct cross-domain repository access.
+All five components are implemented in `backend/`, each split by capability across all layers (`HRM.Domain` → `HRM.Application` → `HRM.Infrastructure` → `HRM.Api`) per [`Docs/CodeStructure/BackendStructure.md`](Docs/CodeStructure/BackendStructure.md) — see [`Docs/c4/README.md`](Docs/c4/README.md#3-component-diagram). Cross-component data dependencies (e.g. Salary Grade Promotion reading employee/organizational unit/salary grade data) are documented in prose there rather than as call arrows — see [Cross-component Data Dependencies](Docs/c4/README.md#cross-component-data-dependencies); in code, this is a Service-to-Service-interface call, never a direct cross-domain repository access.
 
 → Full folder: [`Docs/c4/`](Docs/c4/README.md)
 
@@ -202,7 +200,7 @@ Architectural decisions, quality requirements, constraints, and risks are docume
 
 ## 4. Database Design & API Documentation
 
-The database design covers the full HRM system as analyzed — Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management — 13 tables traced back to the Business Rules in each module's requirements. The first 12 are implemented in `backend/`; `HrLaborContract` (Contract Management) is designed only.
+The database design covers the full HRM system as analyzed — Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management — 13 tables traced back to the Business Rules in each module's requirements. All 13 are implemented in `backend/`.
 
 ```mermaid
 erDiagram
@@ -326,7 +324,7 @@ erDiagram
     }
 ```
 
-`HrBaseSalaryRate` has no relationships to other tables — it is a single organization-wide effective-dated value, not joined per employee or grade. `HrLaborContract` (Contract Management) is designed only — not yet implemented — and has no relationship to the salary tables; see [`Docs/Database/README.md`](Docs/Database/README.md).
+`HrBaseSalaryRate` has no relationships to other tables — it is a single organization-wide effective-dated value, not joined per employee or grade. `HrLaborContract` (Contract Management) has no relationship to the salary tables; see [`Docs/Database/README.md`](Docs/Database/README.md).
 
 Key database documents:
 
@@ -336,7 +334,7 @@ Key database documents:
 
 The REST API is documented using an **OpenAPI 3.0 (Swagger) specification**, with endpoints traced back to the relevant requirements.
 
-* [`openapi.yaml`](Docs/API/openapi.yaml) — OpenAPI 3.0 (Swagger) spec (57 endpoints across 11 tags; the 8 Contract Management endpoints are designed only)
+* [`openapi.yaml`](Docs/API/openapi.yaml) — OpenAPI 3.0 (Swagger) spec (57 endpoints across 11 tags, all implemented)
 
 → Full folder: [`Docs/API/`](Docs/API/README.md)
 
@@ -393,13 +391,13 @@ Key documents:
 
 ## 7. Implementation & Testing
 
-The full HRM backend — all four modules (Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion) — is implemented with **ASP.NET Core / .NET 8**, using the project layout (`HRM.Api` / `HRM.Application` / `HRM.Domain` / `HRM.Infrastructure`) described in section 5.
+The full HRM backend — all five modules (Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion, Contract Management) — is implemented with **ASP.NET Core / .NET 8**, using the project layout (`HRM.Api` / `HRM.Application` / `HRM.Domain` / `HRM.Infrastructure`) described in section 5.
 
 Automated tests are organized into:
 
 * `tests/HRM.Application.Tests` — unit tests for application services and business rules using mocked dependencies.
 * `tests/HRM.Api.Tests` — integration tests through the HTTP pipeline, including API routing, request handling, and response status behavior.
 
-231 tests passing (155 unit + 76 integration), 0 build warnings.
+287 tests passing (191 unit + 96 integration), 0 build warnings.
 
 → [`backend/`](backend/README.md)

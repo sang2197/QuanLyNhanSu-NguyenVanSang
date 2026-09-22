@@ -2,15 +2,15 @@
 
 *Part of the [Arc42 Architecture Documentation](README.md) - HRM System.*
 
-> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
 This view is the C4 model, documented in detail in [`Docs/c4/`](../c4/README.md):
 
 1. **System Context** — HRM System + its 2 actors.
 2. **Container** — HRM Web Application, HRM Backend API, HRM Database.
-3. **Component** (inside HRM Backend API) — Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management. The first four are implemented in `backend/`, each split across the same four projects (`HRM.Domain`, `HRM.Application`, `HRM.Infrastructure`, `HRM.Api`). Contract Management is designed (requirements and UI/UX) but not yet implemented.
+3. **Component** (inside HRM Backend API) — Employee Management, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management. All five are implemented in `backend/`, each split across the same four projects (`HRM.Domain`, `HRM.Application`, `HRM.Infrastructure`, `HRM.Api`).
 
-**Database building blocks** — see [Database Design](../Database/README.md) ([DBML source](../Database/HRM_System.dbml), [Mermaid ER diagram](../Database/README.md#er-diagram-mermaid)): 13 tables across all five analyzed modules — `HrOrganizationalUnit`, `HrJobTitle`, `HrEmployee`, `HrBaseSalaryRate`, `HrSalaryScale`, `HrSalaryGrade`, `HrSalaryGradeCoefficient`, `HrEmployeeSalary`, `HrSalaryReviewPeriod`, `HrSalaryReviewEmployee`, `HrSalaryDecision`, `HrSalaryDecisionDetail`, and `HrLaborContract`. The backend implementation (`backend/`) maps the first 12 tables one-to-one through EF Core (`HrmDbContext`, 12 entity configurations, a single `Initial` migration) — see `backend/README.md`. `HrLaborContract` (Contract Management) is designed only, with no EF Core mapping, migration, or API yet.
+**Database building blocks** — see [Database Design](../Database/README.md) ([DBML source](../Database/HRM_System.dbml), [Mermaid ER diagram](../Database/README.md#er-diagram-mermaid)): 13 tables across all five analyzed modules — `HrOrganizationalUnit`, `HrJobTitle`, `HrEmployee`, `HrBaseSalaryRate`, `HrSalaryScale`, `HrSalaryGrade`, `HrSalaryGradeCoefficient`, `HrEmployeeSalary`, `HrSalaryReviewPeriod`, `HrSalaryReviewEmployee`, `HrSalaryDecision`, `HrSalaryDecisionDetail`, and `HrLaborContract`. The backend implementation (`backend/`) maps all 13 tables one-to-one through EF Core (`HrmDbContext`, 13 entity configurations, the `Initial` and `AddLaborContract` migrations) — see `backend/README.md`.
 
 **Source code locations:** see [`Docs/CodeStructure/`](../CodeStructure/README.md) for how each container/component maps to an actual frontend/backend folder.
 

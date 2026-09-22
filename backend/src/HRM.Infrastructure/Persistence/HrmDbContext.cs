@@ -19,6 +19,7 @@ public class HrmDbContext : DbContext
     public DbSet<HrSalaryReviewEmployee> ReviewEmployees => Set<HrSalaryReviewEmployee>();
     public DbSet<HrSalaryDecision> Decisions => Set<HrSalaryDecision>();
     public DbSet<HrSalaryDecisionDetail> DecisionDetails => Set<HrSalaryDecisionDetail>();
+    public DbSet<HrLaborContract> Contracts => Set<HrLaborContract>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

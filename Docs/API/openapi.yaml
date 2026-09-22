@@ -8,14 +8,11 @@ info:
     Information Architecture / Screens Hierarchy / UI-UX, the C4 model
     (`Docs/c4/`), and the database design (`Docs/Database/HRM_System.dbml`).
 
-    Implementation status (baseline commit 77e5716, reviewed 2026-09-22): the
-    49 endpoints of the first four modules (every tag except Contracts) are
-    implemented in `backend/`. The 8 **Contracts** endpoints are designed
-    only — Contract Management has no EF Core mapping, migration, or
-    controller yet; see `backend/README.md`. The backend has no authentication
-    yet (`bearerAuth` is declared for documentation only), serves routes
-    without a version prefix, and the server URL below is a placeholder. See
-    `Docs/API/README.md`.
+    Implementation status: all 57 endpoints across all 11 tags, including
+    **Contracts**, are implemented in `backend/`; see `backend/README.md`.
+    The backend has no authentication yet (`bearerAuth` is declared for
+    documentation only), serves routes without a version prefix, and the
+    server URL below is a placeholder. See `Docs/API/README.md`.
   version: "0.3.0"
 servers:
   - url: https://api.example.com/v1
@@ -1478,7 +1475,7 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   # ============================================================
-  # CONTRACT MANAGEMENT (US-CON-01–06) — designed, not yet implemented
+  # CONTRACT MANAGEMENT (US-CON-01–06)
   # ============================================================
   /contracts:
     post:
@@ -2508,7 +2505,7 @@ components:
           items:
             $ref: "#/components/schemas/SalaryHistoryEntry"
 
-    # ---------------- Contract Management (designed, not yet implemented) ----------------
+    # ---------------- Contract Management ----------------
     ContractType:
       type: string
       enum: [PROBATION, FIXED_TERM, INDEFINITE_TERM]

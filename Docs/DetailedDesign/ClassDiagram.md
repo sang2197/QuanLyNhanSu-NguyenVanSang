@@ -2,7 +2,7 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-UML class diagrams for the full HRM system — **Employee Management**, **Organization Management**, **Salary Master Data**, **Salary Grade Promotion**, and **Contract Management** — derived from [Database Design](../Database/README.md) (entity fields), [`openapi.yaml`](../API/openapi.yaml) (operations, request/response shapes, enums), [C4 Component Diagram](../c4/README.md#3-component-diagram) (all 5 components), and [`CodeStructure/`](../CodeStructure/README.md) (class/interface names and their domain folders). The diagrams were derived from those documents, not from code; the backend in [`backend/`](../../backend/README.md) was then implemented from them for the first 4 components — **Contract Management (Section 6) is designed only**, with no code in `backend/` yet; see [`BackendStructure.md`](../CodeStructure/BackendStructure.md)'s dedicated section.
+UML class diagrams for the full HRM system — **Employee Management**, **Organization Management**, **Salary Master Data**, **Salary Grade Promotion**, and **Contract Management** — derived from [Database Design](../Database/README.md) (entity fields), [`openapi.yaml`](../API/openapi.yaml) (operations, request/response shapes, enums), [C4 Component Diagram](../c4/README.md#3-component-diagram) (all 5 components), and [`CodeStructure/`](../CodeStructure/README.md) (class/interface names and their domain folders). The diagrams were derived from those documents, not from code; the backend in [`backend/`](../../backend/README.md) was then implemented from them for all 5 components, including Contract Management (Section 6) — see [`BackendStructure.md`](../CodeStructure/BackendStructure.md).
 
 **Notation**
 
@@ -15,7 +15,7 @@ UML class diagrams for the full HRM system — **Employee Management**, **Organi
 
 ## 1. Domain Model
 
-All 13 entities from the [Database Design](../Database/README.md) (`HRM_System.dbml` is the source of truth for fields) — the first 12 are implemented in `backend/`, `HrLaborContract` (Contract Management) is designed only — plus the 8 enums used by [`openapi.yaml`](../API/openapi.yaml) (6 implemented; `ContractType`/`ContractStatus` designed only). Composition (`*--`) is used where the child row has no independent existence or business meaning outside its parent (a Salary Grade's coefficient history, a Review Period's employee snapshot, a Salary Decision's detail lines); plain association is used for ordinary foreign-key references.
+All 13 entities from the [Database Design](../Database/README.md) (`HRM_System.dbml` is the source of truth for fields), all implemented in `backend/` — plus the 8 enums used by [`openapi.yaml`](../API/openapi.yaml), all implemented. Composition (`*--`) is used where the child row has no independent existence or business meaning outside its parent (a Salary Grade's coefficient history, a Review Period's employee snapshot, a Salary Decision's detail lines); plain association is used for ordinary foreign-key references.
 
 ```mermaid
 classDiagram
@@ -142,7 +142,7 @@ classDiagram
         +UpdatedAt : DateTime
     }
 
-    %% ---------- Contract Management (designed, not yet implemented) ----------
+    %% ---------- Contract Management ----------
     class HrLaborContract {
         +Id : int
         +EmployeeId : int
@@ -255,7 +255,7 @@ classDiagram
 - `HrSalaryDecision --> HrEmployeeSalary : causes` is `"0..1" --> "0..*"`, not `"1" --> "0..*"`: most `HrEmployeeSalary` rows have no causing decision (`SalaryDecisionId [0..1]`, e.g. `Reason = "Initial assignment"`) — only rows written by `ApplyDecision` do.
 - `HrSalaryReviewPeriod --> HrSalaryDecision` is `"1" --> "0..*"`, not `"0..1"`: `US-SGP-10` AC04 allows a cancelled Draft to be replaced by a new Decision from the same period, so a period can accumulate several `HrSalaryDecision` rows over its lifetime — the "at most one **non-cancelled**" rule (`US-SGP-06`) is an application-layer invariant, not a structural multiplicity.
 - `HrBaseSalaryRate` has no relationships — a single, organization-wide effective-dated value (see [Database Design](../Database/README.md)).
-- `HrLaborContract` (Contract Management, designed only) has a single relationship, to `HrEmployee` — no relationship to any Salary Master Data / Salary Grade Promotion table, since `ContractSalaryAmount` is independent information, deliberately not synchronized with the salary structure (`DQ-CON-02` in `UserStories_ContractManagement.md`, see [Database Design](../Database/README.md)). `EndDate`, `SalaryNote`, `TerminationDate`, and `TerminationReason` are `[0..1]`: `EndDate` is absent for `INDEFINITE_TERM` (`BR-CON-04`); `TerminationDate`/`TerminationReason` are set only once `Status` becomes `TERMINATED` (`BR-CON-21`).
+- `HrLaborContract` (Contract Management) has a single relationship, to `HrEmployee` — no relationship to any Salary Master Data / Salary Grade Promotion table, since `ContractSalaryAmount` is independent information, deliberately not synchronized with the salary structure (`DQ-CON-02` in `UserStories_ContractManagement.md`, see [Database Design](../Database/README.md)). `EndDate`, `SalaryNote`, `TerminationDate`, and `TerminationReason` are `[0..1]`: `EndDate` is absent for `INDEFINITE_TERM` (`BR-CON-04`); `TerminationDate`/`TerminationReason` are set only once `Status` becomes `TERMINATED` (`BR-CON-21`).
 
 ## 2. Employee Management
 
@@ -764,9 +764,9 @@ classDiagram
     SalaryHistoryService --> IEmployeeSalaryRepository
 ```
 
-## 6. Contract Management (designed, not yet implemented)
+## 6. Contract Management
 
-The C4 model's fifth component — see the [Component Diagram](../c4/README.md#3-component-diagram), [`HrLaborContract`](../Database/HRM_System.dbml) in the Database Design, and the `Contracts` tag in [`openapi.yaml`](../API/openapi.yaml). It has no code in `backend/` yet; this section is the target design for when it is built, following the same Controller → Service → Repository pattern as Sections 2–5 ([ADR-04](../Arc42/09-architecture-decisions.md#adr-04-layered-design-inside-each-backend-component)).
+The C4 model's fifth component — see the [Component Diagram](../c4/README.md#3-component-diagram), [`HrLaborContract`](../Database/HRM_System.dbml) in the Database Design, and the `Contracts` tag in [`openapi.yaml`](../API/openapi.yaml). Implemented in `backend/` following the same Controller → Service → Repository pattern as Sections 2–5 ([ADR-04](../Arc42/09-architecture-decisions.md#adr-04-layered-design-inside-each-backend-component)).
 
 ```mermaid
 classDiagram
@@ -801,7 +801,7 @@ classDiagram
         +ActivateContract(contractId : int) : ContractDetail
         +ExpireContract(contractId : int) : ContractDetail
         +TerminateContract(contractId : int, request : TerminateContractRequest) : ContractDetail
-        note for ContractService "CreateContract — employeeId must reference an existing, non-Terminated employee (BR-CON-07); contractType, contractNumber, startDate, contractSalaryAmount required (BR-CON-02); contractNumber unique (BR-CON-01); endDate required for PROBATION/FIXED_TERM, forbidden for INDEFINITE_TERM (BR-CON-04); endDate later than startDate (BR-CON-05); contractSalaryAmount greater than zero (BR-CON-06); status is DRAFT or ACTIVE (BR-CON-08), ACTIVE additionally requires startDate on or before today and no other Active contract for the employee (BR-CON-09, BR-CON-10)<br/>SearchContracts — search by employee code/name or contractNumber, combinable with contractType/status/date-range filters (BR-CON-11, BR-CON-12, BR-CON-14); a time-period filter matches by term overlap, open-ended when endDate is null (BR-CON-13); expiringSoon lists Active contracts ending within the window plus overdue ones, ordered by endDate, combinable with the other filters (BR-CON-25–27, BR-CON-32)<br/>GetContract — employee fields are read live via IEmployeeService, not frozen at contract creation (BR-CON-15)<br/>UpdateContract — DRAFT only (BR-CON-28); employeeId and status are not editable (BR-CON-29); the same validation rules as CreateContract apply to the changed fields (BR-CON-30)<br/>DeleteContract — DRAFT only (BR-CON-28); removes the row and frees its contractNumber for reuse, the only hard delete among all 5 components (BR-CON-31)<br/>ActivateContract — DRAFT only, startDate on or before today, no other Active contract for the employee, employee not Terminated (BR-CON-18)<br/>ExpireContract — ACTIVE only, endDate set and earlier than today (BR-CON-19)<br/>TerminateContract — ACTIVE only, terminationDate and terminationReason required, terminationDate within [startDate, endDate] (BR-CON-21, BR-CON-22)"
+        note for ContractService "CreateContract — employeeId must reference an existing, non-Terminated employee (BR-CON-07); contractType, contractNumber, startDate, contractSalaryAmount required (BR-CON-02); contractNumber unique (BR-CON-01); endDate required for PROBATION/FIXED_TERM, forbidden for INDEFINITE_TERM (BR-CON-04); endDate later than startDate (BR-CON-05); contractSalaryAmount greater than zero (BR-CON-06); status is DRAFT or ACTIVE (BR-CON-08), ACTIVE additionally requires startDate on or before today and no other Active contract for the employee (BR-CON-09, BR-CON-10)<br/>SearchContracts — search by employee code/name or contractNumber, combinable with contractType/status/date-range filters (BR-CON-11, BR-CON-12, BR-CON-14); a time-period filter matches by term overlap, open-ended when endDate is null (BR-CON-13); expiringSoon lists Active contracts ending within the window plus overdue ones, ordered by endDate, combinable with the other filters (BR-CON-25–27, BR-CON-32)<br/>GetContract — employee fields (code, name, unit, job title) are read live via ContractRepository's own Employee navigation include, not frozen at contract creation (BR-CON-15)<br/>UpdateContract — DRAFT only (BR-CON-28); employeeId and status are not editable (BR-CON-29); the same validation rules as CreateContract apply to the changed fields (BR-CON-30)<br/>DeleteContract — DRAFT only (BR-CON-28); removes the row and frees its contractNumber for reuse, the only hard delete among all 5 components (BR-CON-31)<br/>ActivateContract — DRAFT only, startDate on or before today, no other Active contract for the employee, employee not Terminated (BR-CON-18)<br/>ExpireContract — ACTIVE only, endDate set and earlier than today (BR-CON-19)<br/>TerminateContract — ACTIVE only, terminationDate and terminationReason required, terminationDate within [startDate, endDate] (BR-CON-21, BR-CON-22)"
     }
     ContractService ..|> IContractService
 
@@ -817,6 +817,7 @@ classDiagram
     }
     class ContractRepository {
         -context : HrmDbContext
+        note for ContractRepository "FindById and Search both include the Employee navigation (ThenInclude OrganizationalUnit, ThenInclude JobTitle) — the same repository-level cross-domain read-hydration pattern EmployeeRepository already uses for OrganizationalUnit/JobTitle. This is a repository's own EF join, not a Service-to-Repository dependency, so it does not violate ADR-03."
     }
     ContractRepository ..|> IContractRepository
 
@@ -827,7 +828,7 @@ classDiagram
 
     ContractsController --> IContractService
     ContractService --> IContractRepository
-    ContractService ..> IEmployeeService : GetEmployee(employeeId) — existence, EmploymentStatus, and the live profile fields shown on ContractDetail (BR-CON-07, BR-CON-15, BR-CON-18)
+    ContractService ..> IEmployeeService : GetEmployee(employeeId) — existence and EmploymentStatus for the business-rule checks only (BR-CON-07, BR-CON-18); the live profile fields shown on ContractDetail (BR-CON-15) come from ContractRepository's own Employee include, not this call
 ```
 
 `ContractRepository.HasOtherActiveForEmployee` backs `BR-CON-10` at both `CreateContract` (when `status` is `ACTIVE`) and `ActivateContract` — the same check, exposed once. Unlike the cross-domain guards in Sections 2–5, this dependency needs no new method on `IEmployeeService`: the already-implemented `GetEmployee(employeeId) : Employee` returns `employmentStatus` directly, so `ContractService` reads it from there instead of requiring a change to Employee Management's real, already-shipped interface.
@@ -835,10 +836,10 @@ classDiagram
 ## Traceability
 
 - Every Controller matches an [`openapi.yaml`](../API/openapi.yaml) tag, and every operation on it matches one endpoint under that tag — see the [API README's coverage table](../API/README.md#coverage).
-- The 5 sections (2–6) match the 5 `HRM.Application`/`Controllers`/`Repositories` folders and all 5 [C4 components](../c4/README.md#3-component-diagram) — Sections 2–5 are implemented in `backend/`; Section 6 (Contract Management) matches the target layout in [`BackendStructure.md`](../CodeStructure/BackendStructure.md)'s "Contract Management (designed, not yet implemented)" section and has no code yet.
-- Cross-domain dependencies are drawn as dependency arrows (`..>`) to an interface defined in another section, never as a direct dependency on another domain's Repository — consistent with [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain)'s consequence that "any cross-domain read ... requires a call to another component instead of a single local query." Within one domain, a Service may depend on another Repository/Service in the same section directly (e.g. `SalaryDecisionService --> IReviewPeriodRepository`).
-- The [C4 diagrams](../c4/README.md#cross-component-data-dependencies) list 4 cross-component data dependencies (Employee Management ← Organization Management; Salary Grade Promotion ← Employee Management; Salary Grade Promotion ← Salary Master Data; Contract Management ← Employee Management, planned) but explicitly deferred naming the actual classes/interfaces to the detailed design stage. This diagram names them (`EmployeeService ..> IOrganizationalUnitService`/`IJobTitleService`, `ReviewPeriodService ..> IEmployeeService`/`ISalaryGradeService`, `ContractService ..> IEmployeeService`) and additionally surfaces **2 dependencies the C4 diagrams did not list**, found while working through the Use Cases' guard conditions:
+- The 5 sections (2–6) match the 5 `HRM.Application`/`Controllers`/`Repositories` folders and all 5 [C4 components](../c4/README.md#3-component-diagram) — all 5 sections are implemented in `backend/`, matching [`BackendStructure.md`](../CodeStructure/BackendStructure.md).
+- Cross-domain dependencies are drawn as dependency arrows (`..>`) to an interface defined in another section, never as a direct dependency on another domain's Repository — consistent with [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain)'s consequence that "any cross-domain read ... requires a call to another component instead of a single local query." Within one domain, a Service may depend on another Repository/Service in the same section directly (e.g. `SalaryDecisionService --> IReviewPeriodRepository`). A Repository's own EF `Include()` of a cross-domain navigation property (e.g. `ContractRepository` including `Employee`) is not drawn as a cross-domain dependency arrow, since it is a repository's own join, not a Service-to-Repository call — see the `ContractRepository` note in Section 6.
+- The [C4 diagrams](../c4/README.md#cross-component-data-dependencies) list 4 cross-component data dependencies (Employee Management ← Organization Management; Salary Grade Promotion ← Employee Management; Salary Grade Promotion ← Salary Master Data; Contract Management ← Employee Management) but explicitly deferred naming the actual classes/interfaces to the detailed design stage. This diagram names them (`EmployeeService ..> IOrganizationalUnitService`/`IJobTitleService`, `ReviewPeriodService ..> IEmployeeService`/`ISalaryGradeService`, `ContractService ..> IEmployeeService`) and additionally surfaces **2 dependencies the C4 diagrams did not list**, found while working through the Use Cases' guard conditions:
   - `OrganizationalUnitService ..> IEmployeeService` — `BR-ORG-11` blocks deactivating a unit with active employees assigned, which Organization Management cannot determine from its own data.
   - `SalaryGradeService ..> ISalaryHistoryService` — `BR-SAL-15` blocks deactivating a salary grade with an active employee currently assigned to it, which Salary Master Data cannot determine from its own data (the current assignment lives in Salary Grade Promotion's `HrEmployeeSalary`).
 - `SalaryPromotionEligibilityRule` matches the `Rules/` folder in `HRM.Application/SalaryGradePromotion/` from [`BackendStructure.md`](../CodeStructure/BackendStructure.md).
-- `ContractService`'s use of the existing `IEmployeeService.GetEmployee` (Section 6) — rather than a new purpose-built method, unlike the 2 dependencies above — is a design choice, not a requirement: Employee Management's real, already-implemented interface does not need to change for Contract Management to be built later.
+- `ContractService`'s use of the existing `IEmployeeService.GetEmployee` (Section 6) — rather than a new purpose-built method, unlike the 2 dependencies above — is a design choice, not a requirement: Employee Management's real, already-implemented interface did not need to change to build Contract Management.

@@ -2,15 +2,15 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-REST API for the full HRM system — Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management — written as an [OpenAPI 3.0](https://swagger.io/specification/) spec. The first four modules are implemented by [`backend/`](../../backend/README.md); Contract Management's 8 endpoints (`Contracts` tag) are designed only.
+REST API for the full HRM system — Employee Profile, Organization Management, Salary Master Data, Salary Grade Promotion, and Contract Management — written as an [OpenAPI 3.0](https://swagger.io/specification/) spec. All five modules are implemented by [`backend/`](../../backend/README.md).
 
-Designed from the current User Stories / Use Cases (INVEST), Information Architecture / Screens Hierarchy / UI-UX, the C4 model (`Docs/c4/`), and the database design (`Docs/Database/HRM_System.dbml`). The backend was then implemented against this spec for the first four modules: the 49 operations (method + path) of the generated Swagger document match `openapi.yaml` exactly, across the same 10 tags — see `backend/README.md`. The `Contracts` tag (8 operations) is not yet reflected in the generated Swagger, since Contract Management has no controller yet.
+Designed from the current User Stories / Use Cases (INVEST), Information Architecture / Screens Hierarchy / UI-UX, the C4 model (`Docs/c4/`), and the database design (`Docs/Database/HRM_System.dbml`). The backend was then implemented against this spec for all five modules: the 57 operations (method + path) of the generated Swagger document match `openapi.yaml` exactly, across the same 11 tags — see `backend/README.md`.
 
 - [`openapi.yaml`](openapi.yaml) — the spec. Paste its content into the [Swagger Editor](https://editor.swagger.io/) to view it as interactive documentation, or run `npx @redocly/cli lint openapi.yaml` to validate it.
 
 ## Coverage
 
-57 endpoints across 11 tags (49 implemented, 8 designed only), each mapped to the user story it implements:
+57 endpoints across 11 tags, all implemented, each mapped to the user story it implements:
 
 | Tag | Endpoints | Stories |
 |---|---|---|
@@ -24,7 +24,7 @@ Designed from the current User Stories / Use Cases (INVEST), Information Archite
 | Review Period Employees | List, view detail, approve/reject (single + bulk) | US-SGP-03, 04 |
 | Salary Decisions | Draft, list, view detail, save draft, remove employee, apply, cancel | US-SGP-06, 07, 09, 10 |
 | Salary History | Look up an employee's history (read-only) | US-SGP-08 |
-| Contracts | Create, search/filter (including Expiring Soon), view, update, delete, activate, mark as expired, terminate | US-CON-01–06 *(designed only)* |
+| Contracts | Create, search/filter (including Expiring Soon), view, update, delete, activate, mark as expired, terminate | US-CON-01–06 |
 
 All resource IDs are `integer`, matching the `int IDENTITY` primary keys in `Docs/Database/HRM_System.dbml`.
 
@@ -47,7 +47,7 @@ All resource IDs are `integer`, matching the `int IDENTITY` primary keys in `Doc
 
 ## Implementation status
 
-- **49 of 57 endpoints are implemented** in `backend/` (ASP.NET Core, one controller per tag) and covered by HTTP-level integration tests that check routing and status codes against this spec. The 8 `Contracts` endpoints are designed only — no `HRM.Domain` entity, EF Core mapping, migration, or controller exists yet for Contract Management.
+- **All 57 endpoints are implemented** in `backend/` (ASP.NET Core, one controller per tag) and covered by HTTP-level integration tests that check routing and status codes against this spec.
 - **Error responses:** `ExceptionHandlingMiddleware` returns the `Error` schema with 400 (validation), 404 (not found), 409 (conflict), and 500 (unexpected). The generated Swagger only declares success responses, so the error responses documented here are not yet visible in Swagger UI — see [DEBT-03](../Arc42/11-risks-and-technical-debt.md#technical-debt).
 - **Server URL / versioning:** the spec lists the placeholder server `https://api.example.com/v1`; the implementation serves routes from the root without a version prefix — see [DEBT-05](../Arc42/11-risks-and-technical-debt.md#technical-debt).
 - **Authentication:** the `bearerAuth` scheme is declared for documentation only. No endpoint enforces it — the backend has no authentication or authorization yet ([ADR-07](../Arc42/09-architecture-decisions.md#adr-07-authentication-and-authorization-mechanism), [RISK-05](../Arc42/11-risks-and-technical-debt.md)).

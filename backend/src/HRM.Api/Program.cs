@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using HRM.Api.Middleware;
 using HRM.Application.Common;
+using HRM.Application.ContractManagement.Interfaces;
+using HRM.Application.ContractManagement.Services;
 using HRM.Application.EmployeeManagement.Interfaces;
 using HRM.Application.EmployeeManagement.Services;
 using HRM.Application.OrganizationManagement.Interfaces;
@@ -11,6 +13,7 @@ using HRM.Application.SalaryGradePromotion.Services;
 using HRM.Application.SalaryMasterData.Interfaces;
 using HRM.Application.SalaryMasterData.Services;
 using HRM.Infrastructure.Persistence;
+using HRM.Infrastructure.Repositories.ContractManagement;
 using HRM.Infrastructure.Repositories.EmployeeManagement;
 using HRM.Infrastructure.Repositories.OrganizationManagement;
 using HRM.Infrastructure.Repositories.SalaryGradePromotion;
@@ -49,6 +52,7 @@ builder.Services.AddScoped<IReviewPeriodRepository, ReviewPeriodRepository>();
 builder.Services.AddScoped<IReviewEmployeeRepository, ReviewEmployeeRepository>();
 builder.Services.AddScoped<ISalaryDecisionRepository, SalaryDecisionRepository>();
 builder.Services.AddScoped<IEmployeeSalaryRepository, EmployeeSalaryRepository>();
+builder.Services.AddScoped<IContractRepository, ContractRepository>();
 
 // Rules
 builder.Services.AddScoped<ISalaryPromotionEligibilityRule, SalaryPromotionEligibilityRule>();
@@ -64,6 +68,7 @@ builder.Services.AddScoped<IReviewPeriodService, ReviewPeriodService>();
 builder.Services.AddScoped<IReviewEmployeeService, ReviewEmployeeService>();
 builder.Services.AddScoped<ISalaryDecisionService, SalaryDecisionService>();
 builder.Services.AddScoped<ISalaryHistoryService, SalaryHistoryService>();
+builder.Services.AddScoped<IContractService, ContractService>();
 
 // OrganizationalUnitService and EmployeeService depend on each other
 // (ADR-03 cross-domain calls: BR-ORG-11, BR-EMP-04/05) — a genuine

@@ -19,4 +19,5 @@ public class HrEmployee
     public ICollection<HrEmployeeSalary> Salaries { get; set; } = new List<HrEmployeeSalary>();
     public ICollection<HrSalaryReviewEmployee> ReviewEntries { get; set; } = new List<HrSalaryReviewEmployee>();
     public ICollection<HrSalaryDecisionDetail> DecisionDetails { get; set; } = new List<HrSalaryDecisionDetail>();
+    public ICollection<HrLaborContract> Contracts { get; set; } = new List<HrLaborContract>();
 }

@@ -1,6 +1,6 @@
 # C4 Model Diagrams
 
-> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
 Architecture diagrams for the HRM System following the C4 Model.
 
@@ -116,7 +116,7 @@ flowchart TB
         ORG[["Organization Management<br/>Component<br/>Manages organizational units and job titles"]]
         SAL[["Salary Master Data<br/>Component<br/>Manages base salary rates, salary scales, grades, and coefficients"]]
         SGP[["Salary Grade Promotion<br/>Component<br/>Handles salary review periods, salary decisions, and salary history"]]
-        CON[["Contract Management<br/>Component<br/>Manages labor contracts and their lifecycle<br/>(designed, not yet implemented)"]]
+        CON[["Contract Management<br/>Component<br/>Manages labor contracts and their lifecycle"]]
     end
 
     DB[("HRM Database")]
@@ -132,11 +132,9 @@ flowchart TB
     SAL -->|Reads/writes data| DB
     SGP -->|Reads/writes data| DB
     CON -->|Reads/writes data| DB
-
-    style CON stroke-dasharray: 5 5
 ```
 
-The Component diagram zooms into the **HRM Backend API** and shows the five major functional components derived from the currently analyzed HRM modules. A dashed border marks a component that is designed but not yet implemented.
+The Component diagram zooms into the **HRM Backend API** and shows the five major functional components derived from the currently analyzed HRM modules.
 
 | Component | Status |
 |---|---|
@@ -144,7 +142,7 @@ The Component diagram zooms into the **HRM Backend API** and shows the five majo
 | Organization Management | Implemented |
 | Salary Master Data | Implemented |
 | Salary Grade Promotion | Implemented |
-| Contract Management | Designed only — requirements, use cases, and UI/UX; no database design, API, or implementation yet |
+| Contract Management | Implemented |
 
 ### Employee Management
 
@@ -215,7 +213,7 @@ They are intentionally not shown as direct component-to-component calls in the C
 - Organization Management → Employee Management (a unit with active employees cannot be deactivated)
 - Salary Master Data → Salary Grade Promotion (a grade with an assigned active employee cannot be deactivated)
 - Salary Grade Promotion → Employee Management and Salary Master Data (active employees, next active grade, current coefficient)
-- Contract Management → Employee Management (planned, not yet implemented: employee existence and employment status, employee information shown with a contract)
+- Contract Management → Employee Management (employee existence and employment status via `IEmployeeService.GetEmployeeAsync`; the employee's display information shown with a contract is read directly through `ContractRepository`'s own EF `Include()` of the `Employee` navigation, the same repository-level cross-domain read pattern `EmployeeRepository` already uses for `OrganizationalUnit`/`JobTitle`)
 
 The Component Diagram therefore does not draw relationships such as:
 

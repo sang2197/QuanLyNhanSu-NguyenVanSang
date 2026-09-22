@@ -2,7 +2,7 @@
 
 *Part of the [Arc42 Architecture Documentation](README.md) - HRM System.*
 
-> **Status:** Current (ADR-07: Proposed, not implemented) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current (ADR-07: Proposed, not implemented) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
 ## ADR-01: Separate Frontend and Backend
 
@@ -16,7 +16,7 @@ The system needs a web UI usable by both HR Staff and Approver / Manager, callin
 
 The React frontend communicates with the ASP.NET Core backend through REST APIs.
 
-**Implementation:** Backend REST API implemented for 49 of the 57 endpoints in `openapi.yaml` — the 8 Contract Management endpoints are designed only. The React frontend is design-only — no frontend code exists yet.
+**Implementation:** Backend REST API implemented for all 57 endpoints in `openapi.yaml`. The React frontend is design-only — no frontend code exists yet.
 
 **Consequences**
 
@@ -62,9 +62,9 @@ Salary Grade Promotion's scope is expected to grow (e.g. a future Allowance Mana
 
 Inside the Backend API, `Employee Management`, `Organization Management`, `Salary Master Data`, and `Salary Grade Promotion` are implemented as four separate components, split by business domain rather than by technical layer.
 
-**Update:** `Contract Management` is added to the C4 component design as a fifth component under the same rule. It is designed (requirements and UI/UX) but not yet implemented, so the implementation notes below describe the four implemented components.
+**Update:** `Contract Management` is added to the C4 component design as a fifth component under the same rule, and is implemented alongside the other four.
 
-**Implementation:** All four components are implemented in `backend/`. The domain split is mirrored as `EmployeeManagement/`, `OrganizationManagement/`, `SalaryMasterData/`, and `SalaryGradePromotion/` subfolders inside `HRM.Application`, `HRM.Infrastructure`, and `HRM.Api` (entities stay flat in `HRM.Domain`, since several are read across domains). The four components are co-deployed in one process ([Section 7](07-deployment-view.md)). Cross-domain access is an in-process call to the other domain's **Service interface**, never to its repository. Two dependencies are resolved with `Lazy<T>` injection: the genuine cycle `OrganizationalUnitService` ↔ `EmployeeService`, and `SalaryGradeService` → `ISalaryHistoryService` (one-way, kept lazy for consistency) — see [DEBT-04](11-risks-and-technical-debt.md#technical-debt).
+**Implementation:** All five components are implemented in `backend/`. The domain split is mirrored as `EmployeeManagement/`, `OrganizationManagement/`, `SalaryMasterData/`, `SalaryGradePromotion/`, and `ContractManagement/` subfolders inside `HRM.Application`, `HRM.Infrastructure`, and `HRM.Api` (entities stay flat in `HRM.Domain`, since several are read across domains). The five components are co-deployed in one process ([Section 7](07-deployment-view.md)). Cross-domain access is an in-process call to the other domain's **Service interface**, never to its repository. Two dependencies are resolved with `Lazy<T>` injection: the genuine cycle `OrganizationalUnitService` ↔ `EmployeeService`, and `SalaryGradeService` → `ISalaryHistoryService` (one-way, kept lazy for consistency) — see [DEBT-04](11-risks-and-technical-debt.md#technical-debt). `ContractService` → `IEmployeeService` is one-way with no cycle, so it is injected directly without `Lazy<T>`.
 
 **Consequences**
 

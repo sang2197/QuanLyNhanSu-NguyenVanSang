@@ -2,7 +2,7 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-UML sequence diagrams for the full HRM system's key business-rule flows — the ones with validation, guard conditions, branching, or a transaction, one per module. Simple unguarded CRUD (plain create/update/list/view with only "required field" validation — e.g. creating a Job Title or a Salary Scale, updating a Salary Scale's name, reactivating a Salary Scale, or opening/resuming a Salary Decision by id) is intentionally not diagrammed; its request/response shape is already fully specified in [`openapi.yaml`](../API/openapi.yaml) and its class/method is in [ClassDiagram.md](ClassDiagram.md). Sections 1–4 cover the 4 implemented modules; **Section 5 (Contract Management) is designed only** — no code exists for it yet, see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented).
+UML sequence diagrams for the full HRM system's key business-rule flows — the ones with validation, guard conditions, branching, or a transaction, one per module. Simple unguarded CRUD (plain create/update/list/view with only "required field" validation — e.g. creating a Job Title or a Salary Scale, updating a Salary Scale's name, reactivating a Salary Scale, or opening/resuming a Salary Decision by id) is intentionally not diagrammed; its request/response shape is already fully specified in [`openapi.yaml`](../API/openapi.yaml) and its class/method is in [ClassDiagram.md](ClassDiagram.md). Sections 1–5 cover all 5 implemented modules, see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management) for Section 5 (Contract Management).
 
 Class, interface, and repository names match [ClassDiagram.md](ClassDiagram.md). Endpoints match [`openapi.yaml`](../API/openapi.yaml). A cross-domain call (per [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain)) always targets another domain's Service interface, never its Repository — see the Traceability note in [ClassDiagram.md](ClassDiagram.md#traceability).
 
@@ -890,9 +890,9 @@ sequenceDiagram
 
 ---
 
-## 5. Contract Management (designed, not yet implemented)
+## 5. Contract Management
 
-The C4 model's fifth component — see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented). It has no code in `backend/` yet; these are the target flows for when it is built.
+The C4 model's fifth component — see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management). Implemented in `backend/`; these flows match `ContractService`.
 
 ### 5.1 Create Contract (US-CON-01)
 
@@ -960,7 +960,7 @@ sequenceDiagram
     FE-->>HR: New contract opens on Contract Detail
 ```
 
-`EMPSVC: IEmployeeService` is the cross-domain dependency named in [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented) — it reuses `GetEmployee`, not a purpose-built method, so Employee Management's already-implemented interface needs no change.
+`EMPSVC: IEmployeeService` is the cross-domain dependency named in [ClassDiagram.md §6](ClassDiagram.md#6-contract-management) — it reuses `GetEmployee`, not a purpose-built method, so Employee Management's already-implemented interface needs no change.
 
 ### 5.2 Activate a Draft Contract (US-CON-04)
 
@@ -1129,4 +1129,4 @@ sequenceDiagram
 
 This is the only flow in the whole system that removes a row instead of changing a `Status` — a Draft contract has no dependent history yet, so there is nothing to preserve (see the Domain Model note in [ClassDiagram.md](ClassDiagram.md#1-domain-model)).
 
-Searching/filtering contracts (`GET /contracts`, including the `expiringSoon`/`window` quick filter — `BR-CON-11`–`BR-CON-14`, `BR-CON-25`–`BR-CON-27`, `BR-CON-32`), viewing one (`GET /contracts/{contractId}`, which reads the employee's current profile live via `IEmployeeService.GetEmployee` — `BR-CON-15`), and updating a Draft contract's fields (`PUT /contracts/{contractId}` — Draft only, `BR-CON-28`; employee and status not editable, `BR-CON-29`; the same field validation as Create Contract, `BR-CON-30`) are plain reads/writes with no branching beyond what Create Contract and the guards above already show, so they are not diagrammed separately.
+Searching/filtering contracts (`GET /contracts`, including the `expiringSoon`/`window` quick filter — `BR-CON-11`–`BR-CON-14`, `BR-CON-25`–`BR-CON-27`, `BR-CON-32`), viewing one (`GET /contracts/{contractId}`, which reads the employee's current profile live — code, name, unit, job title — via `ContractRepository`'s own `Employee` navigation include, not a call to `IEmployeeService`, `BR-CON-15`), and updating a Draft contract's fields (`PUT /contracts/{contractId}` — Draft only, `BR-CON-28`; employee and status not editable, `BR-CON-29`; the same field validation as Create Contract, `BR-CON-30`) are plain reads/writes with no branching beyond what Create Contract and the guards above already show, so they are not diagrammed separately.

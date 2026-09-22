@@ -2,7 +2,7 @@
 
 > **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-UML state machine diagrams for every status-bearing entity across the full HRM system, derived from the `Status`/enum fields in [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml), and the guard conditions in each module's Use Cases. Sections 1–5 cover the 4 implemented modules; **Section 6 (Contract Status) is designed only** — no code exists for it yet, see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented).
+UML state machine diagrams for every status-bearing entity across the full HRM system, derived from the `Status`/enum fields in [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml), and the guard conditions in each module's Use Cases. Sections 1–6 cover all 5 implemented modules, see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management) for Section 6 (Contract Status).
 
 **Notation** — transitions are written in UML's `event [guard] / effect` form: a short event name, an optional `[guard]` stating the condition that must hold for the transition to fire (phrased positively, as what *allows* it, not what blocks it), and an optional `/ effect` for a side effect worth calling out. User Story/Acceptance-Criteria/Business-Rule references and any longer explanation are kept out of the diagram and given as prose underneath instead.
 
@@ -89,7 +89,7 @@ stateDiagram-v2
 
 Neither state is ever terminal for these 4 entities — deactivation is always reversible, unlike the lifecycle-driven statuses in Sections 1–4 above. Deactivating never deletes the row or its historical data (`BR-ORG-12`, `BR-ORG-19`, `BR-SAL-14`, `BR-SAL-19`); it only blocks the row from being selected for new assignments (`BR-ORG-12`, `BR-SAL-16`, `BR-SAL-21`) and, for a Salary Grade, causes it to be skipped when Salary Grade Promotion determines a proposed grade (`BR-SAL-17`).
 
-## 6. Contract Status (`HrLaborContract.Status`, designed, not yet implemented)
+## 6. Contract Status (`HrLaborContract.Status`)
 
 ```mermaid
 stateDiagram-v2
