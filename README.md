@@ -29,7 +29,7 @@ Scope tracked in this repository: **Employee Profile, Organization Management, S
 | 2 | Screen Design — Information Architecture → Screens Hierarchy → UI/UX | IA, screens hierarchy, and wireframes for all 5 specified modules (the 4 implemented ones plus Contract Management); final design images for the 11 key screens of Employee Profile, Organization, Salary Grade Promotion, and Contract Management | 100% |
 | 3 | Architecture — C4 (Context, Container, Component) | 5 components (4 implemented; Contract Management designed only) | 100% |
 | 4 | Database Design & API Documentation (OpenAPI 3.0) | 13 tables (12 implemented; `HrLaborContract` designed only), 57 endpoints (49 implemented; 8 for Contract Management designed only) | 100% |
-| 5 | Code Structure Design — Frontend & Backend | Both designed; backend structure matches the implementation below | 100% |
+| 5 | Code Structure Design — Frontend & Backend | Both cover 5/5 modules; backend structure matches the implementation below for 4/5 (Contract Management target layout designed only) | 100% |
 | 6 | Detailed Design — Class, Sequence & State Diagrams | 4/4 modules, 20 sequence diagrams | 100% |
 | 7 | API Implementation & Unit Testing | 4/4 modules, 231 tests passing (155 unit + 76 integration), 0 build warnings | 100% |
 

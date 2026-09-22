@@ -1,8 +1,8 @@
 # Frontend Folder Structure (React)
 
-> **Status:** Design only (no frontend code exists) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Design only (no frontend code exists) · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-`frontend/` project layout (design only — not yet implemented) for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, and **Salary Grade Promotion** — mapping the [C4 `HRM Web Application` container](../c4/README.md#2-container-diagram) to an actual source folder. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
+`frontend/` project layout (design only — not yet implemented) for the full HRM System — **Employee Management**, **Organization Management**, **Salary Master Data**, **Salary Grade Promotion**, and **Contract Management** — mapping the [C4 `HRM Web Application` container](../c4/README.md#2-container-diagram) to an actual source folder. Referenced from [Arc42 Section 5 (Building Block View)](../Arc42/05-building-block-view.md), which requires source code locations to be specified.
 
 Feature-based structure: folders are organized by business capability, matching the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap and each module's Screens Hierarchy — not by technical file type. See [ADR-08](../Arc42/09-architecture-decisions.md#adr-08-switch-frontend-framework-to-react). No `frontend/` implementation exists yet; this is the target structure.
 
@@ -10,7 +10,7 @@ Feature-based structure: folders are organized by business capability, matching 
 frontend/
 ├── public/
 ├── src/
-│   ├── api/                                # HTTP client + 1 file per openapi.yaml tag (10), grouped like features/
+│   ├── api/                                # HTTP client + 1 file per openapi.yaml tag (11), grouped like features/
 │   │   ├── httpClient.js                   # base client; attaches the JWT from ADR-07 to every request
 │   │   ├── employeeManagement/
 │   │   │   └── employeesApi.js             # tag: Employees
@@ -21,11 +21,13 @@ frontend/
 │   │   │   ├── baseSalaryRatesApi.js       # tag: Base Salary Rate
 │   │   │   ├── salaryScalesApi.js          # tag: Salary Scales
 │   │   │   └── salaryGradesApi.js          # tag: Salary Grades
-│   │   └── salaryGradePromotion/
-│   │       ├── reviewPeriodsApi.js         # tag: Review Periods
-│   │       ├── reviewPeriodEmployeesApi.js # tag: Review Period Employees
-│   │       ├── salaryDecisionsApi.js       # tag: Salary Decisions
-│   │       └── salaryHistoryApi.js         # tag: Salary History — calls /employees/{id}/salary-history
+│   │   ├── salaryGradePromotion/
+│   │   │   ├── reviewPeriodsApi.js         # tag: Review Periods
+│   │   │   ├── reviewPeriodEmployeesApi.js # tag: Review Period Employees
+│   │   │   ├── salaryDecisionsApi.js       # tag: Salary Decisions
+│   │   │   └── salaryHistoryApi.js         # tag: Salary History — calls /employees/{id}/salary-history
+│   │   └── contractManagement/
+│   │       └── contractsApi.js             # tag: Contracts
 │   ├── app/
 │   │   ├── App.jsx
 │   │   ├── router.jsx                      # 1 route per Page in the IA Page List
@@ -66,25 +68,31 @@ frontend/
 │   │   │       ├── hooks/                  # useSalaryScales, useSalaryScale, useCreateScale, useUpdateScale, useSetScaleStatus, useCreateGrade, useUpdateCoefficient, useSetGradeStatus
 │   │   │       └── pages/                  # SalaryScalesPage, SalaryScaleDetailPage
 │   │   │
-│   │   └── salaryGradePromotion/
-│   │       ├── reviewPeriods/              # IA: Review Periods, Review Period Detail
-│   │       │   ├── components/             # CreatePeriodModal, CancelPeriodDialog, SubmitPeriodDialog, BulkApproveDialog, BulkRejectDialog
-│   │       │   ├── hooks/                  # useReviewPeriods, useReviewPeriod, useCreateReviewPeriod, useSubmitReviewPeriod, useCancelReviewPeriod, useBulkApprove, useBulkReject
-│   │       │   └── pages/                  # ReviewPeriodListPage, ReviewPeriodDetailPage
-│   │       ├── reviewEmployees/            # IA: Employee Review Detail
-│   │       │   ├── components/             # RejectEmployeeDialog
-│   │       │   ├── hooks/                  # useReviewEmployee, useApproveEmployee, useRejectEmployee
-│   │       │   └── pages/                  # EmployeeReviewDetailPage
-│   │       ├── salaryDecisions/            # IA: Salary Decisions, Salary Decision Detail
-│   │       │   ├── components/             # PickReviewPeriodDialog, ApplyDecisionDialog, CancelDecisionDialog
-│   │       │   ├── hooks/                  # useSalaryDecisions, useSalaryDecision, useSaveDraftDecision, useApplyDecision, useCancelDecision
-│   │       │   └── pages/                  # SalaryDecisionListPage, SalaryDecisionDetailPage
-│   │       └── salaryHistory/              # IA: Salary History (read-only)
-│   │           ├── hooks/                  # useSalaryHistory
-│   │           └── pages/                  # SalaryHistoryPage
+│   │   ├── salaryGradePromotion/
+│   │   │   ├── reviewPeriods/              # IA: Review Periods, Review Period Detail
+│   │   │   │   ├── components/             # CreatePeriodModal, CancelPeriodDialog, SubmitPeriodDialog, BulkApproveDialog, BulkRejectDialog
+│   │   │   │   ├── hooks/                  # useReviewPeriods, useReviewPeriod, useCreateReviewPeriod, useSubmitReviewPeriod, useCancelReviewPeriod, useBulkApprove, useBulkReject
+│   │   │   │   └── pages/                  # ReviewPeriodListPage, ReviewPeriodDetailPage
+│   │   │   ├── reviewEmployees/            # IA: Employee Review Detail
+│   │   │   │   ├── components/             # RejectEmployeeDialog
+│   │   │   │   ├── hooks/                  # useReviewEmployee, useApproveEmployee, useRejectEmployee
+│   │   │   │   └── pages/                  # EmployeeReviewDetailPage
+│   │   │   ├── salaryDecisions/            # IA: Salary Decisions, Salary Decision Detail
+│   │   │   │   ├── components/             # PickReviewPeriodDialog, ApplyDecisionDialog, CancelDecisionDialog
+│   │   │   │   ├── hooks/                  # useSalaryDecisions, useSalaryDecision, useSaveDraftDecision, useApplyDecision, useCancelDecision
+│   │   │   │   └── pages/                  # SalaryDecisionListPage, SalaryDecisionDetailPage
+│   │   │   └── salaryHistory/              # IA: Salary History (read-only)
+│   │   │       ├── hooks/                  # useSalaryHistory
+│   │   │       └── pages/                  # SalaryHistoryPage
+│   │   │
+│   │   └── contractManagement/
+│   │       └── contracts/                  # IA: Contracts, Contract Detail
+│   │           ├── components/             # CreateContractModal, EditContractModal, DeleteContractDialog, ActivateContractDialog, MarkAsExpiredDialog, TerminateContractModal
+│   │           ├── hooks/                  # useContracts, useContract, useCreateContract, useUpdateContract, useDeleteContract, useActivateContract, useExpireContract, useTerminateContract
+│   │           └── pages/                  # ContractListPage, ContractDetailPage
 │   │
 │   ├── layouts/
-│   │   └── MainLayout.jsx                  # nav shell; sections = Employee Management / Organization / Salary Management, matching the IA sitemap
+│   │   └── MainLayout.jsx                  # nav shell; sections = Employee Management / Organization / Salary Management / Contract Management, matching the IA sitemap
 │   ├── constants/                          # enums mirrored from openapi.yaml (ReviewPeriodStatus, EmploymentStatus, ActiveStatus, etc.)
 │   ├── utils/
 │   └── index.jsx
@@ -94,13 +102,13 @@ frontend/
 
 ## Traceability
 
-- `features/` and `api/` share the same top-level folders — `employeeManagement`, `organizationManagement`, `salaryMasterData`, `salaryGradePromotion` — matching the first 4 components in the [C4 Component Diagram] (Contract Management is not yet included)(../c4/README.md#3-component-diagram), and matching the same 4 folders in [Backend `Controllers/`](BackendStructure.md).
-- Each `features/*/*/` subfolder matches one page group in the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap and is expanded page-by-page in that module's Screens Hierarchy: [Employee Profile](../UI-UX/ScreensHierarchy_EmployeeProfile.md), [Organization Management](../UI-UX/ScreensHierarchy_OrganizationManagement.md), [Salary Master Data](../UI-UX/ScreensHierarchy_SalaryMasterData.md), [Salary Grade Promotion](../UI-UX/ScreensHierarchy_SalaryGradePromotion.md).
-- `features/*/*/components/` — 1 component per Modal/Dialog node in that module's Screens Hierarchy (e.g. "Update Salary Grade Coefficient" → `UpdateCoefficientModal`).
+- `features/` and `api/` share the same top-level folders — `employeeManagement`, `organizationManagement`, `salaryMasterData`, `salaryGradePromotion`, `contractManagement` — matching all 5 components in the [C4 Component Diagram](../c4/README.md#3-component-diagram), and matching the same folders in [Backend `Controllers/`](BackendStructure.md) for the first 4 (Contract Management has no backend folder yet — see that document's "Contract Management (designed, not yet implemented)" section).
+- Each `features/*/*/` subfolder matches one page group in the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap and is expanded page-by-page in that module's Screens Hierarchy: [Employee Profile](../UI-UX/ScreensHierarchy_EmployeeProfile.md), [Organization Management](../UI-UX/ScreensHierarchy_OrganizationManagement.md), [Salary Master Data](../UI-UX/ScreensHierarchy_SalaryMasterData.md), [Salary Grade Promotion](../UI-UX/ScreensHierarchy_SalaryGradePromotion.md), [Contract Management](../UI-UX/ScreensHierarchy_ContractManagement.md).
+- `features/*/*/components/` — 1 component per Modal/Dialog/Confirmation Dialog/Form-Action Modal node in that module's Screens Hierarchy (e.g. "Update Salary Grade Coefficient" → `UpdateCoefficientModal`; "Terminate Contract" → `TerminateContractModal`).
 - `salaryGradePromotion/salaryHistory/` has no `components/` folder — its Screens Hierarchy defines no modal/dialog for it (read-only page).
 - `components/` (shared) — implements the cross-module conventions in [UX Guidelines](../UI-UX/UXGuidelines_HRM.md): consistent status representation, confirmation dialogs for destructive actions, consistent list/pagination controls.
-- `api/*` — 1 file per tag; this layout covers the 10 tags of the 4 components above (Contract Management's `Contracts` tag — 8 of `openapi.yaml`'s 57 operations — has no `features/`/`api/` design yet, matching the caveat above).
-- `layouts/MainLayout.jsx` — top-level nav matches the 3 top-level groups in the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap (Employee Management, Organization, Salary Management); the `Dashboard` placeholder node is not implemented since it has no current requirements.
+- `api/*` — 1 file per tag, 11 files total, matching the 11 tags in [`openapi.yaml`](../API/openapi.yaml) (see [API README](../API/README.md#coverage)) — including `contractManagement/contractsApi.js` for the 8 designed-only `Contracts` operations.
+- `layouts/MainLayout.jsx` — top-level nav matches the 4 top-level groups in the [Information Architecture](../UI-UX/InformationArchitecture_HRM.md) sitemap (Employee Management, Organization, Salary Management, Contract Management); the `Dashboard` placeholder node is not implemented since it has no current requirements.
 
 ## Libraries this structure assumes
 

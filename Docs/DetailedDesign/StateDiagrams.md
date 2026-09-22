@@ -1,8 +1,8 @@
 # State Diagrams - HRM System
 
-> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-UML state machine diagrams for every status-bearing entity across the full HRM system, derived from the `Status`/enum fields in [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml), and the guard conditions in each module's Use Cases.
+UML state machine diagrams for every status-bearing entity across the full HRM system, derived from the `Status`/enum fields in [Database Design](../Database/README.md) and [`openapi.yaml`](../API/openapi.yaml), and the guard conditions in each module's Use Cases. Sections 1–5 cover the 4 implemented modules; **Section 6 (Contract Status) is designed only** — no code exists for it yet, see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented).
 
 **Notation** — transitions are written in UML's `event [guard] / effect` form: a short event name, an optional `[guard]` stating the condition that must hold for the transition to fire (phrased positively, as what *allows* it, not what blocks it), and an optional `/ effect` for a side effect worth calling out. User Story/Acceptance-Criteria/Business-Rule references and any longer explanation are kept out of the diagram and given as prose underneath instead.
 
@@ -88,3 +88,23 @@ stateDiagram-v2
 | `SalaryGrade` | `[no active employee currently assigned to it]` (`BR-SAL-15` — cross-domain, see [ClassDiagram.md](ClassDiagram.md#4-salary-master-data)) | `[containing Salary Scale is Active]` (`BR-SAL-18`) |
 
 Neither state is ever terminal for these 4 entities — deactivation is always reversible, unlike the lifecycle-driven statuses in Sections 1–4 above. Deactivating never deletes the row or its historical data (`BR-ORG-12`, `BR-ORG-19`, `BR-SAL-14`, `BR-SAL-19`); it only blocks the row from being selected for new assignments (`BR-ORG-12`, `BR-SAL-16`, `BR-SAL-21`) and, for a Salary Grade, causes it to be skipped when Salary Grade Promotion determines a proposed grade (`BR-SAL-17`).
+
+## 6. Contract Status (`HrLaborContract.Status`, designed, not yet implemented)
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT : Create [status = DRAFT]
+    [*] --> ACTIVE : Create [status = ACTIVE, startDate on or before today, no other Active contract for the employee]
+    DRAFT --> ACTIVE : Activate [startDate on or before today, no other Active contract for the employee, employee not Terminated]
+    DRAFT --> [*] : Delete
+    ACTIVE --> EXPIRED : Mark as Expired [end date is set and earlier than today]
+    ACTIVE --> TERMINATED : Terminate [termination date and reason provided, termination date within the contract term]
+```
+
+- **Create** enters `DRAFT` or `ACTIVE` directly depending on the requested initial status (`BR-CON-08`) — there is no separate submission step. Entering `ACTIVE` at creation time requires the same conditions as **Activate** below, so they are checked once at creation instead of being deferred (`BR-CON-09`, `BR-CON-10`).
+- **Activate**'s guard: the start date is on or before today, the employee has no other Active contract, and the employee's employment status is not Terminated (`BR-CON-18`).
+- **Delete** is the only transition in this diagram — and in the whole system — that leaves the state machine at `[*]` instead of another named state: it is a real row deletion, not a status change, reachable only from `DRAFT`, the one status with no dependent history yet (`BR-CON-28`, `BR-CON-31`). Editing a Draft contract's fields (`BR-CON-30`) is not a state transition and is not shown.
+- **Mark as Expired**'s guard: the contract has an end date and it is earlier than today (`BR-CON-19`). This is always an explicit HR Staff action, never date-triggered — the system does not move a contract to `EXPIRED` on its own (`BR-CON-17`).
+- **Terminate**'s guard: a termination date and a termination reason are both provided, and the termination date falls within `[startDate, endDate]` (`BR-CON-21`, `BR-CON-22`).
+- `EXPIRED` and `TERMINATED` are terminal — neither transitions anywhere else (`BR-CON-16`). Unlike the Active/Inactive toggle in Section 5, this lifecycle has no `Reactivate`-style transition back to `ACTIVE` from either terminal state.
+- `Overdue` (`BR-CON-20`) is not a stored status and not a state in this diagram — it is a read-time computed flag (`overdue` in [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented)) on an `ACTIVE` contract whose end date has already passed but has not yet been marked `EXPIRED`; it never changes `Status` by itself.

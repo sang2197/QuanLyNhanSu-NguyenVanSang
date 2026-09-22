@@ -1,8 +1,8 @@
 # Sequence Diagrams - HRM System
 
-> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-18 · **Implementation Baseline Commit:** `77e5716`
+> **Status:** Current · **Owner:** Sang2197 · **Last Reviewed:** 2026-09-22 · **Implementation Baseline Commit:** `77e5716`
 
-UML sequence diagrams for the full HRM system's key business-rule flows — the ones with validation, guard conditions, branching, or a transaction, one per module. Simple unguarded CRUD (plain create/update/list/view with only "required field" validation — e.g. creating a Job Title or a Salary Scale, updating a Salary Scale's name, reactivating a Salary Scale, or opening/resuming a Salary Decision by id) is intentionally not diagrammed; its request/response shape is already fully specified in [`openapi.yaml`](../API/openapi.yaml) and its class/method is in [ClassDiagram.md](ClassDiagram.md).
+UML sequence diagrams for the full HRM system's key business-rule flows — the ones with validation, guard conditions, branching, or a transaction, one per module. Simple unguarded CRUD (plain create/update/list/view with only "required field" validation — e.g. creating a Job Title or a Salary Scale, updating a Salary Scale's name, reactivating a Salary Scale, or opening/resuming a Salary Decision by id) is intentionally not diagrammed; its request/response shape is already fully specified in [`openapi.yaml`](../API/openapi.yaml) and its class/method is in [ClassDiagram.md](ClassDiagram.md). Sections 1–4 cover the 4 implemented modules; **Section 5 (Contract Management) is designed only** — no code exists for it yet, see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented).
 
 Class, interface, and repository names match [ClassDiagram.md](ClassDiagram.md). Endpoints match [`openapi.yaml`](../API/openapi.yaml). A cross-domain call (per [ADR-03](../Arc42/09-architecture-decisions.md#adr-03-split-the-backend-by-business-domain)) always targets another domain's Service interface, never its Repository — see the Traceability note in [ClassDiagram.md](ClassDiagram.md#traceability).
 
@@ -887,3 +887,246 @@ sequenceDiagram
     API-->>-FE: 200 OK
     FE-->>APR: Decision marked "Cancelled" — its review period can now have a new decision drafted (US-SGP-10 AC04)
 ```
+
+---
+
+## 5. Contract Management (designed, not yet implemented)
+
+The C4 model's fifth component — see [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented). It has no code in `backend/` yet; these are the target flows for when it is built.
+
+### 5.1 Create Contract (US-CON-01)
+
+`POST /contracts`
+
+```mermaid
+sequenceDiagram
+    actor HR as HR Staff
+    participant FE as React Web App
+    participant API as ContractsController
+    participant SVC as ContractService
+    participant EMPSVC as IEmployeeService
+    participant REPO as ContractRepository
+    participant DB as HRM Database
+
+    HR->>FE: Fill "Create Contract" form
+    FE->>+API: POST /contracts {employeeId, contractType, contractNumber, startDate, endDate?, contractSalaryAmount, salaryNote?, status}
+    API->>+SVC: CreateContract(request)
+    SVC->>+REPO: FindByNumber(contractNumber)
+    REPO->>DB: SELECT HrLaborContract WHERE ContractNumber=...
+    DB-->>REPO: row?
+    REPO-->>-SVC: exists? yes/no
+    break [contract number already exists]
+        SVC-->>API: 409 Conflict — contract number already in use (BR-CON-01)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+EMPSVC: GetEmployee(employeeId)
+    EMPSVC-->>-SVC: employee
+    break [employee's employment status is TERMINATED]
+        SVC-->>API: 409 Conflict — employee is Terminated (BR-CON-07)
+        API-->>FE: 409 Conflict
+    end
+    break [end date is missing for PROBATION/FIXED_TERM, or present for INDEFINITE_TERM]
+        SVC-->>API: 400 Bad Request — end date does not match contract type (BR-CON-04)
+        API-->>FE: 400 Bad Request
+    end
+    break [end date is provided and not later than start date]
+        SVC-->>API: 400 Bad Request — end date must be later than start date (BR-CON-05)
+        API-->>FE: 400 Bad Request
+    end
+    break [contractSalaryAmount <= 0]
+        SVC-->>API: 400 Bad Request — contract salary amount must be greater than zero (BR-CON-06)
+        API-->>FE: 400 Bad Request
+    end
+    opt [status is ACTIVE]
+        SVC->>+REPO: HasOtherActiveForEmployee(employeeId)
+        REPO->>DB: SELECT COUNT(*) HrLaborContract WHERE EmployeeId=... AND Status='ACTIVE'
+        DB-->>REPO: count
+        REPO-->>-SVC: count
+    end
+    break [status is ACTIVE and startDate is later than today]
+        SVC-->>API: 409 Conflict — cannot be saved as Active before its start date (BR-CON-09)
+        API-->>FE: 409 Conflict
+    end
+    break [status is ACTIVE and employee already has another Active contract]
+        SVC-->>API: 409 Conflict — employee already has another Active contract (BR-CON-10)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+REPO: Add(contract)
+    REPO->>DB: INSERT HrLaborContract
+    DB-->>REPO: OK
+    REPO-->>-SVC: OK
+    SVC-->>-API: ContractDetail
+    API-->>-FE: 201 Created
+    FE-->>HR: New contract opens on Contract Detail
+```
+
+`EMPSVC: IEmployeeService` is the cross-domain dependency named in [ClassDiagram.md §6](ClassDiagram.md#6-contract-management-designed-not-yet-implemented) — it reuses `GetEmployee`, not a purpose-built method, so Employee Management's already-implemented interface needs no change.
+
+### 5.2 Activate a Draft Contract (US-CON-04)
+
+`POST /contracts/{contractId}/activate`
+
+```mermaid
+sequenceDiagram
+    actor HR as HR Staff
+    participant FE as React Web App
+    participant API as ContractsController
+    participant SVC as ContractService
+    participant REPO as ContractRepository
+    participant EMPSVC as IEmployeeService
+    participant DB as HRM Database
+
+    HR->>FE: Choose "Activate" on a Draft contract, confirm
+    FE->>+API: POST /contracts/{contractId}/activate
+    API->>+SVC: ActivateContract(contractId)
+    SVC->>+REPO: FindById(contractId)
+    REPO->>DB: SELECT HrLaborContract
+    DB-->>REPO: contract
+    REPO-->>-SVC: contract
+    break [status is not DRAFT]
+        SVC-->>API: 409 Conflict — only a Draft contract can be activated (BR-CON-16)
+        API-->>FE: 409 Conflict
+    end
+    break [startDate is later than today]
+        SVC-->>API: 409 Conflict — start date has not been reached (BR-CON-18)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+REPO: HasOtherActiveForEmployee(contract.EmployeeId)
+    REPO->>DB: SELECT COUNT(*) HrLaborContract WHERE EmployeeId=... AND Status='ACTIVE'
+    DB-->>REPO: count
+    REPO-->>-SVC: count
+    break [employee already has another Active contract]
+        SVC-->>API: 409 Conflict — employee already has another Active contract (BR-CON-18)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+EMPSVC: GetEmployee(contract.EmployeeId)
+    EMPSVC-->>-SVC: employee
+    break [employee's employment status is TERMINATED]
+        SVC-->>API: 409 Conflict — employee is Terminated (BR-CON-18)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+REPO: Update(contract, Status=ACTIVE)
+    REPO->>DB: UPDATE HrLaborContract SET Status='ACTIVE'
+    DB-->>REPO: OK
+    REPO-->>-SVC: OK
+    SVC-->>-API: ContractDetail
+    API-->>-FE: 200 OK
+    FE-->>HR: Contract's status updated to Active
+```
+
+### 5.3 Mark a Contract as Expired (US-CON-04)
+
+`POST /contracts/{contractId}/expire`
+
+```mermaid
+sequenceDiagram
+    actor HR as HR Staff
+    participant FE as React Web App
+    participant API as ContractsController
+    participant SVC as ContractService
+    participant REPO as ContractRepository
+    participant DB as HRM Database
+
+    HR->>FE: Choose "Mark as Expired" on an overdue contract, confirm
+    FE->>+API: POST /contracts/{contractId}/expire
+    API->>+SVC: ExpireContract(contractId)
+    SVC->>+REPO: FindById(contractId)
+    REPO->>DB: SELECT HrLaborContract
+    DB-->>REPO: contract
+    REPO-->>-SVC: contract
+    break [status is not ACTIVE]
+        SVC-->>API: 409 Conflict — only an Active contract can be marked as Expired (BR-CON-16)
+        API-->>FE: 409 Conflict
+    end
+    break [end date is not set, or is today or later]
+        SVC-->>API: 409 Conflict — end date has not passed (BR-CON-19)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+REPO: Update(contract, Status=EXPIRED)
+    REPO->>DB: UPDATE HrLaborContract SET Status='EXPIRED'
+    DB-->>REPO: OK
+    REPO-->>-SVC: OK
+    SVC-->>-API: ContractDetail
+    API-->>-FE: 200 OK
+    FE-->>HR: Contract's status updated to Expired
+```
+
+Marking a contract as Expired is always an explicit HR Staff action (`BR-CON-17`) — the system never changes `Status` on its own, even though `Overdue` is computed and shown as soon as `EndDate` passes.
+
+### 5.4 Terminate a Contract (US-CON-04)
+
+`POST /contracts/{contractId}/terminate`
+
+```mermaid
+sequenceDiagram
+    actor HR as HR Staff
+    participant FE as React Web App
+    participant API as ContractsController
+    participant SVC as ContractService
+    participant REPO as ContractRepository
+    participant DB as HRM Database
+
+    HR->>FE: Choose "Terminate" on an Active contract, enter a date and reason
+    FE->>+API: POST /contracts/{contractId}/terminate {terminationDate, terminationReason}
+    API->>+SVC: TerminateContract(contractId, request)
+    break [terminationDate or terminationReason is missing]
+        SVC-->>API: 400 Bad Request — termination date and reason are required (BR-CON-21)
+        API-->>FE: 400 Bad Request
+    end
+    SVC->>+REPO: FindById(contractId)
+    REPO->>DB: SELECT HrLaborContract
+    DB-->>REPO: contract
+    REPO-->>-SVC: contract
+    break [status is not ACTIVE]
+        SVC-->>API: 409 Conflict — only an Active contract can be terminated (BR-CON-16)
+        API-->>FE: 409 Conflict
+    end
+    break [terminationDate is earlier than startDate, or later than endDate when endDate is set]
+        SVC-->>API: 409 Conflict — termination date is outside the contract term (BR-CON-22)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+REPO: Update(contract, Status=TERMINATED, TerminationDate, TerminationReason)
+    REPO->>DB: UPDATE HrLaborContract SET Status='TERMINATED', TerminationDate=..., TerminationReason=...
+    DB-->>REPO: OK
+    REPO-->>-SVC: OK
+    SVC-->>-API: ContractDetail
+    API-->>-FE: 200 OK
+    FE-->>HR: Contract's status updated to Terminated, with the termination date and reason recorded
+```
+
+### 5.5 Delete a Draft Contract (US-CON-06)
+
+`DELETE /contracts/{contractId}`
+
+```mermaid
+sequenceDiagram
+    actor HR as HR Staff
+    participant FE as React Web App
+    participant API as ContractsController
+    participant SVC as ContractService
+    participant REPO as ContractRepository
+    participant DB as HRM Database
+
+    HR->>FE: Choose "Delete" on a Draft contract, confirm
+    FE->>+API: DELETE /contracts/{contractId}
+    API->>+SVC: DeleteContract(contractId)
+    SVC->>+REPO: FindById(contractId)
+    REPO->>DB: SELECT HrLaborContract
+    DB-->>REPO: contract
+    REPO-->>-SVC: contract
+    break [status is not DRAFT]
+        SVC-->>API: 409 Conflict — only a Draft contract can be deleted (BR-CON-28)
+        API-->>FE: 409 Conflict
+    end
+    SVC->>+REPO: Remove(contract)
+    REPO->>DB: DELETE FROM HrLaborContract WHERE Id=...
+    DB-->>REPO: OK
+    REPO-->>-SVC: OK
+    SVC-->>-API: (no content)
+    API-->>-FE: 204 No Content
+    FE-->>HR: Contract removed — its contract number is free to reuse (BR-CON-31)
+```
+
+This is the only flow in the whole system that removes a row instead of changing a `Status` — a Draft contract has no dependent history yet, so there is nothing to preserve (see the Domain Model note in [ClassDiagram.md](ClassDiagram.md#1-domain-model)).
+
+Searching/filtering contracts (`GET /contracts`, including the `expiringSoon`/`window` quick filter — `BR-CON-11`–`BR-CON-14`, `BR-CON-25`–`BR-CON-27`, `BR-CON-32`), viewing one (`GET /contracts/{contractId}`, which reads the employee's current profile live via `IEmployeeService.GetEmployee` — `BR-CON-15`), and updating a Draft contract's fields (`PUT /contracts/{contractId}` — Draft only, `BR-CON-28`; employee and status not editable, `BR-CON-29`; the same field validation as Create Contract, `BR-CON-30`) are plain reads/writes with no branching beyond what Create Contract and the guards above already show, so they are not diagrammed separately.
